@@ -63,7 +63,7 @@ fun SplashScreen(navController: NavHostController) {
                     onPermissionResult = { granted ->
                         permissionGranted = granted
                         if (granted) {
-                            navController.navigate(AppRoute.TestScreen.route) {
+                            navController.navigate(AppRoute.HomeScreen.route) {
                                 popUpTo(AppRoute.Splash.route)
                             }
                         } else {
