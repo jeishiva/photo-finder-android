@@ -9,6 +9,7 @@ import androidx.navigation.navArgument
 import com.experiment.facedetector.ui.screen.FullImageScreen
 import com.experiment.facedetector.ui.screen.GalleryScreen
 import com.experiment.facedetector.ui.screen.SplashScreen
+import com.experiment.facedetector.ui.screen.TestScreen
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
@@ -16,9 +17,13 @@ fun AppNavGraph(navController: NavHostController) {
         composable(AppRoute.Splash.route) {
             SplashScreen(navController)
         }
-
         composable(AppRoute.Gallery.route) {
             GalleryScreen(
+                navController = navController
+            )
+        }
+        composable(AppRoute.TestScreen.route) {
+            TestScreen(
                 navController = navController
             )
         }
@@ -34,6 +39,7 @@ fun AppNavGraph(navController: NavHostController) {
 sealed class AppRoute(val route: String) {
     object Splash : AppRoute("splash")
     object Gallery : AppRoute("gallery")
+    object TestScreen : AppRoute("TestScreen")
     object FullImage : AppRoute("fullImage/{mediaId}") {
         fun createRoute(mediaId: Long): String = "fullImage/$mediaId"
     }

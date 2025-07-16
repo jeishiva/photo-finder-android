@@ -3,4 +3,5 @@
     <string name="gallery">Gallery</string>
     <string name="image_permission_denied">Permission denied. Please enable it from settings.</string>
     <string name="full_image">Full Image</string>
+    <string name="test_screen">Test Screen</string>\
 </resources>

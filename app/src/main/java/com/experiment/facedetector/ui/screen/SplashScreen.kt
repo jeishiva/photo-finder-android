@@ -44,7 +44,7 @@ fun SplashScreen(navController: NavHostController) {
     val viewModel: SplashViewModel = koinViewModel()
 
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(1000)
+        kotlinx.coroutines.delay(2500)
         showPermissionRequest = true
     }
     AndroidFaceDetectorTheme {
@@ -63,10 +63,8 @@ fun SplashScreen(navController: NavHostController) {
                     onPermissionResult = { granted ->
                         permissionGranted = granted
                         if (granted) {
-                            navController.navigate(AppRoute.Gallery.route) {
-                                popUpTo(AppRoute.Splash.route) {
-                                    inclusive = true
-                                }
+                            navController.navigate(AppRoute.TestScreen.route) {
+                                popUpTo(AppRoute.Splash.route)
                             }
                         } else {
                             openAppSettingsWithToast(context)

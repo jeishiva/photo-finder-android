@@ -167,7 +167,6 @@ fun CameraImageGrid(
 ) {
     val lazyPagingItems = imagesFlow.collectAsLazyPagingItems()
     LogManager.d("CameraImageGrid", "Item count: ${lazyPagingItems.itemCount}")
-
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center

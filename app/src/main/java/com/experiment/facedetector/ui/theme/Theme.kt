@@ -1,10 +1,10 @@
 package com.experiment.facedetector.ui.theme
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -13,13 +13,10 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = Purple80, secondary = PurpleGrey80, tertiary = Pink80
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -38,41 +35,63 @@ private val LightColorScheme = lightColorScheme(
     */
 )
 
+/**
+ * The main theme composable for the Android Face Detector app.
+ *
+ * @param darkTheme Whether to use dark theme colors. Defaults to the system theme.
+ * @param dynamicColor Whether to use dynamic color theming (Android 12+). Defaults to true.
+ * @param content The content to be displayed within this theme.
+ */
 @Composable
 fun AndroidFaceDetectorTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-      dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-        val context = LocalContext.current
-        if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-      }
-      darkTheme -> DarkColorScheme
-      else -> LightColorScheme
-    }
-
+    val context = LocalContext.current
     MaterialTheme(
-      colorScheme = colorScheme,
-      typography = Typography,
-      content =  {
-          Box(
-              modifier = Modifier
-                  .fillMaxSize()
-                  .background(
-                      Brush.verticalGradient(
-                          colors = listOf(
-                              GradientStartMildGrey,
-                              GradientEndMildBlack,
-                          )
-                      )
-                  )
-          ) {
-              content()
-          }
-      }
+        colorScheme = colorScheme(context, darkTheme, dynamicColor),
+        typography = MaterialTheme.typography,
+        content = {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(screenBackgroundBrush())
+            ) {
+                content()
+            }
+        })
+}
+
+@Composable
+fun colorScheme(
+    context: android.content.Context, darkTheme: Boolean, dynamicColor: Boolean
+): ColorScheme {
+    return when {
+        dynamicColor && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S -> {
+            if (darkTheme) {
+                dynamicDarkColorScheme(context)
+            } else {
+                dynamicLightColorScheme(context)
+            }
+        }
+
+        darkTheme -> {
+            DarkColorScheme
+        }
+
+        else -> {
+            LightColorScheme
+        }
+    }
+}
+
+@Composable
+private fun screenBackgroundBrush(): Brush {
+    return Brush.verticalGradient(
+        colors = listOf(
+            GradientStartMildGrey, GradientEndMildBlack
+        )
     )
 }
 
