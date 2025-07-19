@@ -5,5 +5,6 @@
     <string name="full_image">Full Image</string>
 
     <string name="home_screen">Home Screen</string>\
-    <string name="details_screen">Details Screen</string>\
+    <string name="details_screen">Details Screen</string>
+    <string name="search_photo_msg">Photo Search — Last %1$s</string>\
 </resources>
