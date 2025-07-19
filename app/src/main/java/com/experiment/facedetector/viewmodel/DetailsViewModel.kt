@@ -1,17 +1,17 @@
 package com.experiment.facedetector.viewmodel
 
+import androidx.compose.ui.util.trace
 import androidx.lifecycle.ViewModel
 
 class DetailsViewModel : ViewModel() {
-
+    val hashmap = HashMap<String, String>()
     init {
         hotspot()
     }
 
     private fun hotspot() {
-        val hashmap = HashMap<String, String>()
-        for (index in 0..1000000) {
-            hashmap["$index"] = "2342342334234 + $index"
+        trace("Hotspot Loop Trace") {
+
         }
     }
 }

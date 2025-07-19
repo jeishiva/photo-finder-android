@@ -91,9 +91,7 @@ fun FullImageScreen(navController: NavHostController) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FullImageTopBar(navController: NavHostController) {
-    AppBar(
-        title = stringResource(R.string.full_image),
-    ) {
+    AppBar(title = stringResource(R.string.full_image)) {
         navController.popBackStack()
     }
 }
@@ -108,9 +106,7 @@ private fun FullImageContent(
     onTagChanged: (FaceTag, String) -> Unit
 ) {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(innerPadding),
+        modifier = Modifier.fillMaxSize().padding(innerPadding),
         contentAlignment = Alignment.Center
     ) {
         when (fullImageResult) {

@@ -44,7 +44,7 @@ fun SplashScreen(navController: NavHostController) {
     val viewModel: SplashViewModel = koinViewModel()
 
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(2500)
+        kotlinx.coroutines.delay(1000)
         showPermissionRequest = true
     }
     AndroidFaceDetectorTheme {
@@ -52,9 +52,7 @@ fun SplashScreen(navController: NavHostController) {
             containerColor = Color.Transparent, modifier = Modifier.fillMaxSize()
         ) { innerPadding ->
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
+                modifier = Modifier.fillMaxSize().padding(innerPadding),
                 contentAlignment = Alignment.Center
             ) {
                 SplashContent(
