@@ -83,18 +83,28 @@ class HomeViewModel(val faceDetectionUseCase: FaceDetectionUseCase) : ViewModel(
             HomeUiState()
         }
     }
+
     fun toggleFaceSelection(faceId: String) {
-        if (selectedFaceMap.containsKey(faceId)) {
-            selectedFaceMap.remove(faceId)
-        } else {
-            selectedFaceMap[faceId] = true
+        when {
+            selectedFaceMap.containsKey(faceId) -> {
+                selectedFaceMap.remove(faceId)
+            }
+            selectedFaceMap.size < MAX_SELECTED_FACES -> {
+                selectedFaceMap[faceId] = true
+            }
         }
     }
 
     fun isFaceSelected(faceId: String): Boolean {
         return selectedFaceMap.containsKey(faceId)
     }
+
+    companion object {
+        private const val MAX_SELECTED_FACES = 3
+    }
 }
+
+
 @Immutable
 data class HomeUiState(
     val isLoading: Boolean = false,

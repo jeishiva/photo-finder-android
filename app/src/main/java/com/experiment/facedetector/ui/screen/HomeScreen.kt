@@ -31,6 +31,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -48,28 +49,27 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.experiment.facedetector.R
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
 import com.experiment.facedetector.navigation.AppRoute
+import com.experiment.facedetector.ui.HomeScreenParams
 import com.experiment.facedetector.ui.TimeRange
 import com.experiment.facedetector.ui.components.StatusMessage
 import com.experiment.facedetector.ui.theme.AndroidFaceDetectorTheme
 import com.experiment.facedetector.ui.widgets.AppBar
 import com.experiment.facedetector.viewmodel.HomeIntent
 import com.experiment.facedetector.viewmodel.HomeUiState
-import com.experiment.facedetector.viewmodel.HomeViewModel
-import org.koin.androidx.compose.koinViewModel
 
 
 @Composable
-fun HomeScreen(navController: NavHostController, viewModel: HomeViewModel = koinViewModel()) {
+fun HomeScreen(homeScreenParams: HomeScreenParams) {
     var selectedImage by remember { mutableStateOf<Uri?>(null) }
     var selectedOption by remember { mutableStateOf<TimeRange?>(null) }
+    val navController = homeScreenParams.navController
+    val viewModel = homeScreenParams.viewModel
     val uiState by viewModel.uiState.collectAsState()
-
-    val actions = remember(navController, viewModel) {
+    val actions = remember(navController, homeScreenParams.viewModel) {
         HomeUiModel.Actions(
             onBackClick = { navController.popBackStack(AppRoute.Splash.route, inclusive = true) },
             onImageSelected = { uri -> selectedImage = uri },
@@ -86,8 +86,7 @@ fun HomeScreen(navController: NavHostController, viewModel: HomeViewModel = koin
             },
             toggleFaceSelection = { faceId ->
                 viewModel.toggleFaceSelection(faceId)
-            }
-        )
+            })
     }
     val uiModel = HomeUiModel(
         selectedImage = selectedImage,
@@ -96,8 +95,12 @@ fun HomeScreen(navController: NavHostController, viewModel: HomeViewModel = koin
         homeUiState = uiState
     )
     HomeContent(uiModel = uiModel)
+    DisposableEffect(Unit) {
+        onDispose {
+            homeScreenParams.scope.close()
+        }
+    }
 }
-
 
 @Composable
 fun HomeContent(uiModel: HomeUiModel) {
@@ -105,12 +108,9 @@ fun HomeContent(uiModel: HomeUiModel) {
         Scaffold(
             topBar = {
                 AppBar(
-                    stringResource(R.string.home_screen),
-                    onClick = uiModel.actions.onBackClick
+                    stringResource(R.string.home_screen), onClick = uiModel.actions.onBackClick
                 )
-            },
-            containerColor = Color.Transparent,
-            modifier = Modifier.fillMaxSize()
+            }, containerColor = Color.Transparent, modifier = Modifier.fillMaxSize()
         ) { innerPadding ->
             Box(
                 modifier = Modifier
@@ -148,8 +148,7 @@ fun HomeContent(uiModel: HomeUiModel) {
                     if (uiModel.selectedOption != null) {
                         Text(
                             text = stringResource(
-                                R.string.search_photo_msg,
-                                uiModel.selectedOption.label
+                                R.string.search_photo_msg, uiModel.selectedOption.label
                             ),
                             color = Color.White,
                             modifier = Modifier.fillMaxWidth(),
@@ -167,8 +166,7 @@ fun HomeContent(uiModel: HomeUiModel) {
                         FaceListSection(
                             faces = uiModel.homeUiState.faceList,
                             isFaceSelected = { faceId -> uiModel.actions.isFaceSelected(faceId) },
-                            onFaceClick = { uiModel.actions.toggleFaceSelection(it) }
-                        )
+                            onFaceClick = { uiModel.actions.toggleFaceSelection(it) })
                     }
                 }
 
@@ -196,35 +194,28 @@ fun FaceListSection(
     onFaceClick: (String) -> Unit
 ) {
     LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.padding(16.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(16.dp)
     ) {
         items(
-            faces.size,
-            key = { faces[it].faceId }
-        ) { faceIndex ->
+            faces.size, key = { faces[it].faceId }) { faceIndex ->
             val item = faces[faceIndex]
             FaceListItem(
                 face = item,
                 isSelected = isFaceSelected(item.faceId),
-                onClick = { onFaceClick(item.faceId) }
-            )
+                onClick = { onFaceClick(item.faceId) })
         }
     }
 }
 
 @Composable
 fun FaceListItem(
-    face: FaceDetectedItem,
-    isSelected: Boolean,
-    onClick: () -> Unit
+    face: FaceDetectedItem, isSelected: Boolean, onClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
             .size(50.dp)
             .clip(CircleShape)
-            .clickable { onClick() }
-    ) {
+            .clickable { onClick() }) {
         Image(
             bitmap = face.faceBitmap.asImageBitmap(),
             contentDescription = "Detected Face",
@@ -244,7 +235,6 @@ fun FaceListItem(
         }
     }
 }
-
 
 
 @Composable
@@ -274,7 +264,7 @@ data class HomeUiModel(
         val onSearchClick: () -> Unit = {},
         val isFaceSelected: (String) -> Boolean = { false },
         val toggleFaceSelection: (String) -> Unit = {},
-        )
+    )
 }
 
 @Composable
