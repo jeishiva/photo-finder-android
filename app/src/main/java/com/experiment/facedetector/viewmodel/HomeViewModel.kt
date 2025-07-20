@@ -9,6 +9,7 @@ import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
 import com.experiment.facedetector.domain.entities.LocalImageItem
 import com.experiment.facedetector.domain.usecase.FaceDetectionUseCase
+import com.experiment.facedetector.ui.HomeUiState
 import com.experiment.facedetector.ui.TimeRange
 import com.experiment.facedetector.ui.common.UiStateHolder
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +34,12 @@ class HomeViewModel(val faceDetectionUseCase: FaceDetectionUseCase) : ViewModel(
         }
     }
 
+    fun setSelectedImage(selectedImageUri: Uri?) {
+        _uiState.setState {
+            copy(selectedImageUri = selectedImageUri)
+        }
+    }
+
     fun detectFaces(selectedImage: Uri, selectedTimeRange: TimeRange) {
         LogManager.d("HomeViewModel", "selected image: $selectedImage")
         viewModelScope.launch(Dispatchers.IO) {
@@ -50,7 +57,17 @@ class HomeViewModel(val faceDetectionUseCase: FaceDetectionUseCase) : ViewModel(
 
     fun validationStart() {
         _uiState.setState {
-            HomeUiState(isLoading = true)
+            val selectedImageUri = uiState.value.selectedImageUri
+            HomeUiState(isLoading = true, selectedImageUri = selectedImageUri)
+        }
+    }
+
+    fun getSelectedFaces(): List<FaceDetectedItem> {
+        val faceList = uiState.value.faceList
+        LogManager.d("HomeViewModel", "total faces: ${faceList.size}")
+        LogManager.d("HomeViewModel", "selected faces: ${selectedFaceMap.size}")
+        return uiState.value.faceList.filter {
+            selectedFaceMap.containsKey(it.faceId)
         }
     }
 
@@ -71,7 +88,6 @@ class HomeViewModel(val faceDetectionUseCase: FaceDetectionUseCase) : ViewModel(
                 message = "${faces.size} faces found"
             )
         }
-        clearSelection()
     }
 
     private fun clearSelection() {
@@ -93,6 +109,11 @@ class HomeViewModel(val faceDetectionUseCase: FaceDetectionUseCase) : ViewModel(
                 selectedFaceMap[faceId] = true
             }
         }
+        _uiState.setState {
+            copy(
+                hasSelectedFaces = selectedFaceMap.isNotEmpty()
+            )
+        }
     }
 
     fun isFaceSelected(faceId: String): Boolean {
@@ -105,13 +126,6 @@ class HomeViewModel(val faceDetectionUseCase: FaceDetectionUseCase) : ViewModel(
 }
 
 
-@Immutable
-data class HomeUiState(
-    val isLoading: Boolean = false,
-    val message: String? = null,
-    val errorMessage: String? = "",
-    val faceList: List<FaceDetectedItem> = emptyList(),
-)
 
 sealed class HomeIntent {
     data class Search(val selectedImage: Uri, val selectedOption: TimeRange) : HomeIntent()

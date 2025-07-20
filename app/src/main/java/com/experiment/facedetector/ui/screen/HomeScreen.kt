@@ -31,8 +31,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.Stable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,32 +53,31 @@ import com.experiment.facedetector.R
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
 import com.experiment.facedetector.navigation.AppRoute
 import com.experiment.facedetector.ui.HomeScreenParams
+import com.experiment.facedetector.ui.HomeUiModel
+import com.experiment.facedetector.ui.HomeUiState
 import com.experiment.facedetector.ui.TimeRange
 import com.experiment.facedetector.ui.components.StatusMessage
 import com.experiment.facedetector.ui.theme.AndroidFaceDetectorTheme
 import com.experiment.facedetector.ui.widgets.AppBar
 import com.experiment.facedetector.viewmodel.HomeIntent
-import com.experiment.facedetector.viewmodel.HomeUiState
-
+import com.experiment.facedetector.viewmodel.HomeViewModel
 
 @Composable
-fun HomeScreen(homeScreenParams: HomeScreenParams) {
-    var selectedImage by remember { mutableStateOf<Uri?>(null) }
-    var selectedOption by remember { mutableStateOf<TimeRange?>(null) }
+fun HomeScreen(homeScreenParams: HomeScreenParams,
+               viewModel: HomeViewModel
+) {
+    var selectedOption by remember { mutableStateOf<TimeRange>(TimeRange.OneMonth) }
     val navController = homeScreenParams.navController
-    val viewModel = homeScreenParams.viewModel
     val uiState by viewModel.uiState.collectAsState()
-    val actions = remember(navController, homeScreenParams.viewModel) {
+    val actions = remember(navController, viewModel) {
         HomeUiModel.Actions(
             onBackClick = { navController.popBackStack(AppRoute.Splash.route, inclusive = true) },
-            onImageSelected = { uri -> selectedImage = uri },
+            onImageSelected = { uri ->
+               viewModel.setSelectedImage(uri)
+            },
             onOptionSelected = { option -> selectedOption = option },
             onSearchClick = {
-                if (selectedImage != null && selectedOption != null) {
-                    viewModel.handleIntent(
-                        HomeIntent.Search(selectedImage!!, selectedOption!!)
-                    )
-                }
+                navController.navigate(AppRoute.SearchScreen.route)
             },
             isFaceSelected = { faceId ->
                 viewModel.isFaceSelected(faceId)
@@ -88,18 +86,17 @@ fun HomeScreen(homeScreenParams: HomeScreenParams) {
                 viewModel.toggleFaceSelection(faceId)
             })
     }
-    val uiModel = HomeUiModel(
-        selectedImage = selectedImage,
-        selectedOption = selectedOption,
-        actions = actions,
-        homeUiState = uiState
-    )
-    HomeContent(uiModel = uiModel)
-    DisposableEffect(Unit) {
-        onDispose {
-            homeScreenParams.scope.close()
+    LaunchedEffect(uiState.selectedImageUri) {
+        uiState.selectedImageUri?.let { selectedUri ->
+            viewModel.handleIntent(HomeIntent.Search(selectedUri, selectedOption))
         }
     }
+    val uiModel = HomeUiModel(
+        selectedOption = selectedOption,
+        actions = actions,
+        state = uiState
+    )
+    HomeContent(uiModel = uiModel)
 }
 
 @Composable
@@ -129,7 +126,10 @@ fun HomeContent(uiModel: HomeUiModel) {
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        CircularImageOrPlaceholder(uiModel.selectedImage, size = 120.dp)
+                        CircularImageOrPlaceholder(
+                            imageUri = uiModel.state.selectedImageUri,
+                            size = 120.dp
+                        )
 
                         Spacer(modifier = Modifier.width(16.dp))
 
@@ -142,35 +142,30 @@ fun HomeContent(uiModel: HomeUiModel) {
                             TimeRangeSelectorScreen(onOptionSelected = uiModel.actions.onOptionSelected)
                         }
                     }
-
                     Spacer(modifier = Modifier.height(16.dp))
-
-                    if (uiModel.selectedOption != null) {
-                        Text(
-                            text = stringResource(
-                                R.string.search_photo_msg, uiModel.selectedOption.label
-                            ),
-                            color = Color.White,
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    StatusMessage(
-                        isLoading = uiModel.homeUiState.isLoading,
-                        errorMessage = uiModel.homeUiState.errorMessage,
-                        message = uiModel.homeUiState.message
+                    Text(
+                        text = stringResource(
+                            R.string.search_photo_msg, uiModel.selectedOption.label
+                        ),
+                        color = Color.White,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    if (uiModel.homeUiState.faceList.isNotEmpty()) {
+                    StatusMessage(
+                        isLoading = uiModel.state.isLoading,
+                        errorMessage = uiModel.state.errorMessage,
+                        message = uiModel.state.message
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    if (uiModel.hasFaces) {
                         FaceListSection(
-                            faces = uiModel.homeUiState.faceList,
+                            faces = uiModel.state.faceList,
                             isFaceSelected = { faceId -> uiModel.actions.isFaceSelected(faceId) },
                             onFaceClick = { uiModel.actions.toggleFaceSelection(it) })
                     }
                 }
-
-                if (uiModel.selectedImage != null && uiModel.selectedOption != null) {
+                if (uiModel.hasSelectedFaces) {
                     Button(
                         onClick = uiModel.actions.onSearchClick,
                         modifier = Modifier
@@ -181,7 +176,6 @@ fun HomeContent(uiModel: HomeUiModel) {
                         Text(stringResource(R.string.search))
                     }
                 }
-
             }
         }
     }
@@ -194,7 +188,8 @@ fun FaceListSection(
     onFaceClick: (String) -> Unit
 ) {
     LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(16.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(16.dp)
     ) {
         items(
             faces.size, key = { faces[it].faceId }) { faceIndex ->
@@ -209,7 +204,9 @@ fun FaceListSection(
 
 @Composable
 fun FaceListItem(
-    face: FaceDetectedItem, isSelected: Boolean, onClick: () -> Unit
+    face: FaceDetectedItem,
+    isSelected: Boolean,
+    onClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -222,7 +219,6 @@ fun FaceListItem(
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
         )
-
         if (isSelected) {
             Icon(
                 imageVector = Icons.Default.CheckCircle,
@@ -236,34 +232,14 @@ fun FaceListItem(
     }
 }
 
-
 @Composable
 @Preview(showBackground = true)
 fun HomeContentPreview() {
     HomeContent(
         uiModel = HomeUiModel(
-            selectedImage = null,
-            selectedOption = null,
             actions = HomeUiModel.Actions(),
-            homeUiState = HomeUiState()
+            state = HomeUiState()
         )
-    )
-}
-
-data class HomeUiModel(
-    val selectedImage: Uri?,
-    val selectedOption: TimeRange?,
-    val actions: Actions,
-    val homeUiState: HomeUiState
-) {
-    @Stable
-    data class Actions(
-        val onBackClick: () -> Unit = {},
-        val onImageSelected: (Uri?) -> Unit = {},
-        val onOptionSelected: (TimeRange) -> Unit = {},
-        val onSearchClick: () -> Unit = {},
-        val isFaceSelected: (String) -> Boolean = { false },
-        val toggleFaceSelection: (String) -> Unit = {},
     )
 }
 
@@ -271,6 +247,7 @@ data class HomeUiModel(
 fun CircularImageOrPlaceholder(
     imageUri: Uri?, modifier: Modifier = Modifier, size: Dp = 100.dp
 ) {
+    println("imageUri: $imageUri")
     Box(
         modifier = modifier
             .size(size)
@@ -339,7 +316,9 @@ fun GalleryImagePicker(
     onImageSelected: (Uri?) -> Unit
 ) {
     val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent(), onResult = { uri -> onImageSelected(uri) })
+        contract = ActivityResultContracts.GetContent(), onResult = {
+            uri -> onImageSelected(uri)
+        })
     Button(onClick = { launcher.launch("image/*") }) {
         Text("Select Photo")
     }

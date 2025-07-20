@@ -2,8 +2,9 @@ package com.experiment.facedetector.di
 
 
 import androidx.lifecycle.SavedStateHandle
+import com.experiment.facedetector.domain.entities.FaceDetectedItem
 import com.experiment.facedetector.navigation.NavigationScope
-import com.experiment.facedetector.viewmodel.DetailsViewModel
+import com.experiment.facedetector.viewmodel.SearchViewModel
 import com.experiment.facedetector.viewmodel.FullImageViewModel
 import com.experiment.facedetector.viewmodel.GalleryViewModel
 import com.experiment.facedetector.viewmodel.SplashViewModel
@@ -13,19 +14,17 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 val viewModelModule = module {
-    viewModel { GalleryViewModel(
-        mediaRepo = get(),
-        workManager = get()
-    ) }
+    viewModel {
+        GalleryViewModel(
+            mediaRepo = get(),
+            workManager = get()
+        )
+    }
     viewModel {
         SplashViewModel()
     }
-    scope(named(NavigationScope.Home.name)) {
-        viewModel { HomeViewModel(get()) }
-    }
-    viewModel {
-        DetailsViewModel()
-    }
+    viewModel { HomeViewModel(get()) }
+    viewModel { SearchViewModel() }
     viewModel { (handle: SavedStateHandle) ->
         FullImageViewModel(
             savedStateHandle = handle,
