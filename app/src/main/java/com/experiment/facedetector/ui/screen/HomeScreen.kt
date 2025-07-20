@@ -3,6 +3,7 @@ package com.experiment.facedetector.ui.screen
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,8 +17,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -47,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.experiment.facedetector.R
+import com.experiment.facedetector.domain.entities.FaceDetectedItem
 import com.experiment.facedetector.navigation.AppRoute
 import com.experiment.facedetector.ui.TimeRange
 import com.experiment.facedetector.ui.components.StatusMessage
@@ -56,12 +61,10 @@ import com.experiment.facedetector.viewmodel.HomeIntent
 import com.experiment.facedetector.viewmodel.HomeUiState
 import com.experiment.facedetector.viewmodel.HomeViewModel
 import org.koin.androidx.compose.koinViewModel
-import org.koin.core.logger.MESSAGE
 
 
 @Composable
-fun HomeScreen(navController: NavHostController) {
-    val viewModel: HomeViewModel = koinViewModel()
+fun HomeScreen(navController: NavHostController, viewModel: HomeViewModel = koinViewModel()) {
     var selectedImage by remember { mutableStateOf<Uri?>(null) }
     var selectedOption by remember { mutableStateOf<TimeRange?>(null) }
     val uiState by viewModel.uiState.collectAsState()
@@ -77,6 +80,12 @@ fun HomeScreen(navController: NavHostController) {
                         HomeIntent.Search(selectedImage!!, selectedOption!!)
                     )
                 }
+            },
+            isFaceSelected = { faceId ->
+                viewModel.isFaceSelected(faceId)
+            },
+            toggleFaceSelection = { faceId ->
+                viewModel.toggleFaceSelection(faceId)
             }
         )
     }
@@ -88,6 +97,7 @@ fun HomeScreen(navController: NavHostController) {
     )
     HomeContent(uiModel = uiModel)
 }
+
 
 @Composable
 fun HomeContent(uiModel: HomeUiModel) {
@@ -135,7 +145,6 @@ fun HomeContent(uiModel: HomeUiModel) {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Second Row — Message if option selected
                     if (uiModel.selectedOption != null) {
                         Text(
                             text = stringResource(
@@ -153,6 +162,14 @@ fun HomeContent(uiModel: HomeUiModel) {
                         errorMessage = uiModel.homeUiState.errorMessage,
                         message = uiModel.homeUiState.message
                     )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    if (uiModel.homeUiState.faceList.isNotEmpty()) {
+                        FaceListSection(
+                            faces = uiModel.homeUiState.faceList,
+                            isFaceSelected = { faceId -> uiModel.actions.isFaceSelected(faceId) },
+                            onFaceClick = { uiModel.actions.toggleFaceSelection(it) }
+                        )
+                    }
                 }
 
                 if (uiModel.selectedImage != null && uiModel.selectedOption != null) {
@@ -166,10 +183,68 @@ fun HomeContent(uiModel: HomeUiModel) {
                         Text(stringResource(R.string.search))
                     }
                 }
+
             }
         }
     }
 }
+
+@Composable
+fun FaceListSection(
+    faces: List<FaceDetectedItem>,
+    isFaceSelected: (String) -> Boolean,
+    onFaceClick: (String) -> Unit
+) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(16.dp)
+    ) {
+        items(
+            faces.size,
+            key = { faces[it].faceId }
+        ) { faceIndex ->
+            val item = faces[faceIndex]
+            FaceListItem(
+                face = item,
+                isSelected = isFaceSelected(item.faceId),
+                onClick = { onFaceClick(item.faceId) }
+            )
+        }
+    }
+}
+
+@Composable
+fun FaceListItem(
+    face: FaceDetectedItem,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .size(50.dp)
+            .clip(CircleShape)
+            .clickable { onClick() }
+    ) {
+        Image(
+            bitmap = face.faceBitmap.asImageBitmap(),
+            contentDescription = "Detected Face",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        if (isSelected) {
+            Icon(
+                imageVector = Icons.Default.CheckCircle,
+                contentDescription = "Selected",
+                tint = Color.Green,
+                modifier = Modifier
+                    .size(16.dp)
+                    .align(Alignment.BottomCenter)
+            )
+        }
+    }
+}
+
 
 
 @Composable
@@ -197,7 +272,9 @@ data class HomeUiModel(
         val onImageSelected: (Uri?) -> Unit = {},
         val onOptionSelected: (TimeRange) -> Unit = {},
         val onSearchClick: () -> Unit = {},
-    )
+        val isFaceSelected: (String) -> Boolean = { false },
+        val toggleFaceSelection: (String) -> Unit = {},
+        )
 }
 
 @Composable

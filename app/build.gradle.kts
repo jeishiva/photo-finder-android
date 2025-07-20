@@ -78,4 +78,5 @@ dependencies {
     implementation(libs.koin.workmanager)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.navigation.compose)
+    implementation(libs.mediapipe.vision)
 }

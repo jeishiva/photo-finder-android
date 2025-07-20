@@ -2,6 +2,7 @@ package com.experiment.facedetector.viewmodel
 
 import android.net.Uri
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.experiment.facedetector.common.LogManager
@@ -11,17 +12,15 @@ import com.experiment.facedetector.domain.usecase.FaceDetectionUseCase
 import com.experiment.facedetector.ui.TimeRange
 import com.experiment.facedetector.ui.common.UiStateHolder
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class HomeViewModel(val faceDetectionUseCase: FaceDetectionUseCase) : ViewModel() {
 
     private val _uiState = UiStateHolder<HomeUiState>(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.state
+
+    val selectedFaceMap = mutableStateMapOf<String, Boolean>()
 
     fun handleIntent(intent: HomeIntent) {
         when (intent) {
@@ -67,11 +66,16 @@ class HomeViewModel(val faceDetectionUseCase: FaceDetectionUseCase) : ViewModel(
     fun sendDetectedFaces(faces: List<FaceDetectedItem>) {
         _uiState.setState {
             copy(
-                list = faces,
+                faceList = faces,
                 isLoading = false,
                 message = "${faces.size} faces found"
             )
         }
+        clearSelection()
+    }
+
+    private fun clearSelection() {
+        selectedFaceMap.clear()
     }
 
     fun reset() {
@@ -79,14 +83,24 @@ class HomeViewModel(val faceDetectionUseCase: FaceDetectionUseCase) : ViewModel(
             HomeUiState()
         }
     }
-}
+    fun toggleFaceSelection(faceId: String) {
+        if (selectedFaceMap.containsKey(faceId)) {
+            selectedFaceMap.remove(faceId)
+        } else {
+            selectedFaceMap[faceId] = true
+        }
+    }
 
+    fun isFaceSelected(faceId: String): Boolean {
+        return selectedFaceMap.containsKey(faceId)
+    }
+}
 @Immutable
 data class HomeUiState(
     val isLoading: Boolean = false,
     val message: String? = null,
     val errorMessage: String? = "",
-    val list: List<FaceDetectedItem> = emptyList()
+    val faceList: List<FaceDetectedItem> = emptyList(),
 )
 
 sealed class HomeIntent {
