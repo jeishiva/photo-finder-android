@@ -23,7 +23,10 @@ import com.experiment.facedetector.domain.entities.FaceBoundingBox
 
 class BitmapHelper(val context: Context) {
     fun saveBitmap(
-        bitmap: Bitmap, filename: String, format: Bitmap.CompressFormat, quality: Int
+        bitmap: Bitmap,
+        filename: String,
+        format: Bitmap.CompressFormat,
+        quality: Int
     ): File? {
         val file = getThumbnailPath(filename)
         try {

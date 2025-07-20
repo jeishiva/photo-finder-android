@@ -7,11 +7,14 @@ import org.koin.dsl.module
 val databaseModule = module {
     single {
         Room.databaseBuilder(
-            get(),
-            AppDatabase::class.java,
-            "finder_db"
+            get(), AppDatabase::class.java, "finder_db"
         ).fallbackToDestructiveMigration().build()
     }
+
     single { get<AppDatabase>().mediaDao() }
+
     single { get<AppDatabase>().faceDao() }
+
+    single { get<AppDatabase>().searchFaceDao() }
+
 }

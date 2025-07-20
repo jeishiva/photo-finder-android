@@ -63,21 +63,29 @@ import com.experiment.facedetector.viewmodel.HomeIntent
 import com.experiment.facedetector.viewmodel.HomeViewModel
 
 @Composable
-fun HomeScreen(homeScreenParams: HomeScreenParams,
-               viewModel: HomeViewModel
+fun HomeScreen(
+    homeScreenParams: HomeScreenParams,
+    viewModel: HomeViewModel
 ) {
     var selectedOption by remember { mutableStateOf<TimeRange>(TimeRange.OneMonth) }
     val navController = homeScreenParams.navController
     val uiState by viewModel.uiState.collectAsState()
     val actions = remember(navController, viewModel) {
         HomeUiModel.Actions(
-            onBackClick = { navController.popBackStack(AppRoute.Splash.route, inclusive = true) },
-            onImageSelected = { uri ->
-               viewModel.setSelectedImage(uri)
+            onBackClick = {
+                navController.popBackStack(
+                    AppRoute.Splash.route,
+                    inclusive = true
+                )
             },
-            onOptionSelected = { option -> selectedOption = option },
+            onImageSelected = { uri ->
+                viewModel.setSelectedImage(uri)
+            },
+            onOptionSelected = { option ->
+                selectedOption = option
+            },
             onSearchClick = {
-                navController.navigate(AppRoute.SearchScreen.route)
+                viewModel.saveSelectedFaces()
             },
             isFaceSelected = { faceId ->
                 viewModel.isFaceSelected(faceId)
@@ -89,6 +97,12 @@ fun HomeScreen(homeScreenParams: HomeScreenParams,
     LaunchedEffect(uiState.selectedImageUri) {
         uiState.selectedImageUri?.let { selectedUri ->
             viewModel.handleIntent(HomeIntent.Search(selectedUri, selectedOption))
+        }
+    }
+    LaunchedEffect(uiState.searchSessionId) {
+        if (uiState.searchSessionId != null) {
+            navController.navigate(AppRoute.SearchScreen.route)
+            viewModel.resetSessionId()
         }
     }
     val uiModel = HomeUiModel(
@@ -316,8 +330,8 @@ fun GalleryImagePicker(
     onImageSelected: (Uri?) -> Unit
 ) {
     val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent(), onResult = {
-            uri -> onImageSelected(uri)
+        contract = ActivityResultContracts.GetContent(), onResult = { uri ->
+            onImageSelected(uri)
         })
     Button(onClick = { launcher.launch("image/*") }) {
         Text("Select Photo")

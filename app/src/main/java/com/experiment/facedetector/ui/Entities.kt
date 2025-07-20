@@ -64,7 +64,8 @@ data class HomeUiState(
     val errorMessage: String? = "",
     val faceList: List<FaceDetectedItem> = emptyList(),
     val selectedImageUri : Uri? = null,
-    val hasSelectedFaces: Boolean = false
+    val hasSelectedFaces: Boolean = false,
+    val searchSessionId: String? = null
 )
 
 @Immutable

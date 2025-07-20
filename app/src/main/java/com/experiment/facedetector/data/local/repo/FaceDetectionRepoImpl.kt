@@ -2,7 +2,6 @@ package com.experiment.facedetector.data.local.repo
 
 import android.graphics.Bitmap
 import com.experiment.facedetector.common.await
-import com.experiment.facedetector.common.toFaceId
 import com.experiment.facedetector.config.FullImageConfig
 import com.experiment.facedetector.data.local.entities.FaceDetectionResult
 import com.experiment.facedetector.domain.entities.FaceBoundingBox

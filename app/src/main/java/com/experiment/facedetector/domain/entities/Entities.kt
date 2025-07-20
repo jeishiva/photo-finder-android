@@ -16,5 +16,12 @@ data class FaceBoundingBox(
 data class FaceDetectedItem(
     val faceId: String,
     val faceBoundingBox: FaceBoundingBox,
-    val faceBitmap: Bitmap
+    val faceBitmap: Bitmap,
+)
+
+data class SearchFaceItem(
+    val sessionId: String,
+    val faceId: String,
+    val faceBoundingBox: FaceBoundingBox,
+    val thumbnailPath: String
 )

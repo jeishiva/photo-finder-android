@@ -23,7 +23,7 @@ val viewModelModule = module {
     viewModel {
         SplashViewModel()
     }
-    viewModel { HomeViewModel(get()) }
+    viewModel { HomeViewModel(get(), get(), get()) }
     viewModel { SearchViewModel() }
     viewModel { (handle: SavedStateHandle) ->
         FullImageViewModel(

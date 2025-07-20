@@ -4,6 +4,10 @@ import com.experiment.facedetector.config.ThumbnailConfig
 import com.google.mlkit.vision.face.Face
 
 fun Long.toFileName(): String {
+    return this.toString().toFileName()
+}
+
+fun String.toFileName(): String {
     return StringBuilder().apply {
         append(ThumbnailConfig.THUMBNAIL_FILE_PREFIX)
         append(this@toFileName)

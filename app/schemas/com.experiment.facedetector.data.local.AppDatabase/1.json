@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "892464cf50ff4e6e568b66626aa25330",
+    "identityHash": "ab00aaaabb187db41bb6c44f5356a57f",
     "entities": [
       {
         "tableName": "media",
@@ -95,12 +95,68 @@
             ]
           }
         ]
+      },
+      {
+        "tableName": "search_face_items",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`faceId` TEXT NOT NULL, `searchSessionId` TEXT NOT NULL, `left` INTEGER NOT NULL, `top` INTEGER NOT NULL, `right` INTEGER NOT NULL, `bottom` INTEGER NOT NULL, `thumbnailPath` TEXT NOT NULL, PRIMARY KEY(`faceId`))",
+        "fields": [
+          {
+            "fieldPath": "faceId",
+            "columnName": "faceId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "searchSessionId",
+            "columnName": "searchSessionId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "left",
+            "columnName": "left",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "top",
+            "columnName": "top",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "right",
+            "columnName": "right",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bottom",
+            "columnName": "bottom",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "thumbnailPath",
+            "columnName": "thumbnailPath",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "faceId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
       }
     ],
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '892464cf50ff4e6e568b66626aa25330')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'ab00aaaabb187db41bb6c44f5356a57f')"
     ]
   }
 }
