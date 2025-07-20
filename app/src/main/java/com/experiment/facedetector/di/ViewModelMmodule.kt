@@ -19,7 +19,7 @@ val viewModelModule = module {
         SplashViewModel()
     }
     viewModel {
-        HomeViewModel()
+        HomeViewModel(faceDetectionUseCase = get())
     }
     viewModel {
         DetailsViewModel()

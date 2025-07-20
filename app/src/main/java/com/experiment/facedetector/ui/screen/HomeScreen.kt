@@ -8,12 +8,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
@@ -23,10 +25,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -44,53 +48,161 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.experiment.facedetector.R
 import com.experiment.facedetector.navigation.AppRoute
-import com.experiment.facedetector.ui.TimeRangeOption
+import com.experiment.facedetector.ui.TimeRange
+import com.experiment.facedetector.ui.components.StatusMessage
 import com.experiment.facedetector.ui.theme.AndroidFaceDetectorTheme
 import com.experiment.facedetector.ui.widgets.AppBar
+import com.experiment.facedetector.viewmodel.HomeIntent
+import com.experiment.facedetector.viewmodel.HomeUiState
+import com.experiment.facedetector.viewmodel.HomeViewModel
+import org.koin.androidx.compose.koinViewModel
+import org.koin.core.logger.MESSAGE
+
 
 @Composable
 fun HomeScreen(navController: NavHostController) {
-    val backClick: () -> Unit = remember(navController) {
-        { navController.popBackStack(AppRoute.Splash.route, inclusive = true) }
+    val viewModel: HomeViewModel = koinViewModel()
+    var selectedImage by remember { mutableStateOf<Uri?>(null) }
+    var selectedOption by remember { mutableStateOf<TimeRange?>(null) }
+    val uiState by viewModel.uiState.collectAsState()
+
+    val actions = remember(navController, viewModel) {
+        HomeUiModel.Actions(
+            onBackClick = { navController.popBackStack(AppRoute.Splash.route, inclusive = true) },
+            onImageSelected = { uri -> selectedImage = uri },
+            onOptionSelected = { option -> selectedOption = option },
+            onSearchClick = {
+                if (selectedImage != null && selectedOption != null) {
+                    viewModel.handleIntent(
+                        HomeIntent.Search(selectedImage!!, selectedOption!!)
+                    )
+                }
+            }
+        )
     }
-    HomeContent(onBackClick = backClick)
+    val uiModel = HomeUiModel(
+        selectedImage = selectedImage,
+        selectedOption = selectedOption,
+        actions = actions,
+        homeUiState = uiState
+    )
+    HomeContent(uiModel = uiModel)
 }
 
 @Composable
-@Preview(showBackground = true)
-fun HomeContent(onBackClick: () -> Unit = {}) {
-    // val viewModel: HomeViewModel = koinViewModel()
-    var selectedImage by remember { mutableStateOf<Uri?>(null) }
+fun HomeContent(uiModel: HomeUiModel) {
     AndroidFaceDetectorTheme {
         Scaffold(
-            topBar = { AppBar(stringResource(R.string.home_screen), onClick = onBackClick) },
+            topBar = {
+                AppBar(
+                    stringResource(R.string.home_screen),
+                    onClick = uiModel.actions.onBackClick
+                )
+            },
             containerColor = Color.Transparent,
             modifier = Modifier.fillMaxSize()
         ) { innerPadding ->
-            Column(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                    .padding(innerPadding)
             ) {
-                CircularImageOrPlaceholder(selectedImage, size = 125.dp)
-                Spacer(modifier = Modifier.height(16.dp))
-                GalleryImagePicker { uri ->
-                    selectedImage = uri
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        CircularImageOrPlaceholder(uiModel.selectedImage, size = 120.dp)
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        Column(
+                            modifier = Modifier.weight(1f), // take available space
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            GalleryImagePicker(onImageSelected = uiModel.actions.onImageSelected)
+                            TimeRangeSelectorScreen(onOptionSelected = uiModel.actions.onOptionSelected)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Second Row — Message if option selected
+                    if (uiModel.selectedOption != null) {
+                        Text(
+                            text = stringResource(
+                                R.string.search_photo_msg,
+                                uiModel.selectedOption.label
+                            ),
+                            color = Color.White,
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    StatusMessage(
+                        isLoading = uiModel.homeUiState.isLoading,
+                        errorMessage = uiModel.homeUiState.errorMessage,
+                        message = uiModel.homeUiState.message
+                    )
                 }
-                Spacer(modifier = Modifier.height(16.dp))
-                TimeRangeSelectorScreen()
+
+                if (uiModel.selectedImage != null && uiModel.selectedOption != null) {
+                    Button(
+                        onClick = uiModel.actions.onSearchClick,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                            .align(Alignment.BottomCenter)
+                    ) {
+                        Text(stringResource(R.string.search))
+                    }
+                }
             }
         }
     }
 }
 
+
+@Composable
+@Preview(showBackground = true)
+fun HomeContentPreview() {
+    HomeContent(
+        uiModel = HomeUiModel(
+            selectedImage = null,
+            selectedOption = null,
+            actions = HomeUiModel.Actions(),
+            homeUiState = HomeUiState()
+        )
+    )
+}
+
+data class HomeUiModel(
+    val selectedImage: Uri?,
+    val selectedOption: TimeRange?,
+    val actions: Actions,
+    val homeUiState: HomeUiState
+) {
+    @Stable
+    data class Actions(
+        val onBackClick: () -> Unit = {},
+        val onImageSelected: (Uri?) -> Unit = {},
+        val onOptionSelected: (TimeRange) -> Unit = {},
+        val onSearchClick: () -> Unit = {},
+    )
+}
+
 @Composable
 fun CircularImageOrPlaceholder(
-    imageUri: Uri?,
-    modifier: Modifier = Modifier,
-    size: Dp = 100.dp
+    imageUri: Uri?, modifier: Modifier = Modifier, size: Dp = 100.dp
 ) {
     Box(
         modifier = modifier
@@ -120,37 +232,28 @@ fun CircularImageOrPlaceholder(
 }
 
 @Composable
-fun TimeRangeSelectorScreen() {
-    var selectedOption by remember { mutableStateOf<TimeRangeOption?>(null) }
+fun TimeRangeSelectorScreen(onOptionSelected: (TimeRange) -> Unit) {
     var showBottomSheet by remember { mutableStateOf(false) }
     Button(onClick = { showBottomSheet = true }) {
         Text("Select Time Range")
     }
-    selectedOption?.let {
-        Spacer(Modifier.height(16.dp))
-        Text(text = stringResource(R.string.search_photo_msg, it.label), color = Color.White)
-    }
     if (showBottomSheet) {
         TimeRangeBottomSheetDialog(
-            onOptionSelected = { selectedOption = it },
-            onDismiss = { showBottomSheet = false }
-        )
+            onOptionSelected = onOptionSelected, onDismiss = { showBottomSheet = false })
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimeRangeBottomSheetDialog(
-    onOptionSelected: (TimeRangeOption) -> Unit,
-    onDismiss: () -> Unit
+    onOptionSelected: (TimeRange) -> Unit, onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState()
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState
+        onDismissRequest = onDismiss, sheetState = sheetState
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            TimeRangeOption.toList().forEach { option ->
+            TimeRange.toList().forEach { option ->
                 ListItem(
                     headlineContent = { Text(option.label) },
                     modifier = Modifier
@@ -158,8 +261,7 @@ fun TimeRangeBottomSheetDialog(
                         .clickable {
                             onOptionSelected(option)
                             onDismiss()
-                        }
-                )
+                        })
             }
         }
     }
@@ -170,9 +272,7 @@ fun GalleryImagePicker(
     onImageSelected: (Uri?) -> Unit
 ) {
     val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent(),
-        onResult = { uri -> onImageSelected(uri) }
-    )
+        contract = ActivityResultContracts.GetContent(), onResult = { uri -> onImageSelected(uri) })
     Button(onClick = { launcher.launch("image/*") }) {
         Text("Select Photo")
     }

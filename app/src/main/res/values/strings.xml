@@ -1,10 +1,12 @@
 <resources>
-    <string name="app_name">Photo Finder</string>\
+    <string name="app_name">Photo Finder</string>
     <string name="gallery">Gallery</string>
     <string name="image_permission_denied">Permission denied. Please enable it from settings.</string>
     <string name="full_image">Full Image</string>
 
-    <string name="home_screen">Home Screen</string>\
+    <string name="home_screen">Home Screen</string>
     <string name="details_screen">Details Screen</string>
-    <string name="search_photo_msg">Photo Search — Last %1$s</string>\
+    <string name="search_photo_msg">Photo Search — Last %1$s</string>
+    <string name="search">Search</string>
+    <string name="loading">Loading</string>
 </resources>

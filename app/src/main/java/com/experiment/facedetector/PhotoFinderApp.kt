@@ -11,6 +11,7 @@ import com.experiment.facedetector.di.imageLoaderModule
 import com.experiment.facedetector.di.networkModule
 import com.experiment.facedetector.di.processorModule
 import com.experiment.facedetector.di.repositoryModule
+import com.experiment.facedetector.di.useCaseModule
 import com.experiment.facedetector.di.viewModelModule
 import org.koin.androidx.workmanager.koin.workManagerFactory
 
@@ -36,6 +37,7 @@ class PhotoFinderApp() : Application(), Configuration.Provider {
                     imageLoaderModule,
                     databaseModule,
                     repositoryModule,
+                    useCaseModule,
                     viewModelModule,
                     processorModule
                 )

@@ -7,6 +7,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.Rect
 import android.net.Uri
 import androidx.exifinterface.media.ExifInterface
 import com.google.mlkit.vision.face.Face
@@ -17,6 +18,8 @@ import java.io.IOException
 import androidx.core.graphics.scale
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.config.ThumbnailConfig.THUMBNAIL_SIZE
+import androidx.core.net.toUri
+import com.experiment.facedetector.domain.entities.FaceBoundingBox
 
 class BitmapHelper(val context: Context) {
     fun saveBitmap(
@@ -66,7 +69,18 @@ class BitmapHelper(val context: Context) {
     }
 
     fun decodeBitmap(
-        contentUri: Uri, targetHeight: Int, targetWidth: Int
+        uriString: String,
+        targetHeight: Int,
+        targetWidth: Int
+    ): Bitmap {
+        val uri = uriString.toUri()
+        return decodeBitmap(uri, targetHeight, targetWidth)
+    }
+
+    fun decodeBitmap(
+        contentUri: Uri,
+        targetHeight: Int,
+        targetWidth: Int
     ): Bitmap {
         context.contentResolver.openInputStream(contentUri)?.let { inputStream ->
             BufferedInputStream(inputStream, 8192).use { bufferedStream ->
@@ -227,5 +241,25 @@ class BitmapHelper(val context: Context) {
         }
         return thumbnail
     }
+
+    fun cropFaceFromBitmap(bitmap: Bitmap, box: FaceBoundingBox): Bitmap {
+        val safeRect = Rect(
+            box.left.coerceAtLeast(0),
+            box.top.coerceAtLeast(0),
+            box.right.coerceAtMost(bitmap.width),
+            box.bottom.coerceAtMost(bitmap.height)
+        )
+        val cropped = Bitmap.createBitmap(
+            bitmap,
+            safeRect.left,
+            safeRect.top,
+            safeRect.width(),
+            safeRect.height()
+        )
+        return cropped.scale(112, 112)
+    }
+
+
+
 
 }

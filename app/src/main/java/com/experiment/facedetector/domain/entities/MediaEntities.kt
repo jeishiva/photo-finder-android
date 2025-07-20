@@ -52,3 +52,4 @@ data class FaceTag(
     val tag: String,
     val savedFaceEntity: FaceEntity?
 )
+
