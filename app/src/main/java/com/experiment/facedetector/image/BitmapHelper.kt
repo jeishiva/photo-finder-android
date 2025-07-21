@@ -246,6 +246,41 @@ class BitmapHelper(val context: Context) {
         return thumbnail
     }
 
+    fun saveEmbeddedFaceBoundingBoxes(
+        originalBitmap: Bitmap,
+        faces: List<Face>,
+        thumbnailSize: Int
+    ): Bitmap {
+        if (faces.isEmpty()) {
+            return originalBitmap.scale(thumbnailSize, thumbnailSize)
+        }
+        val thumbnail = scaleFromPool(
+            originalBitmap,
+            THUMBNAIL_SIZE,
+            THUMBNAIL_SIZE
+        )
+        val scaleX = thumbnailSize / originalBitmap.width.toFloat()
+        val scaleY = thumbnailSize / originalBitmap.height.toFloat()
+
+        val canvas = Canvas(thumbnail)
+        val paint = Paint().apply {
+            color = Color.CYAN
+            style = Paint.Style.STROKE
+            strokeWidth = 1.5f
+        }
+
+        for (face in faces) {
+            val bounds = face.boundingBox
+            val left = bounds.left * scaleX
+            val top = bounds.top * scaleY
+            val right = bounds.right * scaleX
+            val bottom = bounds.bottom * scaleY
+
+            canvas.drawRect(left, top, right, bottom, paint)
+        }
+        return thumbnail
+    }
+
     fun cropFaceFromBitmap(bitmap: Bitmap, box: FaceBoundingBox): Bitmap {
         val safeRect = Rect(
             box.left.coerceAtLeast(0),
@@ -270,5 +305,21 @@ class BitmapHelper(val context: Context) {
             null
         }
     }
+
+    fun cropAndResizeFace(original: Bitmap, boundingBox: Rect, size: Int): Bitmap? {
+        val safeBox = Rect(
+            boundingBox.left.coerceAtLeast(0),
+            boundingBox.top.coerceAtLeast(0),
+            boundingBox.right.coerceAtMost(original.width),
+            boundingBox.bottom.coerceAtMost(original.height)
+        )
+        return try {
+            val cropped = Bitmap.createBitmap(original, safeBox.left, safeBox.top, safeBox.width(), safeBox.height())
+            cropped.scale(size, size)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
 
 }

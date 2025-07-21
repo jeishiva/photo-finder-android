@@ -7,11 +7,15 @@ import com.google.mlkit.vision.face.FaceDetectorOptions
 import org.koin.dsl.module
 
 val faceDetectorModule = module {
-
-    single { provideFaceDetector() }
-
-    single { FaceDetectionProcessor(faceDetector = get(), imageHelper = get()) }
-
+    single {
+        provideFaceDetector()
+    }
+    single {
+        FaceDetectionProcessor(
+            faceDetector = get(),
+            imageHelper = get()
+        )
+    }
 }
 
 private fun provideFaceDetector(): FaceDetector {

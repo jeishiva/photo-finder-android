@@ -5,6 +5,7 @@ import com.experiment.facedetector.domain.usecase.FaceDetectionUseCase
 import com.experiment.facedetector.domain.usecase.GetSearchQueryUseCase
 import com.experiment.facedetector.domain.usecase.SaveSearchQueryUseCase
 import com.experiment.facedetector.domain.usecase.facesearch.AddFacesUseCase
+import com.experiment.facedetector.domain.usecase.facesearch.ExtractEmbeddingsUseCase
 import com.experiment.facedetector.domain.usecase.facesearch.GetAllEmbeddingsUseCase
 import com.experiment.facedetector.domain.usecase.facesearch.SearchFaceUseCase
 import org.koin.dsl.module
@@ -31,5 +32,11 @@ val useCaseModule = module {
     }
     factory<SearchFaceUseCase> {
         SearchFaceUseCase(repository = get())
+    }
+    factory<ExtractEmbeddingsUseCase> {
+        ExtractEmbeddingsUseCase(
+            interpreterDeferred = get(),
+            imageHelper = get()
+        )
     }
 }

@@ -35,7 +35,7 @@ val repositoryModule = module {
 
     single<FaceSearchRepository> {
         FaceSearchRepositoryImpl(
-            interpreterDeferred = get(),
+            embeddingsUseCase = get(),
             imageHelper = get()
         )
     }

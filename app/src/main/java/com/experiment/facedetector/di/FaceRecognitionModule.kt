@@ -13,7 +13,7 @@ import java.nio.channels.FileChannel
 
 val faceRecognitionModule = module {
     single {
-        provideInterpreterAsync(get()) // Returns Deferred<Interpreter>
+        provideInterpreterAsync(get())
     }
 }
 
@@ -29,7 +29,6 @@ fun provideInterpreterAsync(context: Context): Deferred<Interpreter> {
                 fileDescriptor.declaredLength
             )
         }
-
         val modelBuffer = loadModelFile(context, "mobile_face_net.tflite")
         Interpreter(modelBuffer)
     }

@@ -82,20 +82,15 @@ class CameraImageProcessor(
         if (imagesToProcess.isEmpty()) {
             return BatchResult(0, 0)
         }
-
         LogManager.d("CameraImageProcessor", "Processing ${imagesToProcess.size} new images concurrently")
-
         // Process images concurrently
         val processedResults = processImagesWithConcurrency(imagesToProcess)
-
         // Save processed images
         val savedEntities = saveProcessedImages(processedResults)
-
         // Batch insert all entities
         if (savedEntities.isNotEmpty()) {
             mediaRepo.insertOrUpdateMedia(savedEntities)
         }
-
         return BatchResult(processedResults.size, savedEntities.size)
     }
 
@@ -156,7 +151,8 @@ class CameraImageProcessor(
                 faceImage.faces,
                 THUMBNAIL_SIZE
             )
-            // Return result without savingun
+
+            // Return result without saving
             ProcessedImageResult(
                 mediaItem = faceImage.mediaItem,
                 thumbnailBitmap = thumbnailBitmap,
@@ -178,7 +174,6 @@ class CameraImageProcessor(
     private suspend fun saveProcessedImages(
         processedResults: List<ProcessedImageResult>
     ): List<MediaEntity> = withContext(Dispatchers.IO) {
-
         processedResults.mapNotNull { result ->
             try {
                 saveThumbnailSafely(result)
@@ -198,14 +193,12 @@ class CameraImageProcessor(
     private fun saveThumbnailSafely(result: ProcessedImageResult): MediaEntity? {
         return try {
             LogManager.d("CameraImageProcessor", "Saving thumbnail for image ${result.mediaItem.mediaId}")
-
             val file = imageHelper.saveBitmap(
                 result.thumbnailBitmap,
                 result.mediaItem.mediaId.toFileName(),
                 ThumbnailConfig.THUMBNAIL_FORMAT,
                 ThumbnailConfig.THUMBNAIL_QUALITY
             )
-
             if (file != null) {
                 val media = MediaEntity(
                     mediaId = result.mediaItem.mediaId,
@@ -228,8 +221,9 @@ class CameraImageProcessor(
      * filter new images using Set for O(1) lookup
      */
     private suspend fun filterNewImages(images: List<MediaItem>): List<MediaItem> {
-        if (images.isEmpty()) return emptyList()
-
+        if (images.isEmpty()) {
+            return emptyList()
+        }
         val allIds = images.map { it.mediaId }
         // converting to set for O(1) lookup
         val existingIds = mediaRepo.getExistingMediaIds(allIds).toSet()
@@ -244,7 +238,6 @@ class CameraImageProcessor(
             BitmapPool.put(bitmap)
         }
     }
-
     /**
      * query camera images with pagination
      */
