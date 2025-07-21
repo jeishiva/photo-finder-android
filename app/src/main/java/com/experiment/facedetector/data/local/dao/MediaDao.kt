@@ -57,5 +57,4 @@ interface MediaDao {
     @Query("SELECT * FROM media ORDER BY mediaId DESC")
     fun getPagedMediaWithFaces(): PagingSource<Int, MediaWithFaces>
 
-
 }

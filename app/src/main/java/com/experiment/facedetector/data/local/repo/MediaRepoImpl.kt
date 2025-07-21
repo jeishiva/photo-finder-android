@@ -4,6 +4,7 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.map
+import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.data.local.dao.FaceDao
 import com.experiment.facedetector.data.local.dao.MediaDao
 import com.experiment.facedetector.data.local.entities.FaceEmbeddingEntity
@@ -64,6 +65,7 @@ class MediaRepoImpl(
     }
 
     override fun getPagedMediaWithFaces(): Flow<PagingData<MediaWithFaces>> {
+        LogManager.d(TAG, "MediaRepo getPagedMediaWithFaces")
         return Pager(
             config = PagingConfig(
                 pageSize = PAGE_SIZE,
@@ -81,4 +83,9 @@ class MediaRepoImpl(
     override suspend fun getFaces(mediaId: Long): List<FaceEntity> {
         return faceDao.getFacesForMedia(mediaId)
     }
+
+    companion object {
+        private const val TAG = "MediaRepoImpl"
+    }
+
 }

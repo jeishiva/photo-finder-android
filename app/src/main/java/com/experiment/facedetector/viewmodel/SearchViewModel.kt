@@ -74,7 +74,6 @@ class SearchViewModel(
                 .cachedIn(viewModelScope)
                 .debounce(200)
                 .onEach {
-                    LogManager.d("SearchViewModel", "similar faces emitted")
                 }.launchIn(viewModelScope)
             _uiState.setState {
                 copy(

@@ -22,18 +22,24 @@ class FaceSearchRepositoryImpl(
     ): Flow<PagingData<MediaWithFaces>> {
         return mediaRepo.getPagedMediaWithFaces()
             .map { pagingData ->
+                println("mediaWithFaces pagingData size: $pagingData")
                 pagingData.filter { mediaWithFaces ->
+                    for (face in mediaWithFaces.faces) {
+                        println("faceEmbedding: $face")
+                    }
                     val isSimilar = mediaWithFaces.faces.any { face ->
                         val embedding = face.embeddingData
                         searchEmbeddings.any { searchEmbedding ->
-                            cosineSimilarity(searchEmbedding, embedding) >= AppConfig.PHOTO_SIMILARITY_THRESHOLD
+                            cosineSimilarity(
+                                searchEmbedding,
+                                embedding
+                            ) >= AppConfig.PHOTO_SIMILARITY_THRESHOLD
                         }
                     }
-                    if (isSimilar) {
-                        LogManager.d(
-                            "FaceSearchRepository",
-                            "similar faces found for mediaId: ${mediaWithFaces.media.mediaId}")
-                    }
+                    LogManager.d(
+                        TAG,
+                        "${if (isSimilar) "Similar" else "Not similar"} faces found for mediaId: ${mediaWithFaces.media.mediaId}"
+                    )
                     isSimilar
                 }
             }
@@ -50,6 +56,10 @@ class FaceSearchRepositoryImpl(
             norm2 += vec2[i] * vec2[i]
         }
         return dot / (sqrt(norm1) * sqrt(norm2))
+    }
+
+    companion object {
+        private const val TAG = "FaceSearchRepository"
     }
 
 }
