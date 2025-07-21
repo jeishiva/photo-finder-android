@@ -3,7 +3,7 @@ package com.experiment.facedetector.data.local.entities
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.experiment.facedetector.domain.entities.FaceBoundingBox
-import com.experiment.facedetector.domain.entities.SearchFaceItem
+import com.experiment.facedetector.domain.entities.FaceSearchItem
 
 @Entity(tableName = "search_face_items")
 data class SearchFaceEntity(
@@ -15,7 +15,7 @@ data class SearchFaceEntity(
     val bottom: Int,
     val thumbnailPath: String
 ) {
-    fun toDomainModel() = SearchFaceItem(
+    fun toDomainModel() = FaceSearchItem(
         sessionId = searchSessionId,
         faceId = faceId,
         faceBoundingBox = FaceBoundingBox(left, top, right, bottom),
@@ -23,7 +23,7 @@ data class SearchFaceEntity(
     )
 
     companion object {
-        fun fromDomain(item: SearchFaceItem) = SearchFaceEntity(
+        fun fromDomain(item: FaceSearchItem) = SearchFaceEntity(
             faceId = item.faceId,
             searchSessionId = item.sessionId,
             left = item.faceBoundingBox.left,

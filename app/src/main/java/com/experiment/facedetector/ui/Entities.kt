@@ -5,6 +5,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.navigation.NavHostController
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
+import com.experiment.facedetector.domain.entities.FaceSearchItem
 import com.experiment.facedetector.viewmodel.HomeViewModel
 import com.experiment.facedetector.viewmodel.SearchViewModel
 
@@ -73,7 +74,7 @@ data class SearchUiState(
     val isLoading: Boolean = false,
     val message: String? = null,
     val errorMessage: String? = "",
-    val faceList: List<FaceDetectedItem> = emptyList(),
+    val faceList: List<FaceSearchItem> = emptyList(),
 )
 
 data class SearchUiModel(

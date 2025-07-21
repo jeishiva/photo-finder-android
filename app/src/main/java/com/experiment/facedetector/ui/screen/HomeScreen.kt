@@ -100,9 +100,9 @@ fun HomeScreen(
         }
     }
     LaunchedEffect(uiState.searchSessionId) {
-        if (uiState.searchSessionId != null) {
-            navController.navigate(AppRoute.SearchScreen.route)
+        uiState.searchSessionId?.let { sessionId ->
             viewModel.resetSessionId()
+            navController.navigate(AppRoute.SearchScreen.createRoute(sessionId))
         }
     }
     val uiModel = HomeUiModel(

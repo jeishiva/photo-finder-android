@@ -16,8 +16,6 @@ import com.experiment.facedetector.ui.common.UiStateHolder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.util.UUID
 
 class HomeViewModel(
     val faceDetectionUseCase: FaceDetectionUseCase,

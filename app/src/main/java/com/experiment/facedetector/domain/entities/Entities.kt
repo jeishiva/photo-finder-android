@@ -19,7 +19,7 @@ data class FaceDetectedItem(
     val faceBitmap: Bitmap,
 )
 
-data class SearchFaceItem(
+data class FaceSearchItem(
     val sessionId: String,
     val faceId: String,
     val faceBoundingBox: FaceBoundingBox,

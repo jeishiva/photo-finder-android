@@ -23,8 +23,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.experiment.facedetector.R
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
+import com.experiment.facedetector.domain.entities.FaceSearchItem
 import com.experiment.facedetector.ui.SearchScreenParams
 import com.experiment.facedetector.ui.SearchUiModel
 import com.experiment.facedetector.ui.SearchUiState
@@ -92,7 +94,7 @@ fun SearchScreenPreview() {
 
 @Composable
 fun FaceListSection(
-    faces: List<FaceDetectedItem>,
+    faces: List<FaceSearchItem>,
 ) {
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -106,17 +108,19 @@ fun FaceListSection(
 }
 
 @Composable
-fun FaceListItem(face: FaceDetectedItem) {
+fun FaceListItem(face: FaceSearchItem) {
     Box(
         modifier = Modifier
             .size(50.dp)
             .clip(CircleShape)
     ) {
-        Image(
-            bitmap = face.faceBitmap.asImageBitmap(),
-            contentDescription = "Detected Face",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
+        AsyncImage(
+            model = face.thumbnailPath,
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(CircleShape),
+            contentScale = ContentScale.Crop
         )
     }
 }

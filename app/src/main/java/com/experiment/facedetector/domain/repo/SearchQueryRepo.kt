@@ -1,10 +1,10 @@
 package com.experiment.facedetector.domain.repo
 
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
-import com.experiment.facedetector.domain.entities.SearchFaceItem
+import com.experiment.facedetector.domain.entities.FaceSearchItem
 
 interface SearchQueryRepo {
     suspend fun save(selectedFaceList: List<FaceDetectedItem>) : String
     suspend fun clearAll()
-    suspend fun getAll(sessionId: String): List<SearchFaceItem>
+    suspend fun getAll(sessionId: String): List<FaceSearchItem>
 }

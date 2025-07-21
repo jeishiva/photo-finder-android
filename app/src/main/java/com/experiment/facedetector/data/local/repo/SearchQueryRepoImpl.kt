@@ -5,7 +5,7 @@ import com.experiment.facedetector.config.ThumbnailConfig
 import com.experiment.facedetector.data.local.dao.SearchFaceDao
 import com.experiment.facedetector.data.local.entities.SearchFaceEntity
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
-import com.experiment.facedetector.domain.entities.SearchFaceItem
+import com.experiment.facedetector.domain.entities.FaceSearchItem
 import com.experiment.facedetector.domain.repo.SearchQueryRepo
 import com.experiment.facedetector.image.BitmapHelper
 import kotlinx.coroutines.Dispatchers
@@ -30,7 +30,7 @@ class SearchQueryRepoImpl(
                 )
             }
             file?.let {
-                SearchFaceItem(
+                FaceSearchItem(
                     sessionId = sessionId,
                     faceId = faceItem.faceId,
                     faceBoundingBox = faceItem.faceBoundingBox,
@@ -46,7 +46,7 @@ class SearchQueryRepoImpl(
         searchFaceDao.clearAll()
     }
 
-    override suspend fun getAll(sessionId: String): List<SearchFaceItem> {
+    override suspend fun getAll(sessionId: String): List<FaceSearchItem> {
         return searchFaceDao.getAllBySession(sessionId).map { it.toDomainModel() }
     }
 }
