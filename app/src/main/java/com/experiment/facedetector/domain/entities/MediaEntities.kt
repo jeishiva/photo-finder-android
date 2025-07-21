@@ -23,6 +23,11 @@ data class FaceDetectedMediaItem(
     val image: Bitmap,
 )
 
+data class FaceEmbeddingRequest(
+    val faces: List<Face>,
+    val image: Bitmap,
+)
+
 /**
  *  processed to detect faces and thumbnail locally saved
  */
@@ -30,7 +35,6 @@ data class ProcessedMediaItem(
     val mediaId: Long,
     val file : File
 )
-
 
 /*
  *  used in FullImageScreen

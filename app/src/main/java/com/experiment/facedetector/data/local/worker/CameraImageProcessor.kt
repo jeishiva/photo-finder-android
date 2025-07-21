@@ -18,10 +18,14 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
 import com.experiment.facedetector.config.ThumbnailConfig
 import com.experiment.facedetector.config.ThumbnailConfig.THUMBNAIL_SIZE
+import com.experiment.facedetector.data.local.entities.FaceEmbeddingEntity
 import com.experiment.facedetector.data.local.worker.entities.BatchResult
 import com.experiment.facedetector.data.local.worker.entities.ProcessedImageResult
 import com.experiment.facedetector.data.local.worker.processor.ICameraProcessor
+import com.experiment.facedetector.domain.entities.FaceEmbeddingRequest
 import com.experiment.facedetector.domain.repo.IMediaRepo
+import com.experiment.facedetector.domain.usecase.facesearch.ExtractEmbeddingsUseCase
+import java.util.UUID
 
 /**
  * processes camera images concurrently with configurable parallelism using Semaphore
@@ -30,6 +34,7 @@ import com.experiment.facedetector.domain.repo.IMediaRepo
 class CameraImageProcessor(
     private val context: Context,
     private val faceDetectionProcessor: FaceDetectionProcessor,
+    private val embeddingsUseCase: ExtractEmbeddingsUseCase,
     private val mediaRepo: IMediaRepo,
     private val imageHelper: BitmapHelper,
     private val pageSize: Int = 20,
@@ -38,7 +43,10 @@ class CameraImageProcessor(
     private val processingLimit = Semaphore(concurrentLimit)
 
     override suspend fun process() = withContext(Dispatchers.IO) {
-        LogManager.d("CameraImageProcessor", "Starting concurrent image processing with limit: $concurrentLimit")
+        LogManager.d(
+            "CameraImageProcessor",
+            "Starting concurrent image processing with limit: $concurrentLimit"
+        )
         var page = 0
         var totalProcessed = 0
         var totalSaved = 0
@@ -82,16 +90,20 @@ class CameraImageProcessor(
         if (imagesToProcess.isEmpty()) {
             return BatchResult(0, 0)
         }
-        LogManager.d("CameraImageProcessor", "Processing ${imagesToProcess.size} new images concurrently")
+        LogManager.d(
+            "CameraImageProcessor",
+            "Processing ${imagesToProcess.size} new images concurrently"
+        )
         // Process images concurrently
         val processedResults = processImagesWithConcurrency(imagesToProcess)
         // Save processed images
-        val savedEntities = saveProcessedImages(processedResults)
-        // Batch insert all entities
-        if (savedEntities.isNotEmpty()) {
-            mediaRepo.insertOrUpdateMedia(savedEntities)
+        val mediaEntities = saveProcessedImages(processedResults)
+        if (mediaEntities.isNotEmpty()) {
+            val faceEmbeddings = getFaceEmbeddings(processedResults)
+            LogManager.d("CameraImageProcessor", "face embeddings before saving: ${faceEmbeddings.size}")
+            mediaRepo.insertOrUpdateMedia(mediaEntities, faceEmbeddings)
         }
-        return BatchResult(processedResults.size, savedEntities.size)
+        return BatchResult(processedResults.size, mediaEntities.size)
     }
 
     /**
@@ -132,7 +144,11 @@ class CameraImageProcessor(
             createProcessedImageResult(faceDetectedMediaItem)
 
         } catch (e: Exception) {
-            LogManager.e("CameraImageProcessor", "Failed to process image ${image.mediaId}: ${e.message}", e)
+            LogManager.e(
+                "CameraImageProcessor",
+                "Failed to process image ${image.mediaId}: ${e.message}",
+                e
+            )
             null
         }
     }
@@ -144,24 +160,31 @@ class CameraImageProcessor(
         faceImage: FaceDetectedMediaItem
     ): ProcessedImageResult? {
         var thumbnailBitmap: Bitmap? = null
-
         return try {
             thumbnailBitmap = imageHelper.drawFaceBoundingBoxesOnThumbnail(
                 faceImage.image,
                 faceImage.faces,
                 THUMBNAIL_SIZE
             )
-
-            // Return result without saving
+            val faceEmbeddings = embeddingsUseCase(
+                FaceEmbeddingRequest(
+                    image = faceImage.image,
+                    faces = faceImage.faces
+                )
+            )
             ProcessedImageResult(
                 mediaItem = faceImage.mediaItem,
                 thumbnailBitmap = thumbnailBitmap,
                 faces = faceImage.faces,
+                faceIdToEmbedding = faceEmbeddings,
                 originalBitmap = faceImage.image
             )
-
         } catch (e: Exception) {
-            LogManager.e("CameraImageProcessor", "Failed to create processed image result for ${faceImage.mediaItem.mediaId}", e)
+            LogManager.e(
+                "CameraImageProcessor",
+                "Failed to create processed image result for ${faceImage.mediaItem.mediaId}",
+                e
+            )
             // Clean up on failure
             cleanupBitmaps(faceImage.image, thumbnailBitmap)
             null
@@ -178,7 +201,11 @@ class CameraImageProcessor(
             try {
                 saveThumbnailSafely(result)
             } catch (e: Exception) {
-                LogManager.e("CameraImageProcessor", "Failed to save image ${result.mediaItem.mediaId}: ${e.message}", e)
+                LogManager.e(
+                    "CameraImageProcessor",
+                    "Failed to save image ${result.mediaItem.mediaId}: ${e.message}",
+                    e
+                )
                 null
             } finally {
                 // Always cleanup bitmaps after saving attempt
@@ -188,11 +215,32 @@ class CameraImageProcessor(
     }
 
     /**
+     *  Face Embeddings
+     */
+    private suspend fun getFaceEmbeddings(
+        processedResults: List<ProcessedImageResult>
+    ): List<FaceEmbeddingEntity> = withContext(Dispatchers.IO) {
+        processedResults
+            .mapNotNull { result ->
+                result.faceIdToEmbedding?.let { (faceId, embedding) ->
+                    FaceEmbeddingEntity(
+                        faceId = UUID.randomUUID().toString(),
+                        mediaOwnerId = result.mediaItem.mediaId,
+                        embeddingData = embedding
+                    )
+                }
+            }
+    }
+
+    /**
      * save single thumbnail with error handling
      */
     private fun saveThumbnailSafely(result: ProcessedImageResult): MediaEntity? {
         return try {
-            LogManager.d("CameraImageProcessor", "Saving thumbnail for image ${result.mediaItem.mediaId}")
+            LogManager.d(
+                "CameraImageProcessor",
+                "Saving thumbnail for image ${result.mediaItem.mediaId}"
+            )
             val file = imageHelper.saveBitmap(
                 result.thumbnailBitmap,
                 result.mediaItem.mediaId.toFileName(),
@@ -208,11 +256,18 @@ class CameraImageProcessor(
                 LogManager.d("CameraImageProcessor", "Successfully saved: $media")
                 media
             } else {
-                LogManager.w("CameraImageProcessor", "Failed to save bitmap for ${result.mediaItem.mediaId}")
+                LogManager.w(
+                    "CameraImageProcessor",
+                    "Failed to save bitmap for ${result.mediaItem.mediaId}"
+                )
                 null
             }
         } catch (e: Exception) {
-            LogManager.e("CameraImageProcessor", "Exception saving thumbnail for ${result.mediaItem.mediaId}", e)
+            LogManager.e(
+                "CameraImageProcessor",
+                "Exception saving thumbnail for ${result.mediaItem.mediaId}",
+                e
+            )
             null
         }
     }
@@ -238,6 +293,7 @@ class CameraImageProcessor(
             BitmapPool.put(bitmap)
         }
     }
+
     /**
      * query camera images with pagination
      */

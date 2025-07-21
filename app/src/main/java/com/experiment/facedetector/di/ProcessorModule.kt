@@ -20,9 +20,10 @@ val processorModule = module {
     }
 
     single<ICameraProcessor> {
-          CameraImageProcessor(
+        CameraImageProcessor(
             context = get(),
             faceDetectionProcessor = get(),
+            embeddingsUseCase = get(),
             mediaRepo = get(),
             imageHelper = get()
         )

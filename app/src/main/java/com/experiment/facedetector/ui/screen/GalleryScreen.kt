@@ -133,7 +133,7 @@ private fun GalleryContent(
             spacing = 8.dp,
             imageLoader = imageLoader,
             onItemClick = { mediaId ->
-                navController.navigate(AppRoute.FullImage.createRoute(mediaId))
+                navController.navigate(AppRoute.MediaFullView.createRoute(mediaId))
             },
             isLoadingPhotos = isLoadingPhotos
         )

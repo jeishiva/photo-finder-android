@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "ab00aaaabb187db41bb6c44f5356a57f",
+    "identityHash": "c11845f98b870c39dfac54c4f17946ce",
     "entities": [
       {
         "tableName": "media",
@@ -35,6 +35,60 @@
         },
         "indices": [],
         "foreignKeys": []
+      },
+      {
+        "tableName": "face_embedding",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`faceId` TEXT NOT NULL, `mediaOwnerId` INTEGER NOT NULL, `embeddingData` BLOB NOT NULL, PRIMARY KEY(`faceId`), FOREIGN KEY(`mediaOwnerId`) REFERENCES `media`(`mediaId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "faceId",
+            "columnName": "faceId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mediaOwnerId",
+            "columnName": "mediaOwnerId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "embeddingData",
+            "columnName": "embeddingData",
+            "affinity": "BLOB",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "faceId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_face_embedding_mediaOwnerId",
+            "unique": false,
+            "columnNames": [
+              "mediaOwnerId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_face_embedding_mediaOwnerId` ON `${TABLE_NAME}` (`mediaOwnerId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "media",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "mediaOwnerId"
+            ],
+            "referencedColumns": [
+              "mediaId"
+            ]
+          }
+        ]
       },
       {
         "tableName": "faces",
@@ -156,7 +210,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'ab00aaaabb187db41bb6c44f5356a57f')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c11845f98b870c39dfac54c4f17946ce')"
     ]
   }
 }

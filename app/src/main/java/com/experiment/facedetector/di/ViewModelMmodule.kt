@@ -31,7 +31,8 @@ val viewModelModule = module {
             getSearchQueryUseCase = get(),
             addFaceToGalleryUseCase = get(),
             getAllEmbeddingsUseCase = get(),
-            searchFaceUseCase = get()
+            searchFaceUseCase = get(),
+            workManager = get(),
         )
     }
     viewModel { (handle: SavedStateHandle) ->

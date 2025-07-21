@@ -19,14 +19,14 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
-    NavHost(navController, startDestination = AppRoute.HomeScreen.route) {
+    NavHost(navController, startDestination = AppRoute.Splash.route) {
         composable(AppRoute.Splash.route) {
             SplashScreen(navController)
         }
         composable(AppRoute.Gallery.route) {
             GalleryScreen(navController = navController)
         }
-        composable(AppRoute.HomeScreen.route) {
+        composable(AppRoute.Home.route) {
             val viewModel : HomeViewModel = koinViewModel()
             val homeScreenParams = HomeScreenParams(
                 navController = navController,
@@ -36,7 +36,7 @@ fun AppNavGraph(navController: NavHostController) {
         }
 
         composable(
-            route = AppRoute.SearchScreen.route,
+            route = AppRoute.Search.route,
             arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
         ) {
             val searchViewModel: SearchViewModel = koinViewModel()
@@ -48,7 +48,7 @@ fun AppNavGraph(navController: NavHostController) {
         }
 
         composable(
-            route = AppRoute.FullImage.route,
+            route = AppRoute.MediaFullView.route,
             arguments = listOf(navArgument("mediaId") { type = NavType.LongType })
         ) {
             FullImageScreen(navController)
@@ -63,11 +63,11 @@ sealed class NavigationScope(val name: String) {
 sealed class AppRoute(val route: String) {
     object Splash : AppRoute("splash")
     object Gallery : AppRoute("gallery")
-    object HomeScreen : AppRoute("homeScreen")
-    object SearchScreen : AppRoute("searchScreen/{sessionId}") {
+    object Home : AppRoute("homeScreen")
+    object Search : AppRoute("searchScreen/{sessionId}") {
         fun createRoute(sessionId: String): String = "searchScreen/$sessionId"
     }
-    object FullImage : AppRoute("fullImage/{mediaId}") {
+    object MediaFullView : AppRoute("fullImage/{mediaId}") {
         fun createRoute(mediaId: Long): String = "fullImage/$mediaId"
     }
 }

@@ -9,6 +9,7 @@ data class BatchResult(val processed: Int, val saved: Int)
 data class ProcessedImageResult(
     val mediaItem: MediaItem,
     val thumbnailBitmap: Bitmap,
+    val faceIdToEmbedding: Pair<String, FloatArray>?,
     val faces: List<Face>,
     val originalBitmap: Bitmap
 )

@@ -6,7 +6,10 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
+import com.experiment.facedetector.data.local.entities.FaceEmbeddingEntity
 import com.experiment.facedetector.data.local.entities.MediaEntity
+import com.experiment.facedetector.data.local.entities.MediaWithFaces
 
 @Dao
 interface MediaDao {
@@ -27,6 +30,22 @@ interface MediaDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMediaList(mediaList: List<MediaEntity>)
+
+    @Transaction
+    suspend fun insertMediaWithFaces(
+        mediaEntity: List<MediaEntity>,
+        faces: List<FaceEmbeddingEntity>
+    ) {
+        insertMediaList(mediaEntity)
+        insertFaceEmbeddings(faces)
+    }
+
+    @Transaction
+    @Query("SELECT * FROM media WHERE mediaId = :mediaId")
+    suspend fun getMediaWithFaces(mediaId: Long): MediaWithFaces
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertFaceEmbeddings(embeddings: List<FaceEmbeddingEntity>)
 
     @Delete
     suspend fun deleteMedia(media: MediaEntity)

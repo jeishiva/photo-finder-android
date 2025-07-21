@@ -47,6 +47,7 @@ fun SplashScreen(navController: NavHostController) {
         kotlinx.coroutines.delay(1000)
         showPermissionRequest = true
     }
+
     AndroidFaceDetectorTheme {
         Scaffold(
             containerColor = Color.Transparent, modifier = Modifier.fillMaxSize()
@@ -61,8 +62,10 @@ fun SplashScreen(navController: NavHostController) {
                     onPermissionResult = { granted ->
                         permissionGranted = granted
                         if (granted) {
-                            navController.navigate(AppRoute.HomeScreen.route) {
-                                popUpTo(AppRoute.Splash.route)
+                            navController.navigate(AppRoute.Home.route) {
+                                popUpTo(AppRoute.Splash.route) {
+                                    inclusive = true
+                                }
                             }
                         } else {
                             openAppSettingsWithToast(context)

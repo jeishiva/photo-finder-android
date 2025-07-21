@@ -4,8 +4,10 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.map
+import androidx.room.Transaction
 import com.experiment.facedetector.data.local.dao.FaceDao
 import com.experiment.facedetector.data.local.dao.MediaDao
+import com.experiment.facedetector.data.local.entities.FaceEmbeddingEntity
 import com.experiment.facedetector.data.local.entities.FaceEntity
 import com.experiment.facedetector.data.local.entities.MediaEntity
 import com.experiment.facedetector.domain.entities.ProcessedMediaItem
@@ -20,15 +22,19 @@ import kotlinx.coroutines.flow.map
 import java.io.File
 
 class MediaRepo(
-    val mediaDao: MediaDao, val faceDao: FaceDao
+    val mediaDao: MediaDao,
+    val faceDao: FaceDao,
 ) : IMediaRepo {
 
     override suspend fun getMedia(mediaId: Long): MediaEntity {
         return mediaDao.getMediaEntityById(mediaId)
     }
 
-    override suspend fun insertOrUpdateMedia(mediaList: List<MediaEntity>) {
-        mediaDao.insertMediaList(mediaList)
+    override suspend fun insertOrUpdateMedia(
+        mediaList: List<MediaEntity>,
+        embeddings: List<FaceEmbeddingEntity>
+    ) {
+        mediaDao.insertMediaWithFaces(mediaList, embeddings)
     }
 
     override suspend fun getExistingMediaIds(mediaIds: List<Long>): List<Long> {

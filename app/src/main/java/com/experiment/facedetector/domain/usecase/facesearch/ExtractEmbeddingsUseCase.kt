@@ -1,7 +1,7 @@
 package com.experiment.facedetector.domain.usecase.facesearch
 
 import android.graphics.Bitmap
-import com.experiment.facedetector.domain.entities.FaceDetectedMediaItem
+import com.experiment.facedetector.domain.entities.FaceEmbeddingRequest
 import com.experiment.facedetector.image.BitmapHelper
 import kotlinx.coroutines.Deferred
 import org.tensorflow.lite.DataType
@@ -11,6 +11,7 @@ import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.support.image.ops.ResizeOp
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
+import java.util.UUID
 
 class ExtractEmbeddingsUseCase(
     private val interpreterDeferred: Deferred<Interpreter>,
@@ -24,28 +25,26 @@ class ExtractEmbeddingsUseCase(
         }
     }
 
-    suspend operator fun invoke(mediaItem: FaceDetectedMediaItem): Map<String, FloatArray> {
+    suspend operator fun invoke(faceEmbeddingRequest: FaceEmbeddingRequest): Pair<String, FloatArray>? {
         val interpreter = initialize()
-        val faceEmbeddings = mutableMapOf<String, FloatArray>()
-        mediaItem.faces.forEach { face ->
-            val cropped = imageHelper.cropAndResizeFace(mediaItem.image, face.boundingBox, 112)
+        faceEmbeddingRequest.faces.forEach { face ->
+            val cropped = imageHelper.cropAndResizeFace(faceEmbeddingRequest.image, face.boundingBox, 112)
             if (cropped != null) {
                 val embedding = getFaceEmbeddingWithSupport(cropped, interpreter)
-                faceEmbeddings[face.trackingId.toString()] = embedding
+                return UUID.randomUUID().toString() to embedding
             }
         }
-        return faceEmbeddings
+        return null
     }
 
-
-    suspend operator fun invoke(bitmap: Bitmap): FloatArray {
+    suspend operator fun invoke(faceBitmap: Bitmap): FloatArray {
         val interpreter = initialize()
-        return getFaceEmbeddingWithSupport(bitmap, interpreter)
+        return getFaceEmbeddingWithSupport(faceBitmap, interpreter)
     }
 
-    fun getFaceEmbeddingWithSupport(bitmap: Bitmap, interpreter: Interpreter): FloatArray {
+    fun getFaceEmbeddingWithSupport(faceBitmap: Bitmap, interpreter: Interpreter): FloatArray {
         val tensorImage = TensorImage(DataType.FLOAT32)
-        tensorImage.load(bitmap)
+        tensorImage.load(faceBitmap)
         val processor = ImageProcessor.Builder()
             .add(ResizeOp(112, 112, ResizeOp.ResizeMethod.BILINEAR))
             .add(NormalizeOp(127.5f, 128f))

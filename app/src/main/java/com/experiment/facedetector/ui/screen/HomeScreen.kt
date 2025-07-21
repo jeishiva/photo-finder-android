@@ -105,7 +105,7 @@ fun HomeScreen(
         uiState.searchSessionId?.let { sessionId ->
             viewModel.resetSessionId()
             navController.navigate(
-                AppRoute.SearchScreen.createRoute(sessionId)
+                AppRoute.Search.createRoute(sessionId)
             )
         }
     }
