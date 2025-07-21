@@ -6,6 +6,7 @@ import com.experiment.facedetector.domain.entities.FaceEmbedding
 import com.experiment.facedetector.domain.entities.FaceSearchItem
 import com.experiment.facedetector.domain.repo.FaceSearchRepository
 import com.experiment.facedetector.image.BitmapHelper
+import kotlinx.coroutines.Deferred
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.support.common.ops.NormalizeOp
@@ -16,28 +17,42 @@ import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import kotlin.math.sqrt
 
 class FaceSearchRepositoryImpl(
-    private val modelInterpreter: Interpreter,
+    private val interpreterDeferred: Deferred<Interpreter>,
     private val imageHelper: BitmapHelper,
 ) : FaceSearchRepository {
 
     private val faceEmbeddings = mutableListOf<FaceEmbedding>()
+    private var interpreterInstance: Interpreter? = null
+
+    suspend fun initialize() {
+        interpreterInstance ?: interpreterDeferred.await().also {
+            interpreterInstance = it
+        }
+    }
 
     override suspend fun addFaces(faces: List<FaceSearchItem>) {
+        initialize()
         faces.forEach { item ->
             val bitmap = imageHelper.loadBitmapFromPath(item.thumbnailPath)
             if (bitmap != null) {
-                val embedding = getFaceEmbeddingWithSupport(bitmap, modelInterpreter)
+                val embedding = getFaceEmbeddingWithSupport(bitmap, interpreterInstance!!)
                 LogManager.d("FaceSearchRepository", "Embedding: $embedding")
                 faceEmbeddings.add(FaceEmbedding(id = item.faceId, embedding = embedding))
             } else {
-                LogManager.e("FaceSearchRepository", "Failed to load bitmap from path: ${item.thumbnailPath}")
+                LogManager.e(
+                    "FaceSearchRepository",
+                    "Failed to load bitmap from path: ${item.thumbnailPath}"
+                )
             }
         }
     }
 
     override suspend fun getAllEmbeddings(): List<FaceEmbedding> = faceEmbeddings
 
-    override suspend fun searchFace(targetEmbedding: FloatArray, threshold: Float): List<FaceEmbedding> {
+    override suspend fun searchFace(
+        targetEmbedding: FloatArray,
+        threshold: Float
+    ): List<FaceEmbedding> {
         return faceEmbeddings.filter { stored ->
             cosineSimilarity(targetEmbedding, stored.embedding) >= threshold
         }

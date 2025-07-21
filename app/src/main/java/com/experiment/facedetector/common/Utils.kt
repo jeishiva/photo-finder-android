@@ -22,11 +22,3 @@ suspend fun <T> Task<T>.await(): T = suspendCancellableCoroutine { cont ->
 }
 
 
-fun loadModelFile(context: Context, modelFileName: String): MappedByteBuffer {
-    val fileDescriptor = context.assets.openFd(modelFileName)
-    val inputStream = FileInputStream(fileDescriptor.fileDescriptor)
-    val fileChannel = inputStream.channel
-    val startOffset = fileDescriptor.startOffset
-    val declaredLength = fileDescriptor.declaredLength
-    return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
-}
