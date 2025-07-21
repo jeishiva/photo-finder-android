@@ -1,7 +1,11 @@
 package com.experiment.facedetector.common
 
+import android.content.Context
 import kotlinx.coroutines.suspendCancellableCoroutine
 import com.google.android.gms.tasks.Task
+import java.io.FileInputStream
+import java.nio.MappedByteBuffer
+import java.nio.channels.FileChannel
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -15,4 +19,14 @@ suspend fun <T> Task<T>.await(): T = suspendCancellableCoroutine { cont ->
     addOnCanceledListener {
         if (cont.isActive) cont.cancel()
     }
+}
+
+
+fun loadModelFile(context: Context, modelFileName: String): MappedByteBuffer {
+    val fileDescriptor = context.assets.openFd(modelFileName)
+    val inputStream = FileInputStream(fileDescriptor.fileDescriptor)
+    val fileChannel = inputStream.channel
+    val startOffset = fileDescriptor.startOffset
+    val declaredLength = fileDescriptor.declaredLength
+    return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
 }

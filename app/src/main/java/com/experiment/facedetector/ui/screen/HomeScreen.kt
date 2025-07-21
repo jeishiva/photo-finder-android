@@ -96,13 +96,17 @@ fun HomeScreen(
     }
     LaunchedEffect(uiState.selectedImageUri) {
         uiState.selectedImageUri?.let { selectedUri ->
-            viewModel.handleIntent(HomeIntent.Search(selectedUri, selectedOption))
+            viewModel.handleIntent(
+                HomeIntent.Search(selectedUri, selectedOption)
+            )
         }
     }
     LaunchedEffect(uiState.searchSessionId) {
         uiState.searchSessionId?.let { sessionId ->
             viewModel.resetSessionId()
-            navController.navigate(AppRoute.SearchScreen.createRoute(sessionId))
+            navController.navigate(
+                AppRoute.SearchScreen.createRoute(sessionId)
+            )
         }
     }
     val uiModel = HomeUiModel(

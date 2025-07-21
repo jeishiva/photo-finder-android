@@ -21,6 +21,7 @@ import com.experiment.facedetector.config.ThumbnailConfig.THUMBNAIL_SIZE
 import androidx.core.net.toUri
 import com.experiment.facedetector.domain.entities.FaceBoundingBox
 
+
 class BitmapHelper(val context: Context) {
     fun saveBitmap(
         bitmap: Bitmap,
@@ -262,7 +263,12 @@ class BitmapHelper(val context: Context) {
         return cropped.scale(112, 112)
     }
 
-
-
+    fun loadBitmapFromPath(path: String): Bitmap? {
+        return try {
+            BitmapFactory.decodeFile(path)
+        } catch (e: Exception) {
+            null
+        }
+    }
 
 }

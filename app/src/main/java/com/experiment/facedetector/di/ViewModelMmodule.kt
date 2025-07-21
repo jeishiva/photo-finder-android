@@ -2,6 +2,10 @@ package com.experiment.facedetector.di
 
 
 import androidx.lifecycle.SavedStateHandle
+import com.experiment.facedetector.domain.usecase.GetSearchQueryUseCase
+import com.experiment.facedetector.domain.usecase.facesearch.AddFacesUseCase
+import com.experiment.facedetector.domain.usecase.facesearch.GetAllEmbeddingsUseCase
+import com.experiment.facedetector.domain.usecase.facesearch.SearchFaceUseCase
 import com.experiment.facedetector.viewmodel.SearchViewModel
 import com.experiment.facedetector.viewmodel.FullImageViewModel
 import com.experiment.facedetector.viewmodel.GalleryViewModel
@@ -25,6 +29,9 @@ val viewModelModule = module {
         SearchViewModel(
             savedStateHandle = handle,
             getSearchQueryUseCase = get(),
+            addFaceToGalleryUseCase = get(),
+            getAllEmbeddingsUseCase = get(),
+            searchFaceUseCase = get()
         )
     }
     viewModel { (handle: SavedStateHandle) ->

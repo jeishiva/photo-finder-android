@@ -79,4 +79,8 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.navigation.compose)
     implementation(libs.mediapipe.vision)
+
+    implementation(libs.tensorflow.lite)
+    implementation(libs.tensorflow.lite.support)
+
 }

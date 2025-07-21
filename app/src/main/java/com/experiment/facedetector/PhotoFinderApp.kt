@@ -7,6 +7,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.GlobalContext.startKoin
 import androidx.work.Configuration
 import com.experiment.facedetector.di.faceDetectorModule
+import com.experiment.facedetector.di.faceRecognitionModule
 import com.experiment.facedetector.di.imageLoaderModule
 import com.experiment.facedetector.di.networkModule
 import com.experiment.facedetector.di.processorModule
@@ -39,7 +40,8 @@ class PhotoFinderApp() : Application(), Configuration.Provider {
                     repositoryModule,
                     useCaseModule,
                     viewModelModule,
-                    processorModule
+                    processorModule,
+                    faceRecognitionModule
                 )
             )
         }

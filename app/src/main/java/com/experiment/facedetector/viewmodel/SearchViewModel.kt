@@ -4,6 +4,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.experiment.facedetector.domain.usecase.GetSearchQueryUseCase
+import com.experiment.facedetector.domain.usecase.facesearch.AddFacesUseCase
+import com.experiment.facedetector.domain.usecase.facesearch.GetAllEmbeddingsUseCase
+import com.experiment.facedetector.domain.usecase.facesearch.SearchFaceUseCase
 import com.experiment.facedetector.ui.SearchUiState
 import com.experiment.facedetector.ui.common.UiStateHolder
 import kotlinx.coroutines.Dispatchers
@@ -12,7 +15,10 @@ import kotlinx.coroutines.launch
 
 class SearchViewModel(
     savedStateHandle: SavedStateHandle,
-    val getSearchQueryUseCase: GetSearchQueryUseCase
+    val getSearchQueryUseCase: GetSearchQueryUseCase,
+    val addFaceToGalleryUseCase: AddFacesUseCase,
+    val getAllEmbeddingsUseCase: GetAllEmbeddingsUseCase,
+    val searchFaceUseCase: SearchFaceUseCase,
 ) : ViewModel() {
     private val _uiState = UiStateHolder<SearchUiState>(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.state
@@ -38,7 +44,10 @@ class SearchViewModel(
                 copy(isLoading = true)
             }
             val faces = getSearchQueryUseCase(sessionId)
-            println(message = "faces size: ${faces.size} sessionId: $sessionId total faces: ${faces.size}")
+            println(message = "selected faces: ${faces.size}")
+            addFaceToGalleryUseCase(faces)
+            val embeddings = getAllEmbeddingsUseCase()
+            println(message = "embeddings: ${embeddings.size}")
             _uiState.setState {
                 copy(
                     faceList = faces,

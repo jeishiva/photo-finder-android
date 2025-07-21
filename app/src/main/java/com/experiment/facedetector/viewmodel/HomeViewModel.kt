@@ -16,6 +16,7 @@ import com.experiment.facedetector.ui.common.UiStateHolder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class HomeViewModel(
     val faceDetectionUseCase: FaceDetectionUseCase,
@@ -45,7 +46,7 @@ class HomeViewModel(
     }
 
     fun detectFaces(selectedImage: Uri, selectedTimeRange: TimeRange) {
-        LogManager.d("HomeViewModel", "selected image: $selectedImage")
+        LogManager.d("HomeViewModel", "selected image: $selectedImage  $this")
         viewModelScope.launch(Dispatchers.IO) {
             startFaceDetection()
             val result =
@@ -116,13 +117,17 @@ class HomeViewModel(
     fun sendDetectedFaces(faces: List<FaceDetectedItem>) {
         _uiState.setState {
             copy(
-                faceList = faces, isLoading = false, message = "${faces.size} faces found"
+                faceList = faces,
+                isLoading = false,
+                message = "${faces.size} faces found"
             )
         }
     }
 
-    private fun clearSelection() {
-        selectedFaceMap.clear()
+    private suspend fun clearSelection() {
+        withContext(Dispatchers.Main) {
+            selectedFaceMap.clear()
+        }
     }
 
     fun reset() {
