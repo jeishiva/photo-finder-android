@@ -3,8 +3,8 @@ package com.experiment.facedetector.di
 
 import com.experiment.facedetector.data.local.repo.FaceDetectionRepoImpl
 import com.experiment.facedetector.data.local.repo.FaceSearchRepositoryImpl
-import com.experiment.facedetector.domain.repo.IMediaRepo
-import com.experiment.facedetector.data.local.repo.MediaRepo
+import com.experiment.facedetector.domain.repo.MediaRepo
+import com.experiment.facedetector.data.local.repo.MediaRepoImpl
 import com.experiment.facedetector.data.local.repo.SearchQueryRepoImpl
 import com.experiment.facedetector.domain.repo.FaceDetectionRepo
 import com.experiment.facedetector.domain.repo.FaceSearchRepository
@@ -12,8 +12,9 @@ import com.experiment.facedetector.domain.repo.SearchQueryRepo
 import org.koin.dsl.module
 
 val repositoryModule = module {
-    single<IMediaRepo> {
-        MediaRepo(
+
+    single<MediaRepo> {
+        MediaRepoImpl(
             mediaDao = get(),
             faceDao = get()
         )
@@ -35,8 +36,7 @@ val repositoryModule = module {
 
     single<FaceSearchRepository> {
         FaceSearchRepositoryImpl(
-            embeddingsUseCase = get(),
-            imageHelper = get()
+            mediaRepo = get(),
         )
     }
 }

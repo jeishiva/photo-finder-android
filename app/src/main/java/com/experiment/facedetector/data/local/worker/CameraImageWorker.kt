@@ -3,12 +3,8 @@ package com.experiment.facedetector.data.local.worker
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.experiment.facedetector.image.BitmapHelper
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.data.local.worker.processor.ICameraProcessor
-import com.experiment.facedetector.data.local.worker.processor.IProcessor
-import com.experiment.facedetector.domain.repo.IMediaRepo
-import com.experiment.facedetector.face.FaceDetectionProcessor
 
 class CameraImageWorker(
     context: Context,

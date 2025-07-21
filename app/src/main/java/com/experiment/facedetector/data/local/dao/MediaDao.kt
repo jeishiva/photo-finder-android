@@ -53,4 +53,9 @@ interface MediaDao {
     @Query("SELECT mediaId FROM media WHERE mediaId IN (:mediaIds)")
     suspend fun getExistingMediaIds(mediaIds: List<Long>): List<Long>
 
+    @Transaction
+    @Query("SELECT * FROM media ORDER BY mediaId DESC")
+    fun getPagedMediaWithFaces(): PagingSource<Int, MediaWithFaces>
+
+
 }

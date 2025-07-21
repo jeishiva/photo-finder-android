@@ -33,7 +33,7 @@ data class FaceEmbeddingRequest(
  */
 data class ProcessedMediaItem(
     val mediaId: Long,
-    val file : File
+    val file : File,
 )
 
 /*

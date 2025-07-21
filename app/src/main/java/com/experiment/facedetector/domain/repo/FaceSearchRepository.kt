@@ -1,12 +1,11 @@
 package com.experiment.facedetector.domain.repo
 
-import com.experiment.facedetector.domain.entities.FaceEmbedding
-import com.experiment.facedetector.domain.entities.FaceSearchItem
+import androidx.paging.PagingData
+import com.experiment.facedetector.data.local.entities.MediaWithFaces
+import kotlinx.coroutines.flow.Flow
 
 interface FaceSearchRepository {
-    suspend fun addFaces(faces: List<FaceSearchItem>)
-
-    suspend fun getAllEmbeddings(): List<FaceEmbedding>
-
-    suspend fun searchFace(targetEmbedding: FloatArray, threshold: Float = 0.7f): List<FaceEmbedding>
+    suspend fun searchMatchingFacesPagedFlow(
+        searchFaceEmbeddings: List<FloatArray>,
+    ) : Flow<PagingData<MediaWithFaces>>
 }

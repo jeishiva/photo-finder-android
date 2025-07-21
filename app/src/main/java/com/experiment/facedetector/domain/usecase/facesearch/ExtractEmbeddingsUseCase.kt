@@ -1,6 +1,7 @@
 package com.experiment.facedetector.domain.usecase.facesearch
 
 import android.graphics.Bitmap
+import com.experiment.facedetector.domain.entities.FaceEmbedding
 import com.experiment.facedetector.domain.entities.FaceEmbeddingRequest
 import com.experiment.facedetector.image.BitmapHelper
 import kotlinx.coroutines.Deferred
@@ -40,6 +41,17 @@ class ExtractEmbeddingsUseCase(
     suspend operator fun invoke(faceBitmap: Bitmap): FloatArray {
         val interpreter = initialize()
         return getFaceEmbeddingWithSupport(faceBitmap, interpreter)
+    }
+
+    suspend operator fun invoke(imagePath: String): FloatArray? {
+        val interpreter = initialize()
+        return try {
+            imageHelper.loadBitmapFromPath(imagePath)?.let { faceBitmap ->
+                getFaceEmbeddingWithSupport(faceBitmap, interpreter)
+            }
+        } catch (e: Exception) {
+            null
+        }
     }
 
     fun getFaceEmbeddingWithSupport(faceBitmap: Bitmap, interpreter: Interpreter): FloatArray {

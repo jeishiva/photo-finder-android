@@ -13,7 +13,7 @@ import com.experiment.facedetector.common.CAMERA_WORKER_TAG
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.data.local.worker.CameraImageWorker
 import com.experiment.facedetector.domain.entities.ProcessedMediaItem
-import com.experiment.facedetector.domain.repo.IMediaRepo
+import com.experiment.facedetector.domain.repo.MediaRepo
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,7 +26,7 @@ import kotlinx.coroutines.flow.StateFlow
  */
 
 class GalleryViewModel(
-    mediaRepo: IMediaRepo,
+    mediaRepo: MediaRepo,
     private val workManager: WorkManager
 ) : ViewModel() {
 
@@ -59,7 +59,6 @@ class GalleryViewModel(
                 _workInfoStateFlow.value = it
                 LogManager.d("GalleryViewModel", "Work status: ${it.map { it.state }}")
             }
-            .launchIn(viewModelScope)
     }
 
     fun startInitialWork() {

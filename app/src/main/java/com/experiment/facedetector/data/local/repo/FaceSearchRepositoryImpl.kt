@@ -1,46 +1,43 @@
 package com.experiment.facedetector.data.local.repo
 
-import android.graphics.Bitmap
+import androidx.paging.PagingData
+import androidx.paging.filter
 import com.experiment.facedetector.common.LogManager
-import com.experiment.facedetector.domain.entities.FaceEmbedding
-import com.experiment.facedetector.domain.entities.FaceSearchItem
+import com.experiment.facedetector.config.AppConfig
+import com.experiment.facedetector.data.local.entities.MediaWithFaces
 import com.experiment.facedetector.domain.repo.FaceSearchRepository
-import com.experiment.facedetector.domain.usecase.facesearch.ExtractEmbeddingsUseCase
-import com.experiment.facedetector.image.BitmapHelper
+import com.experiment.facedetector.domain.repo.MediaRepo
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlin.math.sqrt
 
 class FaceSearchRepositoryImpl(
-    private val imageHelper: BitmapHelper,
-    private val embeddingsUseCase: ExtractEmbeddingsUseCase
+    private val mediaRepo: MediaRepo
 ) : FaceSearchRepository {
 
-    private val faceEmbeddings = mutableListOf<FaceEmbedding>()
-
-    override suspend fun addFaces(faces: List<FaceSearchItem>) {
-        faces.forEach { item ->
-            val bitmap = imageHelper.loadBitmapFromPath(item.thumbnailPath)
-            if (bitmap != null) {
-                val embedding = embeddingsUseCase(bitmap)
-                LogManager.d("FaceSearchRepository", "Embedding: $embedding")
-                faceEmbeddings.add(FaceEmbedding(id = item.faceId, embedding = embedding))
-            } else {
-                LogManager.e(
-                    "FaceSearchRepository",
-                    "Failed to load bitmap from path: ${item.thumbnailPath}"
-                )
+    override suspend fun searchMatchingFacesPagedFlow(
+        searchEmbeddings: List<FloatArray>,
+    ): Flow<PagingData<MediaWithFaces>> {
+        return mediaRepo.getPagedMediaWithFaces()
+            .map { pagingData ->
+                pagingData.filter { mediaWithFaces ->
+                    val isSimilar = mediaWithFaces.faces.any { face ->
+                        val embedding = face.embeddingData
+                        searchEmbeddings.any { searchEmbedding ->
+                            cosineSimilarity(searchEmbedding, embedding) >= AppConfig.PHOTO_SIMILARITY_THRESHOLD
+                        }
+                    }
+                    if (isSimilar) {
+                        LogManager.d(
+                            "FaceSearchRepository",
+                            "similar faces found for mediaId: ${mediaWithFaces.media.mediaId}")
+                    }
+                    isSimilar
+                }
             }
-        }
-    }
-
-    override suspend fun getAllEmbeddings(): List<FaceEmbedding> = faceEmbeddings
-
-    override suspend fun searchFace(
-        targetEmbedding: FloatArray,
-        threshold: Float
-    ): List<FaceEmbedding> {
-        return faceEmbeddings.filter { stored ->
-            cosineSimilarity(targetEmbedding, stored.embedding) >= threshold
-        }
+            .flowOn(Dispatchers.Default)
     }
 
     fun cosineSimilarity(vec1: FloatArray, vec2: FloatArray): Float {

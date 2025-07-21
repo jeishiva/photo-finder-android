@@ -23,7 +23,7 @@ import com.experiment.facedetector.data.local.worker.entities.BatchResult
 import com.experiment.facedetector.data.local.worker.entities.ProcessedImageResult
 import com.experiment.facedetector.data.local.worker.processor.ICameraProcessor
 import com.experiment.facedetector.domain.entities.FaceEmbeddingRequest
-import com.experiment.facedetector.domain.repo.IMediaRepo
+import com.experiment.facedetector.domain.repo.MediaRepo
 import com.experiment.facedetector.domain.usecase.facesearch.ExtractEmbeddingsUseCase
 import java.util.UUID
 
@@ -35,7 +35,7 @@ class CameraImageProcessor(
     private val context: Context,
     private val faceDetectionProcessor: FaceDetectionProcessor,
     private val embeddingsUseCase: ExtractEmbeddingsUseCase,
-    private val mediaRepo: IMediaRepo,
+    private val mediaRepo: MediaRepo,
     private val imageHelper: BitmapHelper,
     private val pageSize: Int = 20,
     private val concurrentLimit: Int = 5
@@ -185,7 +185,6 @@ class CameraImageProcessor(
                 "Failed to create processed image result for ${faceImage.mediaItem.mediaId}",
                 e
             )
-            // Clean up on failure
             cleanupBitmaps(faceImage.image, thumbnailBitmap)
             null
         }
