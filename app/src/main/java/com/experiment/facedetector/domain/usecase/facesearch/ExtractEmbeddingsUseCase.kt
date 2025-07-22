@@ -1,6 +1,7 @@
 package com.experiment.facedetector.domain.usecase.facesearch
 
 import android.graphics.Bitmap
+import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.domain.entities.FaceEmbedding
 import com.experiment.facedetector.domain.entities.FaceEmbeddingRequest
 import com.experiment.facedetector.image.BitmapHelper
@@ -38,11 +39,6 @@ class ExtractEmbeddingsUseCase(
         return null
     }
 
-    suspend operator fun invoke(faceBitmap: Bitmap): FloatArray {
-        val interpreter = initialize()
-        return getFaceEmbeddingWithSupport(faceBitmap, interpreter)
-    }
-
     suspend operator fun invoke(imagePath: String): FloatArray? {
         val interpreter = initialize()
         return try {
@@ -57,6 +53,7 @@ class ExtractEmbeddingsUseCase(
     fun getFaceEmbeddingWithSupport(faceBitmap: Bitmap, interpreter: Interpreter): FloatArray {
         val tensorImage = TensorImage(DataType.FLOAT32)
         tensorImage.load(faceBitmap)
+        LogManager.d(TAG, "embedding faceBitmap size : ${tensorImage.height} x ${tensorImage.width}")
         val processor = ImageProcessor.Builder()
             .add(ResizeOp(112, 112, ResizeOp.ResizeMethod.BILINEAR))
             .add(NormalizeOp(127.5f, 128f))
@@ -65,5 +62,9 @@ class ExtractEmbeddingsUseCase(
         val outputBuffer = TensorBuffer.createFixedSize(intArrayOf(1, 128), DataType.FLOAT32)
         interpreter.run(processed.buffer, outputBuffer.buffer.rewind())
         return outputBuffer.floatArray
+    }
+
+    companion object {
+        private const val TAG = "ExtractEmbeddingsUseCase"
     }
 }

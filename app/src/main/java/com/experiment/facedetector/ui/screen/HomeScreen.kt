@@ -75,12 +75,8 @@ fun HomeScreen(
     val navController = homeScreenParams.navController
     val uiState by viewModel.uiState.collectAsState()
     val selectedFaceIds by viewModel.selectedFaceIds.collectAsState()
-    val context = LocalContext.current
     val actions = remember(navController, viewModel) {
         HomeUiModel.Actions(
-            onBackClick = {
-               (context as? Activity)?.finish()
-            },
             onImageSelected = { uri ->
                 viewModel.setSelectedImage(uri)
             },
@@ -126,7 +122,6 @@ fun HomeContent(uiModel: HomeUiModel, selectedFaceIds: Set<String>) {
             topBar = {
                 AppBar(
                     stringResource(R.string.home_screen),
-                    onBackClicked = uiModel.actions.onBackClick,
                 )
             }, containerColor = Color.Transparent, modifier = Modifier.fillMaxSize()
         ) { innerPadding ->

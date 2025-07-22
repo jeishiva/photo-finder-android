@@ -42,7 +42,6 @@ data class HomeUiModel(
 ) {
     @Stable
     data class Actions(
-        val onBackClick: () -> Unit = {},
         val onImageSelected: (Uri?) -> Unit = {},
         val onOptionSelected: (TimeRange) -> Unit = {},
         val onSearchClick: () -> Unit = {},

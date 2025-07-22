@@ -75,10 +75,9 @@ class HomeViewModel(
     fun getSelectedFaces(): List<FaceDetectedItem> {
         val selectedIds = _selectedFaceIds.value
         val faceList = uiState.value.faceList
-        LogManager.d("HomeViewModel", "Total faces: ${faceList.size}, Selected: ${selectedIds.size}")
+        LogManager.d(TAG, "Total faces: ${faceList.size}, Selected: ${selectedIds.size}")
         return faceList.filter { face -> selectedIds.contains(face.faceId) }
     }
-
 
     fun saveSelectedFaces() {
         viewModelScope.launch(Dispatchers.IO) {

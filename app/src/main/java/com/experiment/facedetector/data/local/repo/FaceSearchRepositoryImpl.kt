@@ -24,29 +24,34 @@ class FaceSearchRepositoryImpl(
             .map { pagingData ->
                 println("mediaWithFaces pagingData size: $pagingData")
                 pagingData.filter { mediaWithFaces ->
-                    for (face in mediaWithFaces.faces) {
-                        println("faceEmbedding: $face")
-                    }
-                    val isSimilar = mediaWithFaces.faces.any { face ->
-                        val embedding = face.embeddingData
-                        searchEmbeddings.any { searchEmbedding ->
-                            cosineSimilarity(
-                                searchEmbedding,
-                                embedding
-                            ) >= AppConfig.PHOTO_SIMILARITY_THRESHOLD
-                        }
-                    }
-                    LogManager.d(
-                        TAG,
-                        "${if (isSimilar) "Similar" else "Not similar"} faces found for mediaId: ${mediaWithFaces.media.mediaId}"
-                    )
-                    isSimilar
+                    val hasSimilarFace = hasMatchingFaceEmbedding(mediaWithFaces, searchEmbeddings)
+                    logSimilarityResult(mediaWithFaces.media.mediaId, hasSimilarFace)
+                    hasSimilarFace
                 }
             }
             .flowOn(Dispatchers.Default)
     }
 
+    private fun hasMatchingFaceEmbedding(
+        mediaWithFaces: MediaWithFaces,
+        searchEmbeddings: List<FloatArray>
+    ): Boolean {
+        return mediaWithFaces.faces.any { face ->
+            val faceEmbedding = face.embeddingData
+            searchEmbeddings.any { searchEmbedding ->
+                val similarity = cosineSimilarity(searchEmbedding, faceEmbedding)
+                similarity >= AppConfig.PHOTO_SIMILARITY_THRESHOLD
+            }
+        }
+    }
+
+    private fun logSimilarityResult(mediaId: Long, isSimilar: Boolean) {
+        val resultText = if (isSimilar) "Similar" else "Not similar"
+        LogManager.d(TAG, "$resultText faces found for mediaId: $mediaId")
+    }
+
     fun cosineSimilarity(vec1: FloatArray, vec2: FloatArray): Float {
+        require(vec1.size == vec2.size) { "Vectors must be of the same size" }
         var dot = 0f
         var norm1 = 0f
         var norm2 = 0f
@@ -55,9 +60,11 @@ class FaceSearchRepositoryImpl(
             norm1 += vec1[i] * vec1[i]
             norm2 += vec2[i] * vec2[i]
         }
-        val similarity = dot / (sqrt(norm1) * sqrt(norm2))
-        println("similarity: $similarity")
-        return similarity
+        return if (norm1 == 0f || norm2 == 0f) {
+            0f
+        } else {
+            dot / (sqrt(norm1) * sqrt(norm2))
+        }
     }
 
     companion object {
