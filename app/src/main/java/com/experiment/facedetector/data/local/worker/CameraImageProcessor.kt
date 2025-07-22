@@ -25,7 +25,6 @@ import com.experiment.facedetector.data.local.worker.processor.ICameraProcessor
 import com.experiment.facedetector.domain.entities.FaceEmbeddingRequest
 import com.experiment.facedetector.domain.repo.MediaRepo
 import com.experiment.facedetector.domain.usecase.facesearch.ExtractEmbeddingsUseCase
-import java.util.UUID
 
 /**
  * processes camera images concurrently with configurable parallelism using Semaphore

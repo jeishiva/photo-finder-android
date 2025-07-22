@@ -41,6 +41,7 @@ class HomeViewModel(
     }
 
     fun setSelectedImage(selectedImageUri: Uri?) {
+        selectedImageUri ?: return
         _uiState.setState {
             copy(selectedImageUri = selectedImageUri)
         }

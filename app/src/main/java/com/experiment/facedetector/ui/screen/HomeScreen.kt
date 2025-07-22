@@ -11,18 +11,21 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -44,10 +47,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.experiment.facedetector.R
 import com.experiment.facedetector.common.LogManager
@@ -66,27 +70,22 @@ import com.experiment.facedetector.viewmodel.HomeViewModel
 
 @Composable
 fun HomeScreen(
-    homeScreenParams: HomeScreenParams,
-    viewModel: HomeViewModel
+    homeScreenParams: HomeScreenParams, viewModel: HomeViewModel
 ) {
     var selectedOption by remember { mutableStateOf<TimeRange>(TimeRange.OneMonth) }
     val navController = homeScreenParams.navController
     val uiState by viewModel.uiState.collectAsState()
     val selectedFaceIds by viewModel.selectedFaceIds.collectAsState()
     val actions = remember(navController, viewModel) {
-        HomeUiModel.Actions(
-            onImageSelected = { uri ->
-                viewModel.setSelectedImage(uri)
-            },
-            onOptionSelected = { option ->
-                selectedOption = option
-            },
-            onSearchClick = {
-                viewModel.saveSelectedFaces()
-            },
-            toggleFaceSelection = { faceId ->
-                viewModel.toggleFaceSelection(faceId)
-            })
+        HomeUiModel.Actions(onImageSelected = { uri ->
+            viewModel.setSelectedImage(uri)
+        }, onOptionSelected = { option ->
+            selectedOption = option
+        }, onSearchClick = {
+            viewModel.saveSelectedFaces()
+        }, toggleFaceSelection = { faceId ->
+            viewModel.toggleFaceSelection(faceId)
+        })
     }
     LaunchedEffect(uiState.selectedImageUri) {
         uiState.selectedImageUri?.let { selectedUri ->
@@ -105,9 +104,7 @@ fun HomeScreen(
         }
     }
     val uiModel = HomeUiModel(
-        selectedOption = selectedOption,
-        actions = actions,
-        state = uiState
+        selectedOption = selectedOption, actions = actions, state = uiState
     )
     HomeContent(uiModel = uiModel, selectedFaceIds)
 }
@@ -118,7 +115,7 @@ fun HomeContent(uiModel: HomeUiModel, selectedFaceIds: Set<String>) {
         Scaffold(
             topBar = {
                 AppBar(
-                    stringResource(R.string.home_screen),
+                    stringResource(R.string.search_photos),
                 )
             }, containerColor = Color.Transparent, modifier = Modifier.fillMaxSize()
         ) { innerPadding ->
@@ -129,39 +126,37 @@ fun HomeContent(uiModel: HomeUiModel, selectedFaceIds: Set<String>) {
             ) {
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
+                        .wrapContentSize()
+                        .align(Alignment.BottomEnd)
+                        .padding(32.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    TimeRangeIcon(onOptionSelected = uiModel.actions.onOptionSelected)
+                    SelectPhotoIcon(uiModel.actions.onImageSelected)
+                }
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
+                Row(
+                    modifier = Modifier.weight(0.4f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    ImageOrPlaceholderRoundedFullWidth(
+                        imageUri = uiModel.state.selectedImageUri
+                    )
+                }
+                Column(
+                    modifier = Modifier
+                        .weight(0.5f)
+                        .clip(RoundedCornerShape(16.dp)),
                     verticalArrangement = Arrangement.Top,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        CircularImageOrPlaceholder(
-                            imageUri = uiModel.state.selectedImageUri,
-                            size = 120.dp
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(
-                            modifier = Modifier.weight(1f), // take available space
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            GalleryImagePicker(onImageSelected = uiModel.actions.onImageSelected)
-                            TimeRangeSelectorScreen(onOptionSelected = uiModel.actions.onOptionSelected)
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = stringResource(
-                            R.string.search_photo_msg, uiModel.selectedOption.label
-                        ),
-                        color = Color.White,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    )
                     Spacer(modifier = Modifier.height(16.dp))
                     StatusMessage(
                         isLoading = uiModel.state.isLoading,
@@ -176,17 +171,6 @@ fun HomeContent(uiModel: HomeUiModel, selectedFaceIds: Set<String>) {
                             onFaceClick = { uiModel.actions.toggleFaceSelection(it) })
                     }
                 }
-                if (selectedFaceIds.isNotEmpty()) {
-                    Button(
-                        onClick = uiModel.actions.onSearchClick,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                            .align(Alignment.BottomCenter)
-                    ) {
-                        Text(stringResource(R.string.search))
-                    }
-                }
             }
         }
     }
@@ -194,8 +178,7 @@ fun HomeContent(uiModel: HomeUiModel, selectedFaceIds: Set<String>) {
 
 @Composable
 fun FaceListSection(
-    faces: List<FaceDetectedItem>,
-    selectedFaceIds: Set<String>,
+    faces: List<FaceDetectedItem>, selectedFaceIds: Set<String>,
     onFaceClick: (String) -> Unit
 ) {
     LazyRow(
@@ -207,10 +190,8 @@ fun FaceListSection(
             val item = faces[faceIndex]
             val isSelected = selectedFaceIds.contains(item.faceId)
             FaceListItem(
-                face = item,
-                isSelected = isSelected,
-                onClick = { onFaceClick(item.faceId) }
-            )
+                face = item, isSelected = isSelected,
+                onClick = { onFaceClick(item.faceId) })
         }
     }
 }
@@ -252,49 +233,71 @@ fun HomeContentPreview() {
         uiModel = HomeUiModel(
             actions = HomeUiModel.Actions(),
             state = HomeUiState(),
-        ),
-        selectedFaceIds = emptySet()
+        ), selectedFaceIds = emptySet()
     )
 }
 
 @Composable
-fun CircularImageOrPlaceholder(
-    imageUri: Uri?, modifier: Modifier = Modifier, size: Dp = 100.dp
+fun ImageOrPlaceholderRoundedFullWidth(
+    imageUri: Uri?,
+    modifier: Modifier = Modifier,
+    cornerRadius: Dp = 24.dp
 ) {
-    println("imageUri: $imageUri")
     Box(
         modifier = modifier
-            .size(size)
-            .clip(CircleShape)
-            .background(Color.Gray),
-        contentAlignment = Alignment.Center
+            .fillMaxSize()
+            .clip(
+                RoundedCornerShape(
+                    topStart = cornerRadius,
+                    topEnd = cornerRadius,
+                    bottomStart = 0.dp,
+                    bottomEnd = 0.dp
+                )
+            )
+            .background(Color.Gray), contentAlignment = Alignment.Center
     ) {
         if (imageUri != null) {
             AsyncImage(
                 model = imageUri,
-                contentDescription = null,
+                contentDescription = "Selected Image",
+                contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .fillMaxSize()
-                    .clip(CircleShape),
-                contentScale = ContentScale.Crop
-            )
-        } else {
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = "Placeholder",
-                tint = Color.White,
-                modifier = Modifier.size(size / 2)
+                    .clip(RoundedCornerShape(cornerRadius))
             )
         }
     }
 }
 
 @Composable
-fun TimeRangeSelectorScreen(onOptionSelected: (TimeRange) -> Unit) {
+fun SelectPhotoIcon(onImageSelected: (Uri?) -> Unit) {
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(), onResult = { uri ->
+            onImageSelected(uri)
+        })
+    Icon(
+        imageVector = Icons.Default.Add,
+        contentDescription = "Select Image",
+        tint = Color.White.copy(alpha = 0.85f),
+        modifier = Modifier
+            .size(48.dp)
+            .clickable { launcher.launch("image/*") }
+            .background(Color.Black.copy(alpha = 0.4f), shape = CircleShape)
+            .padding(8.dp))
+}
+
+@Composable
+fun TimeRangeIcon(onOptionSelected: (TimeRange) -> Unit) {
     var showBottomSheet by remember { mutableStateOf(false) }
-    Button(onClick = { showBottomSheet = true }) {
-        Text("Select Time Range")
-    }
+    Icon(
+        imageVector = Icons.Default.DateRange,
+        contentDescription = "Select Image",
+        tint = Color.White.copy(alpha = 0.85f),
+        modifier = Modifier
+            .size(48.dp)
+            .clickable { showBottomSheet = true }
+            .background(Color.Black.copy(alpha = 0.4f), shape = CircleShape)
+            .padding(8.dp))
     if (showBottomSheet) {
         TimeRangeBottomSheetDialog(
             onOptionSelected = onOptionSelected, onDismiss = { showBottomSheet = false })
@@ -322,19 +325,6 @@ fun TimeRangeBottomSheetDialog(
                         })
             }
         }
-    }
-}
-
-@Composable
-fun GalleryImagePicker(
-    onImageSelected: (Uri?) -> Unit
-) {
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent(), onResult = { uri ->
-            onImageSelected(uri)
-        })
-    Button(onClick = { launcher.launch("image/*") }) {
-        Text("Select Photo")
     }
 }
 

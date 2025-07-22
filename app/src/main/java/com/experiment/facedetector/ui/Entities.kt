@@ -46,7 +46,8 @@ data class HomeUiModel(
         val onOptionSelected: (TimeRange) -> Unit = {},
         val onSearchClick: () -> Unit = {},
         val toggleFaceSelection: (String) -> Unit = {},
-    )
+        val launchGalleryClicked: () -> Unit = {},
+        )
 
     val hasFaces
         get() = state.faceList.isNotEmpty()
