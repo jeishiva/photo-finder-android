@@ -320,7 +320,9 @@ fun FaceDetectedSheetSection(
         FaceDetectedBottomSheetDialog(
             uiModel,
             selectedFaceIds,
-            onFaceClick = onFaceClick,
+            onFaceClick = {
+                onFaceClick(it)
+            },
             onDismiss = {
                 showBottomSheet = false
             })
@@ -333,7 +335,7 @@ fun FaceDetectedBottomSheetDialog(
     uiModel: HomeUiModel,
     selectedFaceIds: Set<String>,
     onFaceClick: (String) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState()
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
@@ -351,7 +353,10 @@ fun FaceDetectedBottomSheetDialog(
             )
             Spacer(modifier = Modifier.height(32.dp))
             Button(
-                onClick = uiModel.actions.onSearchClick,
+                onClick = {
+                    onDismiss()
+                    uiModel.actions.onSearchClick()
+                },
                 enabled = selectedFaceIds.isNotEmpty(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (selectedFaceIds.isNotEmpty()) {
