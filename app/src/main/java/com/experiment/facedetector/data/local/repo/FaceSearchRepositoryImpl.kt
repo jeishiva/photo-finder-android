@@ -37,9 +37,8 @@ class FaceSearchRepositoryImpl(
         searchEmbeddings: List<FloatArray>
     ): Boolean {
         return mediaWithFaces.faces.any { face ->
-            val faceEmbedding = face.embeddingData
             searchEmbeddings.any { searchEmbedding ->
-                val similarity = cosineSimilarity(searchEmbedding, faceEmbedding)
+                val similarity = cosineSimilarity(searchEmbedding, face.embeddingData)
                 similarity >= AppConfig.PHOTO_SIMILARITY_THRESHOLD
             }
         }

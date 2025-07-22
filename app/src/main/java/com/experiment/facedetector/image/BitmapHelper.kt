@@ -204,12 +204,10 @@ class BitmapHelper(val context: Context) {
 
     fun scaleFromPool(source: Bitmap, targetWidth: Int, targetHeight: Int): Bitmap {
         return try {
-            // Try to get bitmap from pool first
             val pooledBitmap =
                 BitmapPool.get(targetWidth, targetHeight, source.config ?: Bitmap.Config.ARGB_8888)
 
             if (pooledBitmap.width == targetWidth && pooledBitmap.height == targetHeight && !pooledBitmap.isRecycled) {
-                // Use existing bitmap from pool
                 val canvas = Canvas(pooledBitmap)
                 val matrix = Matrix().apply {
                     setScale(
@@ -303,28 +301,24 @@ class BitmapHelper(val context: Context) {
         return thumbnail
     }
 
-    fun cropFaceFromBitmap(bitmap: Bitmap, box: FaceBoundingBox): Bitmap {
-        val safeRect = Rect(
-            box.left.coerceAtLeast(0),
-            box.top.coerceAtLeast(0),
-            box.right.coerceAtMost(bitmap.width),
-            box.bottom.coerceAtMost(bitmap.height)
-        )
-        val cropped = Bitmap.createBitmap(
-            bitmap,
-            safeRect.left,
-            safeRect.top,
-            safeRect.width(),
-            safeRect.height()
-        )
-        return cropped.scale(112, 112)
-    }
-
-    fun loadBitmapFromPath(path: String): Bitmap? {
-        return try {
-            BitmapFactory.decodeFile(path)
-        } catch (e: Exception) {
-            null
+    fun cropFaceFromBitmap(bitmap: Bitmap, box: FaceBoundingBox): Bitmap? {
+        try {
+            val safeRect = Rect(
+                box.left.coerceAtLeast(0),
+                box.top.coerceAtLeast(0),
+                box.right.coerceAtMost(bitmap.width),
+                box.bottom.coerceAtMost(bitmap.height)
+            )
+            val cropped = Bitmap.createBitmap(
+                bitmap,
+                safeRect.left,
+                safeRect.top,
+                safeRect.width(),
+                safeRect.height()
+            )
+            return cropped
+        } catch (ex: Exception) {
+            return null
         }
     }
 
@@ -349,5 +343,12 @@ class BitmapHelper(val context: Context) {
         }
     }
 
+    fun loadBitmapFromPath(path: String): Bitmap? {
+        return try {
+            BitmapFactory.decodeFile(path)
+        } catch (e: Exception) {
+            null
+        }
+    }
 
 }

@@ -137,19 +137,23 @@ class HomeViewModel(
     }
 
     fun toggleFaceSelection(faceId: String) {
-        if (_selectedFaceIds.value.size >= MAX_SELECTED_FACES) {
+        if (_selectedFaceIds.value.contains(faceId).not() && _selectedFaceIds.value.size >= MAX_SELECTED_FACES) {
             _uiState.setState {
                 copy(
-                    errorMessage = "You can select maximum $MAX_SELECTED_FACES faces",
+                    message = "Maximum $MAX_SELECTED_FACES faces selected — oldest removed."
                 )
             }
-            return
         }
         _selectedFaceIds.update { currentSet ->
             if (currentSet.contains(faceId)) {
                 currentSet - faceId
             } else {
-                currentSet + faceId
+                if (currentSet.size >= MAX_SELECTED_FACES) {
+                    val firstSelected = currentSet.first()
+                    (currentSet - firstSelected) + faceId
+                } else {
+                    currentSet + faceId
+                }
             }
         }
         if (_selectedFaceIds.value.isEmpty()) {

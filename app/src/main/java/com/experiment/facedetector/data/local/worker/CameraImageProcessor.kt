@@ -219,11 +219,10 @@ class CameraImageProcessor(
     private suspend fun getFaceEmbeddings(
         processedResults: List<ProcessedImageResult>
     ): List<FaceEmbeddingEntity> = withContext(Dispatchers.IO) {
-        processedResults
-            .mapNotNull { result ->
-                result.faceIdToEmbedding?.let { (faceId, embedding) ->
+        processedResults.flatMap { result ->
+                result.faceIdToEmbedding.map { (faceId, embedding) ->
                     FaceEmbeddingEntity(
-                        faceId = UUID.randomUUID().toString(),
+                        faceId = faceId,
                         mediaOwnerId = result.mediaItem.mediaId,
                         embeddingData = embedding
                     )
@@ -351,4 +350,3 @@ class CameraImageProcessor(
         }
     }
 }
-

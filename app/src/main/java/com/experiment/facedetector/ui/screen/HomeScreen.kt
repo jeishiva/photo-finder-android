@@ -1,6 +1,5 @@
 package com.experiment.facedetector.ui.screen
 
-import android.app.Activity
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -44,7 +43,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -106,7 +104,6 @@ fun HomeScreen(
             viewModel.markNavigationHandled()
         }
     }
-
     val uiModel = HomeUiModel(
         selectedOption = selectedOption,
         actions = actions,
@@ -146,9 +143,7 @@ fun HomeContent(uiModel: HomeUiModel, selectedFaceIds: Set<String>) {
                             imageUri = uiModel.state.selectedImageUri,
                             size = 120.dp
                         )
-
                         Spacer(modifier = Modifier.width(16.dp))
-
                         Column(
                             modifier = Modifier.weight(1f), // take available space
                             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -214,7 +209,8 @@ fun FaceListSection(
             FaceListItem(
                 face = item,
                 isSelected = isSelected,
-                onClick = { onFaceClick(item.faceId) })
+                onClick = { onFaceClick(item.faceId) }
+            )
         }
     }
 }
@@ -227,7 +223,7 @@ fun FaceListItem(
 ) {
     Box(
         modifier = Modifier
-            .size(50.dp)
+            .size(80.dp)
             .clip(CircleShape)
             .clickable { onClick() }) {
         Image(

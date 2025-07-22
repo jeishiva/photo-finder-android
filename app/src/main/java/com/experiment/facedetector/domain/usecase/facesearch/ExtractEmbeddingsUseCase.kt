@@ -2,7 +2,7 @@ package com.experiment.facedetector.domain.usecase.facesearch
 
 import android.graphics.Bitmap
 import com.experiment.facedetector.common.LogManager
-import com.experiment.facedetector.domain.entities.FaceEmbedding
+import com.experiment.facedetector.common.toFaceBoundingBox
 import com.experiment.facedetector.domain.entities.FaceEmbeddingRequest
 import com.experiment.facedetector.image.BitmapHelper
 import kotlinx.coroutines.Deferred
@@ -27,16 +27,20 @@ class ExtractEmbeddingsUseCase(
         }
     }
 
-    suspend operator fun invoke(faceEmbeddingRequest: FaceEmbeddingRequest): Pair<String, FloatArray>? {
+    suspend operator fun invoke(faceEmbeddingRequest: FaceEmbeddingRequest): List<Pair<String, FloatArray>> {
         val interpreter = initialize()
-        faceEmbeddingRequest.faces.forEach { face ->
-            val cropped = imageHelper.cropAndResizeFace(faceEmbeddingRequest.image, face.boundingBox, 112)
+        return faceEmbeddingRequest.faces.mapNotNull { face ->
+            val cropped = imageHelper.cropFaceFromBitmap(
+                faceEmbeddingRequest.image,
+                face.toFaceBoundingBox(),
+            )
             if (cropped != null) {
                 val embedding = getFaceEmbeddingWithSupport(cropped, interpreter)
-                return UUID.randomUUID().toString() to embedding
+                UUID.randomUUID().toString() to embedding
+            } else {
+                null
             }
         }
-        return null
     }
 
     suspend operator fun invoke(imagePath: String): FloatArray? {
@@ -53,12 +57,12 @@ class ExtractEmbeddingsUseCase(
     fun getFaceEmbeddingWithSupport(faceBitmap: Bitmap, interpreter: Interpreter): FloatArray {
         val tensorImage = TensorImage(DataType.FLOAT32)
         tensorImage.load(faceBitmap)
-        LogManager.d(TAG, "embedding faceBitmap size : ${tensorImage.height} x ${tensorImage.width}")
         val processor = ImageProcessor.Builder()
             .add(ResizeOp(112, 112, ResizeOp.ResizeMethod.BILINEAR))
             .add(NormalizeOp(127.5f, 128f))
             .build()
         val processed = processor.process(tensorImage)
+        LogManager.d(TAG, "embedding faceBitmap size : ${processed.height} x ${processed.width}")
         val outputBuffer = TensorBuffer.createFixedSize(intArrayOf(1, 128), DataType.FLOAT32)
         interpreter.run(processed.buffer, outputBuffer.buffer.rewind())
         return outputBuffer.floatArray
