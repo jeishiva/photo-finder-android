@@ -13,8 +13,6 @@ import com.experiment.facedetector.data.local.entities.MediaWithFaces
 
 @Dao
 interface MediaDao {
-    @Query("SELECT * FROM media ORDER BY mediaId DESC")
-    fun getAllMedia(): PagingSource<Int, MediaEntity>
 
     @Query("SELECT * FROM media ORDER BY mediaId DESC LIMIT :limit OFFSET :offset")
     suspend fun getPagedMediaWithOffset(limit: Int, offset: Int): List<MediaEntity>

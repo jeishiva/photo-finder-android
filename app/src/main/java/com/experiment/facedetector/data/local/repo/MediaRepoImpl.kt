@@ -76,9 +76,14 @@ class MediaRepoImpl(
                 initialLoadSize = INITIAL_LOAD_SIZE
             ),
             pagingSourceFactory = {
-                pagingSourceFactory(mediaDao)
+                mediaDao.getPagedMedia()
             }
-        ).flow.flowOn(Dispatchers.IO)
+        ).flow.map { pagingData ->
+            pagingData.map { media ->
+                val faces = mediaDao.getFacesForMediaIds(listOf(media.mediaId))
+                MediaWithFaces(media, faces)
+            }
+        }
     }
 
 
