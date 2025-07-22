@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
@@ -26,6 +27,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -47,11 +50,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.experiment.facedetector.R
 import com.experiment.facedetector.common.LogManager
@@ -63,6 +64,8 @@ import com.experiment.facedetector.ui.HomeUiState
 import com.experiment.facedetector.ui.TimeRange
 import com.experiment.facedetector.ui.components.StatusMessage
 import com.experiment.facedetector.ui.theme.AndroidFaceDetectorTheme
+import com.experiment.facedetector.ui.theme.Emerald
+import com.experiment.facedetector.ui.theme.GradientStartMildGrey
 import com.experiment.facedetector.ui.widgets.AppBar
 import com.experiment.facedetector.viewmodel.HomeIntent
 import com.experiment.facedetector.viewmodel.HomeViewModel
@@ -128,7 +131,7 @@ fun HomeContent(uiModel: HomeUiModel, selectedFaceIds: Set<String>) {
                     modifier = Modifier
                         .wrapContentSize()
                         .align(Alignment.BottomEnd)
-                        .padding(32.dp),
+                        .padding(24.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
@@ -164,12 +167,10 @@ fun HomeContent(uiModel: HomeUiModel, selectedFaceIds: Set<String>) {
                         message = uiModel.state.message
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    if (uiModel.hasFaces) {
-                        FaceListSection(
-                            faces = uiModel.state.faceList,
-                            selectedFaceIds,
-                            onFaceClick = { uiModel.actions.toggleFaceSelection(it) })
-                    }
+                    FaceDetectedSheetSection(
+                        uiModel = uiModel,
+                        selectedFaceIds,
+                        onFaceClick = { uiModel.actions.toggleFaceSelection(it) })
                 }
             }
         }
@@ -178,7 +179,8 @@ fun HomeContent(uiModel: HomeUiModel, selectedFaceIds: Set<String>) {
 
 @Composable
 fun FaceListSection(
-    faces: List<FaceDetectedItem>, selectedFaceIds: Set<String>,
+    faces: List<FaceDetectedItem>,
+    selectedFaceIds: Set<String>,
     onFaceClick: (String) -> Unit
 ) {
     LazyRow(
@@ -190,17 +192,19 @@ fun FaceListSection(
             val item = faces[faceIndex]
             val isSelected = selectedFaceIds.contains(item.faceId)
             FaceListItem(
-                face = item, isSelected = isSelected,
-                onClick = { onFaceClick(item.faceId) })
+                face = item,
+                isSelected = isSelected,
+                onClick = {
+                    onFaceClick(item.faceId)
+                }
+            )
         }
     }
 }
 
 @Composable
 fun FaceListItem(
-    face: FaceDetectedItem,
-    isSelected: Boolean,
-    onClick: () -> Unit
+    face: FaceDetectedItem, isSelected: Boolean, onClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -239,9 +243,7 @@ fun HomeContentPreview() {
 
 @Composable
 fun ImageOrPlaceholderRoundedFullWidth(
-    imageUri: Uri?,
-    modifier: Modifier = Modifier,
-    cornerRadius: Dp = 24.dp
+    imageUri: Uri?, modifier: Modifier = Modifier, cornerRadius: Dp = 24.dp
 ) {
     Box(
         modifier = modifier
@@ -304,6 +306,72 @@ fun TimeRangeIcon(onOptionSelected: (TimeRange) -> Unit) {
     }
 }
 
+@Composable
+fun FaceDetectedSheetSection(
+    uiModel: HomeUiModel,
+    selectedFaceIds: Set<String>,
+    onFaceClick: (String) -> Unit,
+) {
+    if (uiModel.hasFaces.not()) {
+        return
+    }
+    var showBottomSheet by remember { mutableStateOf(true) }
+    if (uiModel.hasFaces && showBottomSheet) {
+        FaceDetectedBottomSheetDialog(
+            uiModel,
+            selectedFaceIds,
+            onFaceClick = onFaceClick,
+            onDismiss = {
+                showBottomSheet = false
+            })
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FaceDetectedBottomSheetDialog(
+    uiModel: HomeUiModel,
+    selectedFaceIds: Set<String>,
+    onFaceClick: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState()
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .padding(bottom = 16.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            FaceListSection(
+                faces = uiModel.state.faceList,
+                selectedFaceIds = selectedFaceIds,
+                onFaceClick = onFaceClick
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+            Button(
+                onClick = uiModel.actions.onSearchClick,
+                enabled = selectedFaceIds.isNotEmpty(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (selectedFaceIds.isNotEmpty()) {
+                        Emerald
+                    } else {
+                        GradientStartMildGrey
+                    }
+                ),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp)
+                    .padding(horizontal = 16.dp) // This creates margin around button
+            ) {
+                Text(stringResource(R.string.search))
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimeRangeBottomSheetDialog(
@@ -311,7 +379,8 @@ fun TimeRangeBottomSheetDialog(
 ) {
     val sheetState = rememberModalBottomSheetState()
     ModalBottomSheet(
-        onDismissRequest = onDismiss, sheetState = sheetState
+        onDismissRequest = onDismiss,
+        sheetState = sheetState
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             TimeRange.toList().forEach { option ->

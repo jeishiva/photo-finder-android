@@ -15,3 +15,6 @@ val MildGray = Color(0xFFA9A9A9)
 
 val GradientStartMildGrey = Color(0xF5424252)
 val GradientEndMildBlack = Color(0xFF424252)
+
+
+val Emerald  = Color(0xFF00674F)
