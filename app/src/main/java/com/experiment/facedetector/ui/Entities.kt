@@ -69,13 +69,13 @@ data class HomeUiState(
     val searchSessionId: String? = null
 )
 
-@Immutable
-data class SearchUiState(
-    val isLoading: Boolean = false,
-    val message: String? = null,
-    val errorMessage: String? = "",
-    val faceList: List<FaceSearchItem> = emptyList(),
-)
+    @Immutable
+    data class SearchUiState(
+        val isLoading: Boolean = false,
+        val message: String? = null,
+        val errorMessage: String? = "",
+        val faceList: List<FaceSearchItem> = emptyList(),
+    )
 
 data class SearchUiModel(
     val actions: Actions,

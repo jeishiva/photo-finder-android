@@ -55,7 +55,9 @@ class FaceSearchRepositoryImpl(
             norm1 += vec1[i] * vec1[i]
             norm2 += vec2[i] * vec2[i]
         }
-        return dot / (sqrt(norm1) * sqrt(norm2))
+        val similarity = dot / (sqrt(norm1) * sqrt(norm2))
+        println("similarity: $similarity")
+        return similarity
     }
 
     companion object {

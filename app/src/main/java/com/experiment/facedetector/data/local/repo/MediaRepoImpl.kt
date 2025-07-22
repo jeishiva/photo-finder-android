@@ -11,6 +11,7 @@ import com.experiment.facedetector.data.local.entities.FaceEmbeddingEntity
 import com.experiment.facedetector.data.local.entities.FaceEntity
 import com.experiment.facedetector.data.local.entities.MediaEntity
 import com.experiment.facedetector.data.local.entities.MediaWithFaces
+import com.experiment.facedetector.data.local.paging.MediaWithFacesPagingSource
 import com.experiment.facedetector.domain.entities.ProcessedMediaItem
 import com.experiment.facedetector.domain.repo.MediaRepo
 import com.experiment.facedetector.viewmodel.GalleryViewModel.Companion.INITIAL_LOAD_SIZE
@@ -25,6 +26,7 @@ import java.io.File
 class MediaRepoImpl(
     val mediaDao: MediaDao,
     val faceDao: FaceDao,
+    private val pagingSourceFactory: (MediaDao) -> MediaWithFacesPagingSource
 ) : MediaRepo {
 
     override suspend fun getMedia(mediaId: Long): MediaEntity {
@@ -74,7 +76,7 @@ class MediaRepoImpl(
                 initialLoadSize = INITIAL_LOAD_SIZE
             ),
             pagingSourceFactory = {
-                mediaDao.getPagedMediaWithFaces()
+                pagingSourceFactory(mediaDao)
             }
         ).flow.flowOn(Dispatchers.IO)
     }

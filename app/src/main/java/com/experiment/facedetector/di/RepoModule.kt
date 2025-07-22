@@ -1,6 +1,8 @@
 package com.experiment.facedetector.di
 
 
+import com.experiment.facedetector.data.local.dao.MediaDao
+import com.experiment.facedetector.data.local.paging.MediaWithFacesPagingSource
 import com.experiment.facedetector.data.local.repo.FaceDetectionRepoImpl
 import com.experiment.facedetector.data.local.repo.FaceSearchRepositoryImpl
 import com.experiment.facedetector.domain.repo.MediaRepo
@@ -16,7 +18,8 @@ val repositoryModule = module {
     single<MediaRepo> {
         MediaRepoImpl(
             mediaDao = get(),
-            faceDao = get()
+            faceDao = get(),
+            pagingSourceFactory = get(),
         )
     }
 
@@ -39,4 +42,10 @@ val repositoryModule = module {
             mediaRepo = get(),
         )
     }
+
+    // create new paging source for each call
+    factory<(MediaDao) -> MediaWithFacesPagingSource> {
+        { dao -> MediaWithFacesPagingSource(dao) }
+    }
+
 }
