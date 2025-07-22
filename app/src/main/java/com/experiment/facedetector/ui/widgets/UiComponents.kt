@@ -11,7 +11,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 
 
-
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,13 +26,19 @@ import com.experiment.facedetector.ui.theme.GradientStartMildGrey
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppBar(title : String, onClick: () -> Unit) {
+fun AppBar(title: String, onBackClicked: (() -> Unit)? = null) {
     TopAppBar(
         title = { Text(title) },
         navigationIcon = {
-            IconButton(onClick = onClick) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Navigation Menu")
+            if (onBackClicked == null) {
+                null
+            } else {
+                IconButton(onClick = onBackClicked) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Navigation Menu"
+                    )
+                }
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
@@ -45,7 +50,6 @@ fun AppBar(title : String, onClick: () -> Unit) {
         )
     )
 }
-
 
 @Composable
 fun AppCircularProgressIndicator() {

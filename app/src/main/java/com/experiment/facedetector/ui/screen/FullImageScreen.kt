@@ -82,8 +82,7 @@ fun FullImageScreen(navController: NavHostController) {
                 editingFaceId = null
                 currentInput = ""
                 viewModel.saveFaceTag(face, newTag)
-            }
-        )
+            })
     }
 }
 
@@ -91,12 +90,12 @@ fun FullImageScreen(navController: NavHostController) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FullImageTopBar(navController: NavHostController) {
-    AppBar(title = stringResource(R.string.full_image)) {
-        navController.popBackStack()
-    }
+    AppBar(
+        title = stringResource(R.string.full_image),
+        onBackClicked = { navController.popBackStack() }
+    )
 }
 
-// Main Content Component
 @Composable
 private fun FullImageContent(
     innerPadding: PaddingValues,
@@ -106,8 +105,9 @@ private fun FullImageContent(
     onTagChanged: (FaceTag, String) -> Unit
 ) {
     Box(
-        modifier = Modifier.fillMaxSize().padding(innerPadding),
-        contentAlignment = Alignment.Center
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding), contentAlignment = Alignment.Center
     ) {
         when (fullImageResult) {
             null -> AppCircularProgressIndicator()
@@ -154,8 +154,7 @@ fun FullImageWithFaceOverlay(
         faceTags.forEach { face ->
             key(face.id) {
                 val (leftPx, topPx) = coordinateHelper.imageToContainerCoords(
-                    face.left.toFloat(),
-                    face.top.toFloat()
+                    face.left.toFloat(), face.top.toFloat()
                 )
                 val widthPx = coordinateHelper.scaleWidth(face.width.toFloat())
                 val heightPx = coordinateHelper.scaleHeight(face.height.toFloat())
@@ -192,17 +191,14 @@ private fun FaceTagItem(
 ) {
     Column(
         modifier = Modifier.absoluteOffset(
-            x = coordinates.left,
-            y = coordinates.top
-        ),
-        horizontalAlignment = Alignment.CenterHorizontally
+            x = coordinates.left, y = coordinates.top
+        ), horizontalAlignment = Alignment.CenterHorizontally
     ) {
         FaceBox(
             width = coordinates.width,
             height = coordinates.height,
             isEditing = isEditing,
-            onClick = { onFaceClick(face) }
-        ) {
+            onClick = { onFaceClick(face) }) {
             if (isEditing) {
                 Box(
                     modifier = Modifier
@@ -211,15 +207,13 @@ private fun FaceTagItem(
                 ) {
                     EditableTagInput(
                         initialTag = face.tag,
-                        onTagSubmit = { newTag -> onTagChanged(face, newTag) }
-                    )
+                        onTagSubmit = { newTag -> onTagChanged(face, newTag) })
                 }
             }
         }
         if (face.tag.isNotEmpty() && !isEditing) {
             StaticTagDisplay(
-                tag = face.tag,
-                maxWidth = coordinates.width
+                tag = face.tag, maxWidth = coordinates.width
             )
         }
     }
@@ -241,16 +235,14 @@ private fun FaceBox(
                 color = if (isEditing) Color(0x40808080) else Color.Transparent
             )
             .border(2.dp, Color.Cyan)
-            .clickable(onClick = onClick),
-        content = content
+            .clickable(onClick = onClick), content = content
     )
 }
 
 // Editable Tag Input Component
 @Composable
 private fun EditableTagInput(
-    initialTag: String,
-    onTagSubmit: (String) -> Unit
+    initialTag: String, onTagSubmit: (String) -> Unit
 ) {
     var tagText by remember { mutableStateOf(initialTag) }
     TextField(
@@ -260,8 +252,7 @@ private fun EditableTagInput(
         modifier = Modifier
             .fillMaxSize()
             .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
+                interactionSource = remember { MutableInteractionSource() }, indication = null
             ) { /* Consume click to prevent propagation to parent */ },
         textStyle = MaterialTheme.typography.labelMedium,
         colors = TextFieldDefaults.colors(
@@ -279,8 +270,7 @@ private fun EditableTagInput(
 
 @Composable
 fun StaticTagDisplay(
-    tag: String,
-    maxWidth: Dp
+    tag: String, maxWidth: Dp
 ) {
     Text(
         text = tag,
@@ -298,8 +288,5 @@ fun StaticTagDisplay(
 }
 
 data class FaceTagCoordinates(
-    val left: Dp,
-    val top: Dp,
-    val width: Dp,
-    val height: Dp
+    val left: Dp, val top: Dp, val width: Dp, val height: Dp
 )

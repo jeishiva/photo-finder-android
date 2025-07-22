@@ -30,9 +30,6 @@ class HomeViewModel(
     private val _selectedFaceIds = MutableStateFlow<Set<String>>(emptySet())
     val selectedFaceIds: StateFlow<Set<String>> = _selectedFaceIds
 
-    var activeSessionId: String? = null
-        private set
-
     fun handleIntent(intent: HomeIntent) {
         when (intent) {
             is HomeIntent.Search -> {
@@ -76,10 +73,12 @@ class HomeViewModel(
     }
 
     fun getSelectedFaces(): List<FaceDetectedItem> {
+        val selectedIds = _selectedFaceIds.value
         val faceList = uiState.value.faceList
-        LogManager.d("HomeViewModel", "total faces: ${faceList.size}")
-        return uiState.value.faceList
+        LogManager.d("HomeViewModel", "Total faces: ${faceList.size}, Selected: ${selectedIds.size}")
+        return faceList.filter { face -> selectedIds.contains(face.faceId) }
     }
+
 
     fun saveSelectedFaces() {
         viewModelScope.launch(Dispatchers.IO) {
@@ -91,22 +90,24 @@ class HomeViewModel(
                 )
             }
             clearFacesUseCase()
-            activeSessionId = saveFacesUseCase(selectedFaces)
-            LogManager.d(TAG, "activeSessionId: $activeSessionId")
-        }
-        _uiState.setState {
-            copy(
-                isLoading = false,
-                message = "",
-                navigateToSearch = true
-            )
+            val sessionId = saveFacesUseCase(selectedFaces)
+            _uiState.setState {
+                copy(
+                    isLoading = false,
+                    message = "",
+                    navigateToSearch = true,
+                    sessionId = sessionId
+                )
+            }
+            LogManager.d(TAG, "activeSessionId: $sessionId")
         }
     }
 
-    fun consumeNavigateToSearch() {
+    fun markNavigationHandled() {
         _uiState.setState {
             copy(
-                navigateToSearch = false
+                navigateToSearch = false,
+                sessionId = null
             )
         }
     }

@@ -1,5 +1,6 @@
 package com.experiment.facedetector.ui.screen
 
+import android.app.Activity
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -43,6 +44,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -50,6 +52,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.experiment.facedetector.R
+import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
 import com.experiment.facedetector.navigation.AppRoute
 import com.experiment.facedetector.ui.HomeScreenParams
@@ -62,6 +65,7 @@ import com.experiment.facedetector.ui.widgets.AppBar
 import com.experiment.facedetector.viewmodel.HomeIntent
 import com.experiment.facedetector.viewmodel.HomeViewModel
 
+
 @Composable
 fun HomeScreen(
     homeScreenParams: HomeScreenParams,
@@ -71,13 +75,11 @@ fun HomeScreen(
     val navController = homeScreenParams.navController
     val uiState by viewModel.uiState.collectAsState()
     val selectedFaceIds by viewModel.selectedFaceIds.collectAsState()
+    val context = LocalContext.current
     val actions = remember(navController, viewModel) {
         HomeUiModel.Actions(
             onBackClick = {
-                navController.popBackStack(
-                    AppRoute.Splash.route,
-                    inclusive = true
-                )
+               (context as? Activity)?.finish()
             },
             onImageSelected = { uri ->
                 viewModel.setSelectedImage(uri)
@@ -100,13 +102,15 @@ fun HomeScreen(
         }
     }
     LaunchedEffect(uiState.navigateToSearch) {
-        viewModel.activeSessionId?.let { sessionId ->
-            viewModel.consumeNavigateToSearch()
+        if (uiState.navigateToSearch) {
+            LogManager.d(TAG, "activeSessionId: ${uiState.sessionId}")
             navController.navigate(
-                AppRoute.Search.createRoute(sessionId)
+                AppRoute.Search.createRoute(uiState.sessionId!!)
             )
+            viewModel.markNavigationHandled()
         }
     }
+
     val uiModel = HomeUiModel(
         selectedOption = selectedOption,
         actions = actions,
@@ -121,7 +125,8 @@ fun HomeContent(uiModel: HomeUiModel, selectedFaceIds: Set<String>) {
         Scaffold(
             topBar = {
                 AppBar(
-                    stringResource(R.string.home_screen), onClick = uiModel.actions.onBackClick
+                    stringResource(R.string.home_screen),
+                    onBackClicked = uiModel.actions.onBackClick,
                 )
             }, containerColor = Color.Transparent, modifier = Modifier.fillMaxSize()
         ) { innerPadding ->
@@ -341,3 +346,5 @@ fun GalleryImagePicker(
         Text("Select Photo")
     }
 }
+
+const val TAG = "HomeScreen"

@@ -51,10 +51,6 @@ data class HomeUiModel(
 
     val hasFaces
         get() = state.faceList.isNotEmpty()
-
-    val hasSelectedFaces
-        get() = state.hasSelectedFaces
-
 }
 
 @Immutable
@@ -65,6 +61,7 @@ data class HomeUiState(
     val selectedImageUri: Uri? = null,
     val hasSelectedFaces: Boolean = false,
     var navigateToSearch: Boolean = false,
+    var sessionId: String? = null,
     val faceList: List<FaceDetectedItem> = emptyList(),
 )
 
