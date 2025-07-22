@@ -29,7 +29,7 @@ class BitmapHelper(val context: Context) {
         format: Bitmap.CompressFormat,
         quality: Int
     ): File? {
-        val file = getThumbnailPath(filename)
+        val file = getThumbnailFile(context, filename, format)
         try {
             FileOutputStream(file).use { out ->
                 bitmap.compress(format, quality, out)
@@ -42,6 +42,26 @@ class BitmapHelper(val context: Context) {
             e.printStackTrace()
         }
         return null
+    }
+
+    fun getThumbnailFile(
+        context: Context,
+        baseName: String,
+        compressFormat: Bitmap.CompressFormat
+    ): File {
+        require(baseName.isNotBlank()) { "Base filename must not be blank" }
+        val extension = compressFormat.toFileExtension()
+        val fileName = "$baseName$extension"
+        return File(context.cacheDir, fileName).apply {
+            parentFile?.mkdirs() ?: throw IllegalStateException("Failed to access cache directory")
+        }
+    }
+
+    private fun Bitmap.CompressFormat.toFileExtension(): String = when (this) {
+        Bitmap.CompressFormat.JPEG -> ".jpg"
+        Bitmap.CompressFormat.PNG -> ".png"
+        Bitmap.CompressFormat.WEBP_LOSSY, Bitmap.CompressFormat.WEBP_LOSSLESS, Bitmap.CompressFormat.WEBP -> ".webp"
+        else -> throw IllegalArgumentException("Unsupported CompressFormat: $this")
     }
 
     fun drawFaceBoundingBoxes(
@@ -64,9 +84,6 @@ class BitmapHelper(val context: Context) {
         return mutableBitmap
     }
 
-    fun getThumbnailPath(filename: String): File {
-        return File(context.cacheDir, "$filename.webp")
-    }
 
     private fun canUseForInBitmap(bitmap: Bitmap, width: Int, height: Int): Boolean {
         return bitmap.width == width && bitmap.height == height && !bitmap.isRecycled && bitmap.isMutable
@@ -185,10 +202,11 @@ class BitmapHelper(val context: Context) {
         return inSampleSize
     }
 
-    fun scaleFromPool(source : Bitmap, targetWidth: Int, targetHeight: Int): Bitmap {
+    fun scaleFromPool(source: Bitmap, targetWidth: Int, targetHeight: Int): Bitmap {
         return try {
             // Try to get bitmap from pool first
-            val pooledBitmap = BitmapPool.get(targetWidth, targetHeight, source.config ?: Bitmap.Config.ARGB_8888)
+            val pooledBitmap =
+                BitmapPool.get(targetWidth, targetHeight, source.config ?: Bitmap.Config.ARGB_8888)
 
             if (pooledBitmap.width == targetWidth && pooledBitmap.height == targetHeight && !pooledBitmap.isRecycled) {
                 // Use existing bitmap from pool
@@ -206,7 +224,11 @@ class BitmapHelper(val context: Context) {
                 source.scale(targetWidth, targetHeight)
             }
         } catch (e: Exception) {
-            LogManager.e("BitmapScale", "Failed to scale bitmap using pool, falling back to direct creation", e)
+            LogManager.e(
+                "BitmapScale",
+                "Failed to scale bitmap using pool, falling back to direct creation",
+                e
+            )
             source.scale(targetWidth, targetHeight)
         }
     }
@@ -314,7 +336,13 @@ class BitmapHelper(val context: Context) {
             boundingBox.bottom.coerceAtMost(original.height)
         )
         return try {
-            val cropped = Bitmap.createBitmap(original, safeBox.left, safeBox.top, safeBox.width(), safeBox.height())
+            val cropped = Bitmap.createBitmap(
+                original,
+                safeBox.left,
+                safeBox.top,
+                safeBox.width(),
+                safeBox.height()
+            )
             cropped.scale(size, size)
         } catch (e: Exception) {
             null
