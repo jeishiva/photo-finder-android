@@ -46,7 +46,6 @@ data class HomeUiModel(
         val onImageSelected: (Uri?) -> Unit = {},
         val onOptionSelected: (TimeRange) -> Unit = {},
         val onSearchClick: () -> Unit = {},
-        val isFaceSelected: (String) -> Boolean = { false },
         val toggleFaceSelection: (String) -> Unit = {},
     )
 
@@ -62,20 +61,20 @@ data class HomeUiModel(
 data class HomeUiState(
     val isLoading: Boolean = false,
     val message: String? = null,
-    val errorMessage: String? = "",
-    val faceList: List<FaceDetectedItem> = emptyList(),
-    val selectedImageUri : Uri? = null,
+    val errorMessage: String? = null,
+    val selectedImageUri: Uri? = null,
     val hasSelectedFaces: Boolean = false,
-    val searchSessionId: String? = null
+    var navigateToSearch: Boolean = false,
+    val faceList: List<FaceDetectedItem> = emptyList(),
 )
 
-    @Immutable
-    data class SearchUiState(
-        val isLoading: Boolean = false,
-        val message: String? = null,
-        val errorMessage: String? = "",
-        val faceList: List<FaceSearchItem> = emptyList(),
-    )
+@Immutable
+data class SearchUiState(
+    val isLoading: Boolean = false,
+    val message: String? = null,
+    val errorMessage: String? = "",
+    val faceList: List<FaceSearchItem> = emptyList(),
+)
 
 data class SearchUiModel(
     val actions: Actions,

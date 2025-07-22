@@ -70,6 +70,7 @@ fun HomeScreen(
     var selectedOption by remember { mutableStateOf<TimeRange>(TimeRange.OneMonth) }
     val navController = homeScreenParams.navController
     val uiState by viewModel.uiState.collectAsState()
+    val selectedFaceIds by viewModel.selectedFaceIds.collectAsState()
     val actions = remember(navController, viewModel) {
         HomeUiModel.Actions(
             onBackClick = {
@@ -87,9 +88,6 @@ fun HomeScreen(
             onSearchClick = {
                 viewModel.saveSelectedFaces()
             },
-            isFaceSelected = { faceId ->
-                viewModel.isFaceSelected(faceId)
-            },
             toggleFaceSelection = { faceId ->
                 viewModel.toggleFaceSelection(faceId)
             })
@@ -101,9 +99,9 @@ fun HomeScreen(
             )
         }
     }
-    LaunchedEffect(uiState.searchSessionId) {
-        uiState.searchSessionId?.let { sessionId ->
-            viewModel.resetSessionId()
+    LaunchedEffect(uiState.navigateToSearch) {
+        viewModel.activeSessionId?.let { sessionId ->
+            viewModel.consumeNavigateToSearch()
             navController.navigate(
                 AppRoute.Search.createRoute(sessionId)
             )
@@ -114,11 +112,11 @@ fun HomeScreen(
         actions = actions,
         state = uiState
     )
-    HomeContent(uiModel = uiModel)
+    HomeContent(uiModel = uiModel, selectedFaceIds)
 }
 
 @Composable
-fun HomeContent(uiModel: HomeUiModel) {
+fun HomeContent(uiModel: HomeUiModel, selectedFaceIds: Set<String>) {
     AndroidFaceDetectorTheme {
         Scaffold(
             topBar = {
@@ -179,11 +177,11 @@ fun HomeContent(uiModel: HomeUiModel) {
                     if (uiModel.hasFaces) {
                         FaceListSection(
                             faces = uiModel.state.faceList,
-                            isFaceSelected = { faceId -> uiModel.actions.isFaceSelected(faceId) },
+                            selectedFaceIds,
                             onFaceClick = { uiModel.actions.toggleFaceSelection(it) })
                     }
                 }
-                if (uiModel.hasSelectedFaces) {
+                if (selectedFaceIds.isNotEmpty()) {
                     Button(
                         onClick = uiModel.actions.onSearchClick,
                         modifier = Modifier
@@ -202,7 +200,7 @@ fun HomeContent(uiModel: HomeUiModel) {
 @Composable
 fun FaceListSection(
     faces: List<FaceDetectedItem>,
-    isFaceSelected: (String) -> Boolean,
+    selectedFaceIds: Set<String>,
     onFaceClick: (String) -> Unit
 ) {
     LazyRow(
@@ -212,9 +210,10 @@ fun FaceListSection(
         items(
             faces.size, key = { faces[it].faceId }) { faceIndex ->
             val item = faces[faceIndex]
+            val isSelected = selectedFaceIds.contains(item.faceId)
             FaceListItem(
                 face = item,
-                isSelected = isFaceSelected(item.faceId),
+                isSelected = isSelected,
                 onClick = { onFaceClick(item.faceId) })
         }
     }
@@ -256,8 +255,9 @@ fun HomeContentPreview() {
     HomeContent(
         uiModel = HomeUiModel(
             actions = HomeUiModel.Actions(),
-            state = HomeUiState()
-        )
+            state = HomeUiState(),
+        ),
+        selectedFaceIds = emptySet()
     )
 }
 

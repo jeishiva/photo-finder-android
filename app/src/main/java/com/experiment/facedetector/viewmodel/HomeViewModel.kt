@@ -1,7 +1,6 @@
 package com.experiment.facedetector.viewmodel
 
 import android.net.Uri
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.experiment.facedetector.common.LogManager
@@ -14,9 +13,10 @@ import com.experiment.facedetector.ui.HomeUiState
 import com.experiment.facedetector.ui.TimeRange
 import com.experiment.facedetector.ui.common.UiStateHolder
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class HomeViewModel(
     val faceDetectionUseCase: FaceDetectionUseCase,
@@ -27,7 +27,11 @@ class HomeViewModel(
     private val _uiState = UiStateHolder<HomeUiState>(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.state
 
-    val selectedFaceMap = mutableStateMapOf<String, Boolean>()
+    private val _selectedFaceIds = MutableStateFlow<Set<String>>(emptySet())
+    val selectedFaceIds: StateFlow<Set<String>> = _selectedFaceIds
+
+    var activeSessionId: String? = null
+        private set
 
     fun handleIntent(intent: HomeIntent) {
         when (intent) {
@@ -48,6 +52,7 @@ class HomeViewModel(
     fun detectFaces(selectedImage: Uri, selectedTimeRange: TimeRange) {
         LogManager.d("HomeViewModel", "selected image: $selectedImage  $this")
         viewModelScope.launch(Dispatchers.IO) {
+            clearSelection()
             startFaceDetection()
             val result =
                 faceDetectionUseCase(localImageItem = LocalImageItem(selectedImage.toString()))
@@ -63,17 +68,17 @@ class HomeViewModel(
     fun startFaceDetection() {
         _uiState.setState {
             val selectedImageUri = uiState.value.selectedImageUri
-            HomeUiState(isLoading = true, selectedImageUri = selectedImageUri)
+            HomeUiState(
+                isLoading = true,
+                selectedImageUri = selectedImageUri
+            )
         }
     }
 
     fun getSelectedFaces(): List<FaceDetectedItem> {
         val faceList = uiState.value.faceList
         LogManager.d("HomeViewModel", "total faces: ${faceList.size}")
-        LogManager.d("HomeViewModel", "selected faces: ${selectedFaceMap.size}")
-        return uiState.value.faceList.filter {
-            selectedFaceMap.containsKey(it.faceId)
-        }
+        return uiState.value.faceList
     }
 
     fun saveSelectedFaces() {
@@ -86,21 +91,22 @@ class HomeViewModel(
                 )
             }
             clearFacesUseCase()
-            val sessionId = saveFacesUseCase(selectedFaces)
-            _uiState.setState {
-                copy(
-                    isLoading = false,
-                    message = "",
-                    searchSessionId = sessionId
-                )
-            }
+            activeSessionId = saveFacesUseCase(selectedFaces)
+            LogManager.d(TAG, "activeSessionId: $activeSessionId")
+        }
+        _uiState.setState {
+            copy(
+                isLoading = false,
+                message = "",
+                navigateToSearch = true
+            )
         }
     }
 
-    fun resetSessionId() {
+    fun consumeNavigateToSearch() {
         _uiState.setState {
             copy(
-                searchSessionId = null
+                navigateToSearch = false
             )
         }
     }
@@ -124,41 +130,38 @@ class HomeViewModel(
         }
     }
 
-    private suspend fun clearSelection() {
-        withContext(Dispatchers.Main) {
-            selectedFaceMap.clear()
-        }
-    }
-
-    fun reset() {
-        _uiState.setState {
-            HomeUiState()
+    private fun clearSelection() {
+        _selectedFaceIds.update {
+            emptySet()
         }
     }
 
     fun toggleFaceSelection(faceId: String) {
-        when {
-            selectedFaceMap.containsKey(faceId) -> {
-                selectedFaceMap.remove(faceId)
+        if (_selectedFaceIds.value.size >= MAX_SELECTED_FACES) {
+            _uiState.setState {
+                copy(
+                    errorMessage = "You can select maximum $MAX_SELECTED_FACES faces",
+                )
             }
-
-            selectedFaceMap.size < MAX_SELECTED_FACES -> {
-                selectedFaceMap[faceId] = true
+            return
+        }
+        _selectedFaceIds.update { currentSet ->
+            if (currentSet.contains(faceId)) {
+                currentSet - faceId
+            } else {
+                currentSet + faceId
             }
         }
-        _uiState.setState {
-            copy(
-                hasSelectedFaces = selectedFaceMap.isNotEmpty()
-            )
+        if (_selectedFaceIds.value.isEmpty()) {
+            _uiState.setState {
+                copy(message = "")
+            }
         }
-    }
-
-    fun isFaceSelected(faceId: String): Boolean {
-        return selectedFaceMap.containsKey(faceId)
     }
 
     companion object {
         private const val MAX_SELECTED_FACES = 3
+        private const val TAG = "HomeViewModel"
     }
 }
 
