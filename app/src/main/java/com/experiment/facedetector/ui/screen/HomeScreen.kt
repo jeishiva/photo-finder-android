@@ -71,30 +71,28 @@ import com.experiment.facedetector.viewmodel.HomeViewModel
 
 @Composable
 fun HomeScreen(
-    homeScreenParams: HomeScreenParams,
-    viewModel: HomeViewModel
+    homeScreenParams: HomeScreenParams, homeViewModel: HomeViewModel
 ) {
     var selectedOption by remember { mutableStateOf<TimeRange>(TimeRange.OneMonth) }
     val navController = homeScreenParams.navController
-    val uiState by viewModel.uiState.collectAsState()
-    val selectedFaceIds by viewModel.selectedFaceIds.collectAsState()
-    val actions = remember(navController, viewModel) {
-        HomeUiModel.Actions(onImageSelected = { uri ->
-            viewModel.setSelectedImage(uri)
-        }, onOptionSelected = { option ->
-            selectedOption = option
-        }, onSearchClick = {
-            viewModel.saveSelectedFaces()
-        }, toggleFaceSelection = { faceId ->
-            viewModel.toggleFaceSelection(faceId)
-        })
-    }
-    LaunchedEffect(uiState.selectedImageUri) {
-        uiState.selectedImageUri?.let { selectedUri ->
-            viewModel.handleIntent(
-                HomeIntent.Search(selectedUri, selectedOption)
-            )
-        }
+    val uiState by homeViewModel.uiState.collectAsState()
+    val selectedFaceIds by homeViewModel.selectedFaceIds.collectAsState()
+    val actions = remember(navController, homeViewModel) {
+        HomeUiModel.Actions(
+            onImageSelected = { uri ->
+                homeViewModel.handleIntent(HomeIntent.Search(uri))
+            }, onOptionSelected = { option ->
+                selectedOption = option
+            }, onSearchClick = {
+                homeViewModel.saveSelectedFaces()
+            }, toggleFaceSelection = { faceId ->
+                homeViewModel.toggleFaceSelection(faceId)
+            }, onFaceSelectionSheetShown = {
+                homeViewModel.markShowSelectedFacesHandled()
+            }, onThumbnailClicked = {
+                homeViewModel.handleIntent(HomeIntent.ShowDetectedFaces)
+            }
+        )
     }
     LaunchedEffect(uiState.navigateToSearch) {
         if (uiState.navigateToSearch) {
@@ -102,13 +100,15 @@ fun HomeScreen(
             navController.navigate(
                 AppRoute.Search.createRoute(uiState.sessionId!!)
             )
-            viewModel.markNavigationHandled()
+            homeViewModel.markNavigationHandled()
         }
     }
     val uiModel = HomeUiModel(
         selectedOption = selectedOption, actions = actions, state = uiState
     )
-    HomeContent(uiModel = uiModel, selectedFaceIds)
+    HomeContent(
+        uiModel = uiModel, selectedFaceIds = selectedFaceIds
+    )
 }
 
 @Composable
@@ -149,7 +149,8 @@ fun HomeContent(uiModel: HomeUiModel, selectedFaceIds: Set<String>) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     ImageOrPlaceholderRoundedFullWidth(
-                        imageUri = uiModel.state.selectedImageUri
+                        imageUri = uiModel.state.selectedImageUri,
+                        onThumbnailClick = uiModel.actions.onThumbnailClicked,
                     )
                 }
                 Column(
@@ -169,7 +170,9 @@ fun HomeContent(uiModel: HomeUiModel, selectedFaceIds: Set<String>) {
                     FaceDetectedSheetSection(
                         uiModel = uiModel,
                         selectedFaceIds,
-                        onFaceClick = { uiModel.actions.toggleFaceSelection(it) })
+                        onFaceClick = { uiModel.actions.toggleFaceSelection(it) },
+                        onDismiss = uiModel.actions.onFaceSelectionSheetShown
+                    )
                 }
             }
         }
@@ -178,25 +181,19 @@ fun HomeContent(uiModel: HomeUiModel, selectedFaceIds: Set<String>) {
 
 @Composable
 fun FaceListSection(
-    faces: List<FaceDetectedItem>,
-    selectedFaceIds: Set<String>,
-    onFaceClick: (String) -> Unit
+    faces: List<FaceDetectedItem>, selectedFaceIds: Set<String>, onFaceClick: (String) -> Unit
 ) {
     LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.padding(16.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(16.dp)
     ) {
         items(
             faces.size, key = { faces[it].faceId }) { faceIndex ->
             val item = faces[faceIndex]
             val isSelected = selectedFaceIds.contains(item.faceId)
             FaceListItem(
-                face = item,
-                isSelected = isSelected,
-                onClick = {
+                face = item, isSelected = isSelected, onClick = {
                     onFaceClick(item.faceId)
-                }
-            )
+                })
         }
     }
 }
@@ -236,14 +233,16 @@ fun HomeContentPreview() {
         uiModel = HomeUiModel(
             actions = HomeUiModel.Actions(),
             state = HomeUiState(),
-        ),
-        selectedFaceIds = emptySet()
+        ), selectedFaceIds = emptySet()
     )
 }
 
 @Composable
 fun ImageOrPlaceholderRoundedFullWidth(
-    imageUri: Uri?, modifier: Modifier = Modifier, cornerRadius: Dp = 24.dp
+    imageUri: Uri?,
+    onThumbnailClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    cornerRadius: Dp = 24.dp
 ) {
     Box(
         modifier = modifier
@@ -265,6 +264,7 @@ fun ImageOrPlaceholderRoundedFullWidth(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .fillMaxSize()
+                    .clickable(onClick = onThumbnailClick)
                     .clip(RoundedCornerShape(cornerRadius))
             )
         }
@@ -311,20 +311,15 @@ fun FaceDetectedSheetSection(
     uiModel: HomeUiModel,
     selectedFaceIds: Set<String>,
     onFaceClick: (String) -> Unit,
+    onDismiss: () -> Unit
 ) {
-    if (uiModel.hasFaces.not()) {
-        return
-    }
-    var showBottomSheet by remember { mutableStateOf(true) }
-    if (uiModel.hasFaces && showBottomSheet) {
+    if (uiModel.showSelectedFaces) {
         FaceDetectedBottomSheetDialog(
-            uiModel,
-            selectedFaceIds,
+            uiModel, selectedFaceIds,
             onFaceClick = {
                 onFaceClick(it)
-            },
-            onDismiss = {
-                showBottomSheet = false
+            }, onDismiss = {
+                onDismiss()
             })
     }
 }
@@ -383,8 +378,7 @@ fun TimeRangeBottomSheetDialog(
 ) {
     val sheetState = rememberModalBottomSheetState()
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState
+        onDismissRequest = onDismiss, sheetState = sheetState
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             TimeRange.toList().forEach { option ->

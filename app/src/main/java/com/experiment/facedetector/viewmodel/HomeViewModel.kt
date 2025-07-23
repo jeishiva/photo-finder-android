@@ -2,39 +2,25 @@ package com.experiment.facedetector.viewmodel
 
 import android.net.Uri
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkInfo
-import androidx.work.WorkManager
-import com.experiment.facedetector.common.CAMERA_WORKER_TAG
 import com.experiment.facedetector.common.LogManager
-import com.experiment.facedetector.data.local.worker.CameraImageWorker
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
 import com.experiment.facedetector.domain.entities.LocalImageItem
 import com.experiment.facedetector.domain.usecase.ClearSearchQueryUseCase
 import com.experiment.facedetector.domain.usecase.FaceDetectionUseCase
 import com.experiment.facedetector.domain.usecase.SaveSearchQueryUseCase
 import com.experiment.facedetector.ui.HomeUiState
-import com.experiment.facedetector.ui.TimeRange
 import com.experiment.facedetector.ui.common.UiStateHolder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.collections.map
 
 class HomeViewModel(
     val faceDetectionUseCase: FaceDetectionUseCase,
     val saveFacesUseCase: SaveSearchQueryUseCase,
     val clearFacesUseCase: ClearSearchQueryUseCase,
-    private val workManager: WorkManager
 ) : ViewModel() {
 
     // home screen ui state
@@ -49,21 +35,35 @@ class HomeViewModel(
     fun handleIntent(intent: HomeIntent) {
         when (intent) {
             is HomeIntent.Search -> {
-                detectFaces(
-                    intent.selectedImage, intent.selectedOption
-                )
+                handleSearchIntent(intent)
+            }
+            is HomeIntent.ShowDetectedFaces -> {
+                handleDetectedFacesIntent()
             }
         }
     }
 
+    private fun handleDetectedFacesIntent() {
+        LogManager.d(TAG, "handleDetectedFacesIntent ${uiState.value.faceList.size}")
+        _uiState.setState {
+            copy(showSelectedFaces = true)
+        }
+    }
+
+    fun handleSearchIntent(intent: HomeIntent.Search) {
+        intent.selectedImageUri ?: return
+        setSelectedImage(intent.selectedImageUri)
+        detectFaces(intent.selectedImageUri)
+    }
+
     fun setSelectedImage(selectedImageUri: Uri?) {
-        selectedImageUri ?: return
+        detectFaces(selectedImageUri!!)
         _uiState.setState {
             copy(selectedImageUri = selectedImageUri)
         }
     }
 
-    fun detectFaces(selectedImage: Uri, selectedTimeRange: TimeRange) {
+    fun detectFaces(selectedImage: Uri) {
         LogManager.d("HomeViewModel", "selected image: $selectedImage  $this")
         viewModelScope.launch(Dispatchers.IO) {
             clearSelection()
@@ -142,8 +142,16 @@ class HomeViewModel(
             copy(
                 faceList = faces,
                 isLoading = false,
-                message = "${faces.size} faces found"
+                message = "${faces.size} faces found",
+                showSelectedFaces = true
             )
+        }
+    }
+
+
+    fun markShowSelectedFacesHandled() {
+        _uiState.setState {
+            copy(showSelectedFaces = false)
         }
     }
 
@@ -154,7 +162,9 @@ class HomeViewModel(
     }
 
     fun toggleFaceSelection(faceId: String) {
-        if (_selectedFaceIds.value.contains(faceId).not() && _selectedFaceIds.value.size >= MAX_SELECTED_FACES) {
+        if (_selectedFaceIds.value.contains(faceId)
+                .not() && _selectedFaceIds.value.size >= MAX_SELECTED_FACES
+        ) {
             _uiState.setState {
                 copy(
                     message = "Maximum $MAX_SELECTED_FACES faces selected — oldest removed."
@@ -188,5 +198,6 @@ class HomeViewModel(
 
 
 sealed class HomeIntent {
-    data class Search(val selectedImage: Uri, val selectedOption: TimeRange) : HomeIntent()
+    data class Search(val selectedImageUri: Uri?) : HomeIntent()
+    data object ShowDetectedFaces : HomeIntent()
 }

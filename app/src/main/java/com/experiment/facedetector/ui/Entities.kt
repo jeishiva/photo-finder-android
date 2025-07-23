@@ -47,10 +47,10 @@ data class HomeUiModel(
         val onSearchClick: () -> Unit = {},
         val toggleFaceSelection: (String) -> Unit = {},
         val launchGalleryClicked: () -> Unit = {},
+        val onFaceSelectionSheetShown: () -> Unit = {},
+        val onThumbnailClicked: () -> Unit = {},
         )
-
-    val hasFaces
-        get() = state.faceList.isNotEmpty()
+    val showSelectedFaces = state.showSelectedFaces
 }
 
 @Immutable
@@ -59,7 +59,7 @@ data class HomeUiState(
     val message: String? = null,
     val errorMessage: String? = null,
     val selectedImageUri: Uri? = null,
-    val hasSelectedFaces: Boolean = false,
+    val showSelectedFaces: Boolean = false,
     var navigateToSearch: Boolean = false,
     var sessionId: String? = null,
     val faceList: List<FaceDetectedItem> = emptyList(),
