@@ -5,11 +5,10 @@
     <string name="full_image">Full Image</string>
 
     <string name="home_screen">Home Screen</string>
-    <string name="search_screen">Search</string>
+    <string name="search_screen">Photo Search</string>
     <string name="search_photo_msg">Photo Search — Last %1$s</string>
     <string name="search">Search</string>
     <string name="loading">Loading</string>
-    <string name="searching_for_faces">Searching for faces</string>
-    <string name="search_photos">Search Photos</string>
+    <string name="search_photos">Search by Face</string>
 
 </resources>

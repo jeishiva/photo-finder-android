@@ -117,7 +117,7 @@ fun HomeContent(uiModel: HomeUiModel, selectedFaceIds: Set<String>) {
         Scaffold(
             topBar = {
                 AppBar(
-                    stringResource(R.string.search_photos),
+                    stringResource(R.string.app_name),
                 )
             }, containerColor = Color.Transparent, modifier = Modifier.fillMaxSize()
         ) { innerPadding ->

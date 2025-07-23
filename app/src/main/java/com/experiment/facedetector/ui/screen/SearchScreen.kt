@@ -18,9 +18,12 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.remember
@@ -106,7 +109,6 @@ fun ScreenContent(
                 verticalArrangement = Arrangement.Top
             ) {
                 SearchHeaderCard(faces = uiModel.state.faceList)
-                Spacer(modifier = Modifier.height(8.dp))
                 SearchResultSection(
                     searchResults = searchResultPagedItems,
                     isLoading = uiModel.state.isLoading
@@ -152,15 +154,8 @@ fun SearchHeaderCard(faces: List<FaceSearchItem>) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-
-            ) {
-            Text(
-                text = stringResource(R.string.searching_for_faces),
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.White,
-                modifier = Modifier.align(Alignment.Start)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             FaceListSection(faces = faces)
         }
     }
@@ -176,7 +171,6 @@ private fun SearchResultsContent(
             .padding(16.dp)
             .fillMaxWidth()
     ) {
-        SearchResultsHeader()
         if (shouldShowInitialLoader(searchResults.itemCount, isLoading)) {
             InitialLoadingIndicator()
         } else {
@@ -193,15 +187,6 @@ private fun shouldShowBottomLoader(itemCount: Int, isLoading: Boolean): Boolean 
     return isLoading && itemCount > 0
 }
 
-@Composable
-private fun SearchResultsHeader() {
-    Text(
-        text = "Matching Photos",
-        style = MaterialTheme.typography.titleMedium,
-        color = Color.White
-    )
-    Spacer(modifier = Modifier.height(8.dp))
-}
 
 @Composable
 private fun InitialLoadingIndicator() {
@@ -309,7 +294,6 @@ fun FaceListSection(
 ) {
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.padding(16.dp)
     ) {
         items(faces.size, key = { faces[it].faceId }) { faceIndex ->
             val item = faces[faceIndex]
@@ -322,7 +306,7 @@ fun FaceListSection(
 fun FaceListItem(face: FaceSearchItem) {
     Box(
         modifier = Modifier
-            .size(50.dp)
+            .size(56.dp)
             .clip(CircleShape)
     ) {
         AsyncImage(
@@ -332,6 +316,14 @@ fun FaceListItem(face: FaceSearchItem) {
                 .fillMaxSize()
                 .clip(CircleShape),
             contentScale = ContentScale.Crop
+        )
+        Icon(
+            imageVector = Icons.Default.CheckCircle,
+            contentDescription = "Selected",
+            tint = Color.Green,
+            modifier = Modifier
+                .size(16.dp)
+                .align(Alignment.BottomCenter)
         )
     }
 }
