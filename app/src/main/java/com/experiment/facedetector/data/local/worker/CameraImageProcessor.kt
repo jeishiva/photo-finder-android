@@ -49,7 +49,7 @@ class CameraImageProcessor(
         var page = 0
         var totalProcessed = 0
         var totalSaved = 0
-        val chunkSize = 1
+        val chunkSize = 5
         while (true) {
             val images = queryCameraImages(pageSize, page * pageSize)
             if (images.isEmpty()) {
@@ -60,7 +60,6 @@ class CameraImageProcessor(
                 break
             }
 
-            // Process images in chunks of 5
             val chunks = images.chunked(chunkSize)
             LogManager.d(
                 "CameraImageProcessor",

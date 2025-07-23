@@ -2,8 +2,11 @@ package com.experiment.facedetector.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -12,7 +15,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.experiment.facedetector.R
 import com.experiment.facedetector.common.LogManager
 
@@ -30,18 +35,23 @@ fun StatusMessage(
         isLoading -> {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(16.dp)
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
             ) {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.primary
+                    modifier = Modifier
+                        .size(32.dp),
+                    color = Color.White,
+                    strokeWidth = 4.dp
                 )
+                Spacer(modifier = Modifier.width(16.dp))
                 Text(
                     text = message ?: stringResource(R.string.loading),
                     color = Color.White,
-                    style = MaterialTheme.typography.bodyMedium
+                    fontSize = 16.sp,
+                    style = MaterialTheme.typography.bodyLarge
                 )
             }
         }
@@ -50,16 +60,20 @@ fun StatusMessage(
             Text(
                 text = errorMessage,
                 color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(16.dp),
-                style = MaterialTheme.typography.bodyMedium
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center
             )
         }
 
         !message.isNullOrBlank() -> {
             Text(
                 text = message,
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
                 color = Color.White,
+                textAlign = TextAlign.Center,
+                fontSize = 16.sp,
                 style = MaterialTheme.typography.bodyMedium
             )
         }

@@ -46,10 +46,6 @@ class HomeViewModel(
     private val _selectedFaceIds = MutableStateFlow<Set<String>>(emptySet())
     val selectedFaceIds: StateFlow<Set<String>> = _selectedFaceIds
 
-    init {
-
-    }
-
     fun handleIntent(intent: HomeIntent) {
         when (intent) {
             is HomeIntent.Search -> {
@@ -59,8 +55,6 @@ class HomeViewModel(
             }
         }
     }
-
-
 
     fun setSelectedImage(selectedImageUri: Uri?) {
         selectedImageUri ?: return

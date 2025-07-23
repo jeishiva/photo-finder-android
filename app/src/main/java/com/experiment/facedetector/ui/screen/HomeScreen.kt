@@ -134,7 +134,7 @@ fun HomeContent(uiModel: HomeUiModel, selectedFaceIds: Set<String>) {
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    TimeRangeIcon(onOptionSelected = uiModel.actions.onOptionSelected)
+                    // TimeRangeIcon(onOptionSelected = uiModel.actions.onOptionSelected)
                     SelectPhotoIcon(uiModel.actions.onImageSelected)
                 }
             }
