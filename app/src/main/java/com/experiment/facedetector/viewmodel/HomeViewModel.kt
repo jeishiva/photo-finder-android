@@ -131,7 +131,7 @@ class HomeViewModel(
     fun facesNotFound() {
         _uiState.setState {
             copy(
-                errorMessage = "Faces not found, Select another image with faces",
+                errorMessage = "No faces found",
                 isLoading = false
             )
         }
