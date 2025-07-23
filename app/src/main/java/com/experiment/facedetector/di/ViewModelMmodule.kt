@@ -20,7 +20,7 @@ val viewModelModule = module {
     viewModel {
         SplashViewModel()
     }
-    viewModel { HomeViewModel(get(), get(), get()) }
+    viewModel { HomeViewModel(get(), get(), get(), get()) }
     viewModel { (handle: SavedStateHandle) ->
         SearchViewModel(
             savedStateHandle = handle,

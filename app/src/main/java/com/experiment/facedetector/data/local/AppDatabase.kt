@@ -19,7 +19,7 @@ import com.experiment.facedetector.data.local.entities.SearchFaceEntity
         FaceEntity::class,
         SearchFaceEntity::class
     ],
-    version = 1
+    version = 2
 )
 @TypeConverters(FaceEmbeddingConverters::class)
 abstract class AppDatabase : RoomDatabase() {

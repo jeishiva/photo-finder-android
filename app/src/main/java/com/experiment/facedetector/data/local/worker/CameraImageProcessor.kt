@@ -49,7 +49,7 @@ class CameraImageProcessor(
         var page = 0
         var totalProcessed = 0
         var totalSaved = 0
-        val chunkSize = 5
+        val chunkSize = 1
         while (true) {
             val images = queryCameraImages(pageSize, page * pageSize)
             if (images.isEmpty()) {
@@ -100,7 +100,7 @@ class CameraImageProcessor(
         if (mediaEntities.isNotEmpty()) {
             val faceEmbeddings = getFaceEmbeddings(processedResults)
             LogManager.d("CameraImageProcessor", "face embeddings before saving: ${faceEmbeddings.size}")
-            mediaRepo.insertOrUpdateMedia(mediaEntities, faceEmbeddings)
+             mediaRepo.insertOrUpdateMedia(mediaEntities, faceEmbeddings)
         }
         return BatchResult(processedResults.size, mediaEntities.size)
     }

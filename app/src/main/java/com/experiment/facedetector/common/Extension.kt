@@ -6,6 +6,7 @@ import com.experiment.facedetector.config.ThumbnailConfig
 import com.experiment.facedetector.domain.entities.FaceBoundingBox
 import com.google.mlkit.vision.face.Face
 import java.io.ByteArrayOutputStream
+import kotlinx.coroutines.flow.*
 
 fun Long.toFileName(): String {
     return this.toString().toFileName()
@@ -31,6 +32,20 @@ fun Face.toFaceBoundingBox(): FaceBoundingBox {
         bottom = this.boundingBox.bottom,
     )
 }
+
+
+
+fun <T> Flow<T>.throttleFirst(windowDuration: Long): Flow<T> = channelFlow {
+    var lastEmissionTime = 0L
+    collect { value ->
+        val currentTime = System.currentTimeMillis()
+        if (currentTime - lastEmissionTime >= windowDuration) {
+            lastEmissionTime = currentTime
+            send(value)
+        }
+    }
+}
+
 
 fun Bitmap.toByteArray(): ByteArray {
     val outputStream = ByteArrayOutputStream()

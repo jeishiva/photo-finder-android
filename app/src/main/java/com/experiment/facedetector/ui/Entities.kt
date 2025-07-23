@@ -68,6 +68,7 @@ data class HomeUiState(
 @Immutable
 data class SearchUiState(
     val isLoading: Boolean = false,
+    val isEmptySearchResult: Boolean = false,
     val message: String? = null,
     val errorMessage: String? = "",
     val faceList: List<FaceSearchItem> = emptyList(),

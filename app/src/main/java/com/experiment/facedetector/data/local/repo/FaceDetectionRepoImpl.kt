@@ -26,7 +26,7 @@ class FaceDetectionRepoImpl(
 
     companion object {
         // prevents 00M for large number of faces in the input
-        private const val FACES_BATCH_SIZE = 10
+        private const val FACES_BATCH_SIZE = 4
     }
 
     override suspend fun detectFaces(localImageItem: LocalImageItem): FaceDetectionResult {

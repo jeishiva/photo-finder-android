@@ -2,8 +2,15 @@ package com.experiment.facedetector.viewmodel
 
 import android.net.Uri
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import com.experiment.facedetector.common.CAMERA_WORKER_TAG
 import com.experiment.facedetector.common.LogManager
+import com.experiment.facedetector.data.local.worker.CameraImageWorker
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
 import com.experiment.facedetector.domain.entities.LocalImageItem
 import com.experiment.facedetector.domain.usecase.ClearSearchQueryUseCase
@@ -14,21 +21,34 @@ import com.experiment.facedetector.ui.TimeRange
 import com.experiment.facedetector.ui.common.UiStateHolder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.collections.map
 
 class HomeViewModel(
     val faceDetectionUseCase: FaceDetectionUseCase,
     val saveFacesUseCase: SaveSearchQueryUseCase,
-    val clearFacesUseCase: ClearSearchQueryUseCase
+    val clearFacesUseCase: ClearSearchQueryUseCase,
+    private val workManager: WorkManager
 ) : ViewModel() {
 
+    // home screen ui state
     private val _uiState = UiStateHolder<HomeUiState>(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.state
 
+    // separate state flow for selected face ids - to be used in face selection
+    // decided to use state flow here because it is easy to update and scalable for large dataset
     private val _selectedFaceIds = MutableStateFlow<Set<String>>(emptySet())
     val selectedFaceIds: StateFlow<Set<String>> = _selectedFaceIds
+
+    init {
+
+    }
 
     fun handleIntent(intent: HomeIntent) {
         when (intent) {
@@ -39,6 +59,8 @@ class HomeViewModel(
             }
         }
     }
+
+
 
     fun setSelectedImage(selectedImageUri: Uri?) {
         selectedImageUri ?: return

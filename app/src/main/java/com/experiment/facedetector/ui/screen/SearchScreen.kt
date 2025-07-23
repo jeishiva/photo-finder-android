@@ -11,13 +11,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.remember
@@ -26,6 +29,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import kotlinx.coroutines.flow.MutableStateFlow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -38,6 +42,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import coil.compose.AsyncImage
 import com.experiment.facedetector.R
@@ -58,6 +63,12 @@ fun SearchScreen(searchScreenParams: SearchScreenParams) {
         { navController.popBackStack() }
     }
     val searchResultPagedItems = searchViewModel.pagedSearchFlow.collectAsLazyPagingItems()
+    LaunchedEffect(searchResultPagedItems.loadState) {
+        searchViewModel.updatePagingState(
+            isAppendLoading = searchResultPagedItems.loadState.append == LoadState.Loading,
+            hasItems = searchResultPagedItems.itemCount > 0
+        )
+    }
     val uiState by searchViewModel.uiState.collectAsState()
     val actions = remember(navController, searchScreenParams.searchViewModel) {
         SearchUiModel.Actions(
@@ -96,9 +107,32 @@ fun ScreenContent(
             ) {
                 SearchHeaderCard(faces = uiModel.state.faceList)
                 Spacer(modifier = Modifier.height(8.dp))
-                SearchResultsGrid(searchResults = searchResultPagedItems)
+                SearchResultSection(
+                    searchResults = searchResultPagedItems,
+                    isLoading = uiModel.state.isLoading
+                )
             }
         }
+    }
+}
+
+@Composable
+fun SearchResultSection(
+    searchResults: LazyPagingItems<MediaWithFaces>,
+    isLoading: Boolean
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(8.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF4A495A)),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        SearchResultsContent(
+            searchResults = searchResults,
+            isLoading = isLoading
+        )
     }
 }
 
@@ -133,44 +167,102 @@ fun SearchHeaderCard(faces: List<FaceSearchItem>) {
 }
 
 @Composable
-fun SearchResultsGrid(
-    searchResults: LazyPagingItems<MediaWithFaces>
+private fun SearchResultsContent(
+    searchResults: LazyPagingItems<MediaWithFaces>,
+    isLoading: Boolean
 ) {
-    Card(
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+            .fillMaxWidth()
+    ) {
+        SearchResultsHeader()
+        if (shouldShowInitialLoader(searchResults.itemCount, isLoading)) {
+            InitialLoadingIndicator()
+        } else {
+            SearchResultsGrid(searchResults, isLoading)
+        }
+    }
+}
+
+private fun shouldShowInitialLoader(itemCount: Int, isLoading: Boolean): Boolean {
+    return itemCount == 0 && isLoading
+}
+
+private fun shouldShowBottomLoader(itemCount: Int, isLoading: Boolean): Boolean {
+    return isLoading && itemCount > 0
+}
+
+@Composable
+private fun SearchResultsHeader() {
+    Text(
+        text = "Matching Photos",
+        style = MaterialTheme.typography.titleMedium,
+        color = Color.White
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+}
+
+@Composable
+private fun InitialLoadingIndicator() {
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF4A495A)),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            .height(200.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "Matching Results",
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.White
-            )
+        CircularProgressIndicator(color = Color.White)
+    }
+}
 
-            Spacer(modifier = Modifier.height(8.dp))
 
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 400.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                content = {
-                    items(searchResults.itemCount) { index ->
-                        val item = searchResults[index]
-                        if (item != null) {
-                            println("thumbnailUri: ${item.media.thumbnailUri}")
-                            ThumbnailItem(thumbnailUri = item.media.thumbnailUri)
-                        }
-                    }
+@Composable
+private fun SearchResultsGrid(
+    searchResults: LazyPagingItems<MediaWithFaces>,
+    isLoading: Boolean
+) {
+    println("isAppending in UI: $isLoading")
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(3),
+        modifier = Modifier.fillMaxSize(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        content = {
+            // Main grid items
+            items(
+                count = searchResults.itemCount,
+                key = { index -> searchResults[index]?.media?.mediaId ?: "item-$index" }
+            ) { index ->
+                searchResults[index]?.let { item ->
+                    ThumbnailItem(thumbnailUri = item.media.thumbnailUri)
                 }
-            )
+            }
+            // Bottom loader as separate item
+            if (shouldShowBottomLoader(searchResults.itemCount, isLoading)) {
+                item(
+                    key = "bottom-loader",
+                    span = { GridItemSpan(3) }
+                ) {
+                    GridItemLoader()
+                }
+            }
         }
+    )
+}
+
+@Composable
+private fun GridItemLoader() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(40.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator(
+            color = Color.White,
+            modifier = Modifier.size(32.dp) // Smaller loader
+        )
     }
 }
 
