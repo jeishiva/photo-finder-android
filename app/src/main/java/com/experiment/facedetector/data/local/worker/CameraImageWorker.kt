@@ -11,7 +11,6 @@ class CameraImageWorker(
     workerParams: WorkerParameters,
     private val processor: ICameraProcessor,
 ) : CoroutineWorker(context, workerParams) {
-
     override suspend fun doWork(): Result {
         LogManager.d(message = "image worker started")
         return try {

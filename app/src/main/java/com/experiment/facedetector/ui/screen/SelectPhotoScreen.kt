@@ -66,12 +66,12 @@ import com.experiment.facedetector.ui.theme.AndroidFaceDetectorTheme
 import com.experiment.facedetector.ui.theme.GradientStartMildGrey
 import com.experiment.facedetector.ui.widgets.AppBar
 import com.experiment.facedetector.viewmodel.HomeIntent
-import com.experiment.facedetector.viewmodel.HomeViewModel
+import com.experiment.facedetector.viewmodel.SelectPhotoViewModel
 
 
 @Composable
-fun HomeScreen(
-    homeScreenParams: HomeScreenParams, homeViewModel: HomeViewModel
+fun SelectPhotoScreen(
+    homeScreenParams: HomeScreenParams, homeViewModel: SelectPhotoViewModel
 ) {
     var selectedOption by remember { mutableStateOf<TimeRange>(TimeRange.OneMonth) }
     val navController = homeScreenParams.navController
@@ -84,7 +84,7 @@ fun HomeScreen(
             }, onOptionSelected = { option ->
                 selectedOption = option
             }, onSearchClick = {
-                homeViewModel.saveSelectedFaces()
+                homeViewModel.triggerSearch()
             }, toggleFaceSelection = { faceId ->
                 homeViewModel.toggleFaceSelection(faceId)
             }, onFaceSelectionSheetShown = {
@@ -288,7 +288,7 @@ fun SelectPhotoIcon(onImageSelected: (Uri?) -> Unit) {
             .padding(8.dp))
 }
 
-@Composable
+/*@Composable
 fun TimeRangeIcon(onOptionSelected: (TimeRange) -> Unit) {
     var showBottomSheet by remember { mutableStateOf(false) }
     Icon(
@@ -304,7 +304,7 @@ fun TimeRangeIcon(onOptionSelected: (TimeRange) -> Unit) {
         TimeRangeBottomSheetDialog(
             onOptionSelected = onOptionSelected, onDismiss = { showBottomSheet = false })
     }
-}
+}*/
 
 @Composable
 fun FaceDetectedSheetSection(

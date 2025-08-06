@@ -6,7 +6,7 @@ import androidx.compose.runtime.Stable
 import androidx.navigation.NavHostController
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
 import com.experiment.facedetector.domain.entities.FaceSearchItem
-import com.experiment.facedetector.viewmodel.HomeViewModel
+import com.experiment.facedetector.viewmodel.SelectPhotoViewModel
 import com.experiment.facedetector.viewmodel.SearchViewModel
 
 sealed class TimeRange(val label: String) {
@@ -27,12 +27,13 @@ sealed class TimeRange(val label: String) {
 
 data class HomeScreenParams(
     val navController: NavHostController,
-    val viewModel: HomeViewModel,
+    val viewModel: SelectPhotoViewModel,
 )
 
 data class SearchScreenParams(
     val navController: NavHostController,
     val searchViewModel: SearchViewModel,
+    val selectPhotoViewModel: SelectPhotoViewModel
 )
 
 data class HomeUiModel(

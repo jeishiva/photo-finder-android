@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import com.experiment.facedetector.config.ThumbnailConfig
 import com.experiment.facedetector.domain.entities.FaceBoundingBox
 import com.google.mlkit.vision.face.Face
+import kotlinx.coroutines.Job
 import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.flow.*
 
@@ -59,5 +60,11 @@ fun ByteArray.toBitmap(byteArray: ByteArray): Bitmap? {
     } catch (e: Exception) {
         e.printStackTrace()
         null
+    }
+}
+
+fun Job?.safeCancel() {
+    if (this?.isActive == true) {
+        this.cancel()
     }
 }

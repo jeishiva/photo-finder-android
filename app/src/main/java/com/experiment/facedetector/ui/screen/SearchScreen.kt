@@ -1,5 +1,6 @@
 package com.experiment.facedetector.ui.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -39,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -49,6 +52,7 @@ import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import coil.compose.AsyncImage
 import com.experiment.facedetector.R
+import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.data.local.entities.MediaWithFaces
 import com.experiment.facedetector.domain.entities.FaceSearchItem
 import com.experiment.facedetector.ui.SearchScreenParams
@@ -57,15 +61,23 @@ import com.experiment.facedetector.ui.SearchUiState
 import com.experiment.facedetector.ui.theme.AndroidFaceDetectorTheme
 import com.experiment.facedetector.ui.theme.MildGray
 import com.experiment.facedetector.ui.widgets.AppBar
+import com.experiment.facedetector.viewmodel.SearchViewModel.SearchIntent
+import com.experiment.facedetector.viewmodel.SelectPhotoViewModel
 
 @Composable
 fun SearchScreen(searchScreenParams: SearchScreenParams) {
     val navController = searchScreenParams.navController
     val searchViewModel = searchScreenParams.searchViewModel
+    val selectPhotoViewModel = searchScreenParams.selectPhotoViewModel
     val backClick: () -> Unit = remember {
         { navController.popBackStack() }
     }
     val searchResultPagedItems = searchViewModel.pagedSearchFlow.collectAsLazyPagingItems()
+    LaunchedEffect(Unit) {
+        val result = selectPhotoViewModel.getSearchItems()
+        LogManager.d("SearchViewModel", "Selected faces in search: ${result.size}")
+        searchViewModel.handleIntent(SearchIntent.Start(selectPhotoViewModel.getSearchItems()))
+    }
     LaunchedEffect(searchResultPagedItems.loadState) {
         searchViewModel.updatePagingState(
             isAppendLoading = searchResultPagedItems.loadState.append == LoadState.Loading,
@@ -208,6 +220,8 @@ private fun SearchResultsGrid(
 ) {
     println("isAppending in UI: $isLoading")
 
+    val gridState = rememberLazyGridState()
+
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
         modifier = Modifier.fillMaxSize(),
@@ -292,6 +306,7 @@ fun SearchScreenPreview() {
 fun FaceListSection(
     faces: List<FaceSearchItem>,
 ) {
+    LogManager.d("SearchViewModel", "Faces: ${faces.size}")
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -309,13 +324,11 @@ fun FaceListItem(face: FaceSearchItem) {
             .size(56.dp)
             .clip(CircleShape)
     ) {
-        AsyncImage(
-            model = face.thumbnailPath,
-            contentDescription = null,
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(CircleShape),
-            contentScale = ContentScale.Crop
+        Image(
+            bitmap = face.faceBitmap.asImageBitmap(),
+            contentDescription = "Search Face",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
         )
         Icon(
             imageVector = Icons.Default.CheckCircle,

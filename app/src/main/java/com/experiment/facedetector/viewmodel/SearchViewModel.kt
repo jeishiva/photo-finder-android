@@ -13,11 +13,11 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.experiment.facedetector.common.CAMERA_WORKER_TAG
 import com.experiment.facedetector.common.LogManager
+import com.experiment.facedetector.common.safeCancel
 import com.experiment.facedetector.common.throttleFirst
 import com.experiment.facedetector.data.local.entities.MediaWithFaces
 import com.experiment.facedetector.data.local.worker.CameraImageWorker
 import com.experiment.facedetector.domain.entities.FaceSearchItem
-import com.experiment.facedetector.domain.usecase.GetSearchQueryUseCase
 import com.experiment.facedetector.domain.usecase.facesearch.ExtractEmbeddingsUseCase
 import com.experiment.facedetector.domain.usecase.facesearch.SearchPhotosPagedUseCase
 import com.experiment.facedetector.ui.SearchUiState
@@ -25,6 +25,7 @@ import com.experiment.facedetector.ui.common.UiStateHolder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -41,7 +42,6 @@ import kotlinx.coroutines.launch
 
 class SearchViewModel(
     savedStateHandle: SavedStateHandle,
-    val getSearchQueryUseCase: GetSearchQueryUseCase,
     val searchFaceUseCase: SearchPhotosPagedUseCase,
     val embeddingUseCase: ExtractEmbeddingsUseCase,
     private val workManager: WorkManager,
@@ -49,6 +49,7 @@ class SearchViewModel(
 
     private val _uiState = UiStateHolder<SearchUiState>(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.state
+    var searchJob: Job? = null
 
     private val _workInfoStateFlow = MutableStateFlow<List<WorkInfo>>(emptyList())
     val isWorkerRunning: StateFlow<Boolean> = _workInfoStateFlow
@@ -68,7 +69,7 @@ class SearchViewModel(
                 searchFaceUseCase(embeddings)
             }
             .cachedIn(viewModelScope)
-    private var searchSessionId: String? = savedStateHandle.get<String>("sessionId")
+    private var searchSessionId: String = savedStateHandle.get<String>("sessionId")!!
     private val _isAppendLoading = MutableStateFlow(false)
     private val _hasItems = MutableStateFlow(false)
 
@@ -94,9 +95,21 @@ class SearchViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
 
     init {
-        getSearchQuery(searchSessionId)
         observeWorkStatus()
         observeLoadingStatus()
+    }
+
+    fun searchFaces(searchItems: List<FaceSearchItem>) {
+        LogManager.d(TAG, "Search faces: ${searchItems.size}")
+        searchJob?.safeCancel()
+        searchJob = viewModelScope.launch(Dispatchers.IO) {
+            startLoading()
+            updateSearchItems(searchItems)
+            searchTrigger.value = searchItems.mapNotNull {
+                embeddingUseCase(it.faceBitmap)
+            }
+            endLoading()
+        }
     }
     
     @OptIn(FlowPreview::class)
@@ -134,26 +147,9 @@ class SearchViewModel(
             .launchIn(viewModelScope)
     }
 
-    @OptIn(FlowPreview::class)
-    fun getSearchQuery(sessionId: String?) {
-        println(message = "searchQuery sessionId: $sessionId")
-        if (sessionId == null) {
-            invalidSessionState()
-            return
-        }
-        viewModelScope.launch(Dispatchers.IO) {
-            downloadEmbeddingCompleteState()
-            val searchFaces = getSearchQueryUseCase(sessionId)
-            searchQueryFoundState(searchFaces)
-            for (face in searchFaces) {
-                LogManager.d("SearchViewModel", "search face query: $face")
-            }
-            val embeddings = searchFaces.mapNotNull {
-                embeddingUseCase(it.thumbnailPath)
-            }
-            searchTrigger.value = embeddings
-            downloadingEmbeddingCompleteState()
-            startInitialWork()
+    fun handleIntent(intent: SearchIntent) {
+        when (intent) {
+            is SearchIntent.Start -> searchFaces(intent.searchFaces)
         }
     }
 
@@ -166,7 +162,8 @@ class SearchViewModel(
         }
     }
 
-    fun searchQueryFoundState(searchFaces: List<FaceSearchItem>) {
+    fun updateSearchItems(searchFaces: List<FaceSearchItem>) {
+        LogManager.d(TAG, "updateSearchItems ${searchFaces.size}")
         _uiState.setState {
             copy(
                 faceList = searchFaces,
@@ -174,17 +171,24 @@ class SearchViewModel(
         }
     }
 
-    fun downloadingEmbeddingCompleteState() {
-        _uiState.setState {
-            copy(
-                isLoading = false
-            )
-        }
-    }
-
-    fun downloadEmbeddingCompleteState() {
+    fun startLoading() {
         _uiState.setState {
             copy(isLoading = false)
         }
     }
+
+    fun endLoading() {
+        _uiState.setState {
+            copy(isLoading = false)
+        }
+    }
+
+    sealed class SearchIntent {
+        data class Start(val searchFaces: List<FaceSearchItem>) : SearchIntent()
+    }
+
+    companion object {
+        private const val TAG = "SearchViewModel"
+    }
+
 }

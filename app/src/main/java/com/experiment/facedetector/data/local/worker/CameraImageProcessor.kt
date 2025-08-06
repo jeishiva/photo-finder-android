@@ -59,13 +59,11 @@ class CameraImageProcessor(
                 )
                 break
             }
-
             val chunks = images.chunked(chunkSize)
             LogManager.d(
                 "CameraImageProcessor",
                 "Page $page: Processing ${images.size} images in ${chunks.size} chunks of $chunkSize"
             )
-
             for ((chunkIndex, chunk) in chunks.withIndex()) {
                 val chunkResult = processImageBatchConcurrently(chunk)
                 totalProcessed += chunkResult.processed

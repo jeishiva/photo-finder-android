@@ -15,6 +15,4 @@ val databaseModule = module {
 
     single { get<AppDatabase>().faceDao() }
 
-    single { get<AppDatabase>().searchFaceDao() }
-
 }

@@ -5,10 +5,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
+import com.experiment.facedetector.domain.entities.FaceSearchItem
 import com.experiment.facedetector.domain.entities.LocalImageItem
-import com.experiment.facedetector.domain.usecase.ClearSearchQueryUseCase
+import com.experiment.facedetector.domain.entities.toFaceSearchItem
 import com.experiment.facedetector.domain.usecase.FaceDetectionUseCase
-import com.experiment.facedetector.domain.usecase.SaveSearchQueryUseCase
 import com.experiment.facedetector.ui.HomeUiState
 import com.experiment.facedetector.ui.common.UiStateHolder
 import kotlinx.coroutines.Dispatchers
@@ -16,11 +16,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.UUID
 
-class HomeViewModel(
+class SelectPhotoViewModel(
     val faceDetectionUseCase: FaceDetectionUseCase,
-    val saveFacesUseCase: SaveSearchQueryUseCase,
-    val clearFacesUseCase: ClearSearchQueryUseCase,
 ) : ViewModel() {
 
     // home screen ui state
@@ -37,6 +36,7 @@ class HomeViewModel(
             is HomeIntent.Search -> {
                 handleSearchIntent(intent)
             }
+
             is HomeIntent.ShowDetectedFaces -> {
                 handleDetectedFacesIntent()
             }
@@ -89,33 +89,27 @@ class HomeViewModel(
         }
     }
 
-    fun getSelectedFaces(): List<FaceDetectedItem> {
+    fun getSearchItems(): List<FaceSearchItem> {
         val selectedIds = _selectedFaceIds.value
         val faceList = uiState.value.faceList
         LogManager.d(TAG, "Total faces: ${faceList.size}, Selected: ${selectedIds.size}")
-        return faceList.filter { face -> selectedIds.contains(face.faceId) }
+        val result = faceList.filter {
+            face -> selectedIds.contains(face.faceId)
+        }.map {
+           it.toFaceSearchItem()
+        }
+        LogManager.d(TAG, "Selected faces: ${result.size}")
+        return result
     }
 
-    fun saveSelectedFaces() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val selectedFaces = getSelectedFaces()
-            _uiState.setState {
-                copy(
-                    isLoading = true,
-                    message = "Saving faces..."
-                )
-            }
-            clearFacesUseCase()
-            val sessionId = saveFacesUseCase(selectedFaces)
-            _uiState.setState {
-                copy(
-                    isLoading = false,
-                    message = "",
-                    navigateToSearch = true,
-                    sessionId = sessionId
-                )
-            }
-            LogManager.d(TAG, "activeSessionId: $sessionId")
+    fun triggerSearch() {
+        _uiState.setState {
+            copy(
+                isLoading = false,
+                message = "",
+                navigateToSearch = true,
+                sessionId = UUID.randomUUID().toString()
+            )
         }
     }
 

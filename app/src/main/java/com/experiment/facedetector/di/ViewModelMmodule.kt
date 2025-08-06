@@ -6,7 +6,7 @@ import com.experiment.facedetector.viewmodel.SearchViewModel
 import com.experiment.facedetector.viewmodel.FullImageViewModel
 import com.experiment.facedetector.viewmodel.GalleryViewModel
 import com.experiment.facedetector.viewmodel.SplashViewModel
-import com.experiment.facedetector.viewmodel.HomeViewModel
+import com.experiment.facedetector.viewmodel.SelectPhotoViewModel
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
@@ -20,11 +20,10 @@ val viewModelModule = module {
     viewModel {
         SplashViewModel()
     }
-    viewModel { HomeViewModel(get(), get(), get()) }
+    viewModel { SelectPhotoViewModel(get()) }
     viewModel { (handle: SavedStateHandle) ->
         SearchViewModel(
             savedStateHandle = handle,
-            getSearchQueryUseCase = get(),
             searchFaceUseCase = get(),
             embeddingUseCase = get(),
             workManager = get(),

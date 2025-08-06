@@ -49,6 +49,15 @@ class ExtractEmbeddingsUseCase(
             imageHelper.loadBitmapFromPath(imagePath)?.let { faceBitmap ->
                 getFaceEmbeddingWithSupport(faceBitmap, interpreter)
             }
+        } catch (ex: Exception) {
+            null
+        }
+    }
+
+    suspend operator fun invoke(faceBitmap: Bitmap): FloatArray? {
+        val interpreter = initialize()
+        return try {
+            getFaceEmbeddingWithSupport(faceBitmap, interpreter)
         } catch (e: Exception) {
             null
         }
