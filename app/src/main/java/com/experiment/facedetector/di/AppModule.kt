@@ -5,14 +5,12 @@ import com.experiment.facedetector.image.BitmapHelper
 import org.koin.dsl.module
 
 val appModule = module {
-
     single {
         WorkManager.getInstance(get())
     }
     single {
         BitmapHelper(get())
     }
-
 }
 
 

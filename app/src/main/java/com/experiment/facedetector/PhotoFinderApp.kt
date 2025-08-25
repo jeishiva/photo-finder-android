@@ -9,6 +9,8 @@ import androidx.work.Configuration
 import com.experiment.facedetector.di.faceDetectorModule
 import com.experiment.facedetector.di.faceRecognitionModule
 import com.experiment.facedetector.di.imageLoaderModule
+import com.experiment.facedetector.di.indexerModule
+import com.experiment.facedetector.di.mediaSourceModule
 import com.experiment.facedetector.di.networkModule
 import com.experiment.facedetector.di.processorModule
 import com.experiment.facedetector.di.repositoryModule
@@ -41,6 +43,8 @@ class PhotoFinderApp() : Application(), Configuration.Provider {
                     useCaseModule,
                     viewModelModule,
                     processorModule,
+                    mediaSourceModule,
+                    indexerModule,
                     faceRecognitionModule
                 )
             )

@@ -10,13 +10,14 @@ import com.google.mlkit.vision.face.Face
 import com.google.mlkit.vision.face.FaceDetector
 import android.graphics.Bitmap
 import com.experiment.facedetector.config.FullImageConfig
+import com.experiment.facedetector.domain.source.SourceMediaItem
 import com.experiment.facedetector.image.BitmapHelper
 
 class FaceDetectionProcessor(
     private val faceDetector: FaceDetector,
     private val imageHelper: BitmapHelper
 ) {
-    suspend fun processImage(mediaItem: MediaItem): FaceDetectedMediaItem =
+    suspend fun processImage(mediaItem: SourceMediaItem): FaceDetectedMediaItem =
         withContext(Dispatchers.IO) {
             val bitmap = imageHelper.decodeBitmap(
                 mediaItem.contentUri,

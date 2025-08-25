@@ -22,12 +22,9 @@ class SelectPhotoViewModel(
     val faceDetectionUseCase: FaceDetectionUseCase,
 ) : ViewModel() {
 
-    // home screen ui state
     private val _uiState = UiStateHolder<HomeUiState>(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.state
 
-    // separate state flow for selected face ids - to be used in face selection
-    // decided to use state flow here because it is easy to update and scalable for large dataset
     private val _selectedFaceIds = MutableStateFlow<Set<String>>(emptySet())
     val selectedFaceIds: StateFlow<Set<String>> = _selectedFaceIds
 

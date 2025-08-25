@@ -1,17 +1,15 @@
 package com.experiment.facedetector.di
 
-import com.experiment.facedetector.data.local.worker.CameraImageProcessor
+import android.graphics.Bitmap
+import com.experiment.facedetector.config.FullImageConfig
+import com.experiment.facedetector.data.processing.FaceEmbeddingPipelineImpl
+import com.experiment.facedetector.data.processing.ThumbnailGeneratorImpl
+import com.experiment.facedetector.domain.processing.FaceEmbeddingPipeline
+import com.experiment.facedetector.domain.processing.ThumbnailGenerator
 import com.experiment.facedetector.face.FaceDetectionProcessor
-import com.experiment.facedetector.data.local.worker.CameraImageWorker
-import com.experiment.facedetector.data.local.worker.processor.ICameraProcessor
-import com.experiment.facedetector.data.local.worker.processor.IProcessor
-import org.koin.androidx.workmanager.dsl.worker
 import org.koin.dsl.module
-import org.koin.dsl.single
-import kotlin.math.sin
 
 val processorModule = module {
-
     single {
         FaceDetectionProcessor(
             faceDetector = get(),
@@ -19,21 +17,22 @@ val processorModule = module {
         )
     }
 
-    single<ICameraProcessor> {
-        CameraImageProcessor(
-            context = get(),
-            faceDetectionProcessor = get(),
-            embeddingsUseCase = get(),
-            mediaRepo = get(),
-            imageHelper = get()
+    single<ThumbnailGenerator> {
+        ThumbnailGeneratorImpl(
+            bitmapHelper = get(),
+            thumbnailSize = 200,
+            compressFormat = Bitmap.CompressFormat.PNG,
+            quality = 85
         )
     }
 
-    worker {
-        CameraImageWorker(
-            context = get(),
-            workerParams = get(),
-            processor = get()
+    single<FaceEmbeddingPipeline> {
+        FaceEmbeddingPipelineImpl(
+            bitmapHelper = get(),
+            faceDetectionProcessor = get(),
+            extractEmbeddingsUseCase = get(),
+            targetHeight = FullImageConfig.MAX_HEIGHT,
+            targetWidth = FullImageConfig.MAX_WIDTH
         )
     }
 }

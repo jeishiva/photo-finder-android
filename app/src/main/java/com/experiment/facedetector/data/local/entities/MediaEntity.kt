@@ -1,31 +1,68 @@
 package com.experiment.facedetector.data.local.entities
 
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import androidx.room.Relation
+
+import androidx.room.TypeConverters
+import com.experiment.facedetector.data.local.converter.FloatArrayConverter
 
 @Entity(tableName = "media")
 data class MediaEntity(
     @PrimaryKey val mediaId: Long,
-    val contentUri: String,
-    val thumbnailUri: String
+    // --- source identity ---
+/*    val source: String,                   // e.g. "CAMERA", "MEDIASTORE", "FOLDER", "CLOUD"
+    val sourceStableId: String,   */        // stable ID from that source (e.g. MediaStore _ID, file path, cloud fileId)
+
+    // --- uris / paths ---
+    val contentUri: String,               // where to open the full image
+    val thumbnailUri: String?,            // cached/generated thumbnail on disk
+
+    // --- processed bitmap dimensions ---
+/*    val procWidth: Int,
+    val procHeight: Int,
+    val orientationApplied: Boolean = true,*/
+
+    // --- lifecycle & consistency fields ---
+/*    val processedState: Int = 0,          // 0 = NONE, 1 = QUEUED, 2 = DONE, 3 = FAILED, 4 = STALE
+    val dateModified: Long? = null,       // last modified from source (epoch millis)
+    val isDeleted: Boolean = false,       // marked deleted if source no longer returns it
+    val sizeBytes: Long? = null,          // file size
+    val fingerprint: String? = null       // digest of size+modified+hash for reprocessing checks*/
 )
 
 @Entity(
-    tableName = "face_embedding",
-    foreignKeys = [ForeignKey(
-        entity = MediaEntity::class,
-        parentColumns = ["mediaId"],
-        childColumns = ["mediaOwnerId"],
-        onDelete = ForeignKey.CASCADE
-    )],
-    indices = [Index(value = ["mediaOwnerId"])]
+    tableName = "face",
+    foreignKeys = [
+        ForeignKey(
+            entity = MediaEntity::class,
+            parentColumns = ["mediaId"],
+            childColumns = ["mediaOwnerId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [
+        Index(value = ["mediaOwnerId"])
+    ]
+)
+@TypeConverters(FloatArrayConverter::class)
+data class FaceEntity(
+    @PrimaryKey val faceId: String,     // UUID/ULID
+    val mediaOwnerId: Long,             // FK → media.mediaId
+    val embeddingData: FloatArray,      // stored as BLOB via converter
+    val createdAt: Long = System.currentTimeMillis()
 )
 
-data class FaceEmbeddingEntity(
-    @PrimaryKey val faceId: String,
-    val mediaOwnerId: Long,
-    val embeddingData: FloatArray
-)
 
+data class MediaWithFaces(
+    @Embedded val media: MediaEntity,
+    @Relation(
+        parentColumn = "mediaId",
+        entityColumn = "mediaOwnerId",
+        entity = FaceEntity::class,
+    )
+    val faces: List<FaceEntity>
+)

@@ -1,6 +1,8 @@
 package com.experiment.facedetector.di
 
 import android.content.Context
+import com.experiment.facedetector.domain.processing.FaceEmbeddingExtractor
+import com.experiment.facedetector.domain.usecase.facesearch.TensorFlowFaceEmbeddingExtractor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -12,7 +14,10 @@ import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 
 val faceRecognitionModule = module {
-    single {
+    single<FaceEmbeddingExtractor> {
+        TensorFlowFaceEmbeddingExtractor(get())
+    }
+    single<Deferred<Interpreter>> {
         provideInterpreterAsync(get())
     }
 }
@@ -29,6 +34,7 @@ fun provideInterpreterAsync(context: Context): Deferred<Interpreter> {
                 fileDescriptor.declaredLength
             )
         }
+
         val modelBuffer = loadModelFile(context, "mobile_face_net.tflite")
         Interpreter(modelBuffer)
     }

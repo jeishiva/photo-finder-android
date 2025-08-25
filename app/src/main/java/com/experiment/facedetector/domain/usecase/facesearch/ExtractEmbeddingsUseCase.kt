@@ -1,80 +1,85 @@
-package com.experiment.facedetector.domain.usecase.facesearch
-
 import android.graphics.Bitmap
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.common.toFaceBoundingBox
+import com.experiment.facedetector.domain.entities.FaceEmbedding
 import com.experiment.facedetector.domain.entities.FaceEmbeddingRequest
+import com.experiment.facedetector.domain.processing.FaceEmbeddingExtractor
 import com.experiment.facedetector.image.BitmapHelper
-import kotlinx.coroutines.Deferred
-import org.tensorflow.lite.DataType
-import org.tensorflow.lite.Interpreter
-import org.tensorflow.lite.support.common.ops.NormalizeOp
-import org.tensorflow.lite.support.image.ImageProcessor
-import org.tensorflow.lite.support.image.TensorImage
-import org.tensorflow.lite.support.image.ops.ResizeOp
-import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import java.util.UUID
 
+/**
+ * Use case for extracting face embeddings with pluggable ML backends
+ */
 class ExtractEmbeddingsUseCase(
-    private val interpreterDeferred: Deferred<Interpreter>,
+    private val embeddingExtractor: FaceEmbeddingExtractor,
     private val imageHelper: BitmapHelper,
 ) {
-    private var interpreterInstance: Interpreter? = null
 
-    private suspend fun initialize(): Interpreter {
-        return interpreterInstance ?: interpreterDeferred.await().also {
-            interpreterInstance = it
-        }
-    }
-
-    suspend operator fun invoke(faceEmbeddingRequest: FaceEmbeddingRequest): List<Pair<String, FloatArray>> {
-        val interpreter = initialize()
-        return faceEmbeddingRequest.faces.mapNotNull { face ->
-            val cropped = imageHelper.cropFaceFromBitmap(
-                faceEmbeddingRequest.image,
-                face.toFaceBoundingBox(),
-            )
-            if (cropped != null) {
-                val embedding = getFaceEmbeddingWithSupport(cropped, interpreter)
-                UUID.randomUUID().toString() to embedding
-            } else {
-                null
-            }
-        }
-    }
-
-    suspend operator fun invoke(imagePath: String): FloatArray? {
-        val interpreter = initialize()
+    /**
+     * Extracts embeddings for multiple faces from a face embedding request.
+     * @param request Contains the image and detected face regions
+     * @return List of face embeddings with IDs and vectors
+     */
+    suspend operator fun invoke(request: FaceEmbeddingRequest): Result<List<FaceEmbedding>> {
         return try {
-            imageHelper.loadBitmapFromPath(imagePath)?.let { faceBitmap ->
-                getFaceEmbeddingWithSupport(faceBitmap, interpreter)
-            }
-        } catch (ex: Exception) {
-            null
-        }
-    }
-
-    suspend operator fun invoke(faceBitmap: Bitmap): FloatArray? {
-        val interpreter = initialize()
-        return try {
-            getFaceEmbeddingWithSupport(faceBitmap, interpreter)
+            embeddingExtractor.initialize()
+            val embeddings = extractEmbeddingsForFaces(request)
+            Result.success(embeddings)
         } catch (e: Exception) {
-            null
+            LogManager.e(TAG, "Failed to extract embeddings from request", e)
+            Result.failure(e)
         }
     }
 
-    fun getFaceEmbeddingWithSupport(faceBitmap: Bitmap, interpreter: Interpreter): FloatArray {
-        val tensorImage = TensorImage(DataType.FLOAT32)
-        tensorImage.load(faceBitmap)
-        val processor = ImageProcessor.Builder()
-            .add(ResizeOp(112, 112, ResizeOp.ResizeMethod.BILINEAR))
-            .add(NormalizeOp(127.5f, 128f))
-            .build()
-        val processed = processor.process(tensorImage)
-        LogManager.d(TAG, "embedding faceBitmap size : ${processed.height} x ${processed.width}")
-        val outputBuffer = TensorBuffer.createFixedSize(intArrayOf(1, 128), DataType.FLOAT32)
-        interpreter.run(processed.buffer, outputBuffer.buffer.rewind())
-        return outputBuffer.floatArray
+    /**
+     * Extracts embedding for a single face bitmap.
+     * @param faceBitmap Pre-cropped face image
+     * @return Face embedding vector
+     */
+    suspend operator fun invoke(faceBitmap: Bitmap): Result<FloatArray> {
+        return try {
+            embeddingExtractor.initialize()
+            val embedding = embeddingExtractor.extractEmbedding(faceBitmap)
+            Result.success(embedding)
+        } catch (e: Exception) {
+            LogManager.e(TAG, "Failed to extract embedding from bitmap", e)
+            Result.failure(e)
+        }
+    }
+
+    private suspend fun extractEmbeddingsForFaces(
+        faceEmbeddingRequest: FaceEmbeddingRequest
+    ): List<FaceEmbedding> {
+        return try {
+            faceEmbeddingRequest.faces.mapNotNull { face ->
+                val croppedFace = imageHelper.cropFaceFromBitmap(
+                    faceEmbeddingRequest.image,
+                    face.toFaceBoundingBox()
+                ) ?: run {
+                    LogManager.w(TAG, "Failed to crop face from bitmap")
+                    return@mapNotNull null
+                }
+                val embedding = embeddingExtractor.extractEmbedding(croppedFace)
+                val faceId = generateFaceId()
+                FaceEmbedding(
+                    id = faceId,
+                    embedding = embedding,
+                )
+            }
+        } catch (e: Exception) {
+            LogManager.w(TAG, "Failed to extract embeddings for faces")
+            emptyList()
+        }
+    }
+
+    private fun generateFaceId(): String = UUID.randomUUID().toString()
+
+    /**
+     * Cleanup resources when done
+     */
+    fun cleanup() {
+        embeddingExtractor.cleanup()
+        LogManager.d(TAG, "Use case resources cleaned up")
     }
 
     companion object {

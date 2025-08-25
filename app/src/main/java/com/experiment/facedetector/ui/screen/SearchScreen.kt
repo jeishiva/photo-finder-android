@@ -4,15 +4,12 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -26,17 +23,12 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.remember
-import androidx.paging.PagingData
-import androidx.paging.compose.collectAsLazyPagingItems
-import kotlinx.coroutines.flow.MutableStateFlow
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,7 +41,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
+import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
 import com.experiment.facedetector.R
 import com.experiment.facedetector.common.LogManager
@@ -62,7 +56,7 @@ import com.experiment.facedetector.ui.theme.AndroidFaceDetectorTheme
 import com.experiment.facedetector.ui.theme.MildGray
 import com.experiment.facedetector.ui.widgets.AppBar
 import com.experiment.facedetector.viewmodel.SearchViewModel.SearchIntent
-import com.experiment.facedetector.viewmodel.SelectPhotoViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 
 @Composable
 fun SearchScreen(searchScreenParams: SearchScreenParams) {
@@ -77,12 +71,6 @@ fun SearchScreen(searchScreenParams: SearchScreenParams) {
         val result = selectPhotoViewModel.getSearchItems()
         LogManager.d("SearchViewModel", "Selected faces in search: ${result.size}")
         searchViewModel.handleIntent(SearchIntent.Start(selectPhotoViewModel.getSearchItems()))
-    }
-    LaunchedEffect(searchResultPagedItems.loadState) {
-        searchViewModel.updatePagingState(
-            isAppendLoading = searchResultPagedItems.loadState.append == LoadState.Loading,
-            hasItems = searchResultPagedItems.itemCount > 0
-        )
     }
     val uiState by searchViewModel.uiState.collectAsState()
     val actions = remember(navController, searchScreenParams.searchViewModel) {
@@ -113,8 +101,7 @@ fun ScreenContent(
             containerColor = Color.Transparent,
             modifier = Modifier.fillMaxSize()
         ) { innerPadding ->
-            Column(
-                modifier = Modifier
+            Column(modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -123,7 +110,7 @@ fun ScreenContent(
                 SearchHeaderCard(faces = uiModel.state.faceList)
                 SearchResultSection(
                     searchResults = searchResultPagedItems,
-                    isLoading = uiModel.state.isLoading
+                    isLoading =  searchResultPagedItems.loadState.append == LoadState.Loading
                 )
             }
         }
@@ -199,7 +186,6 @@ private fun shouldShowBottomLoader(itemCount: Int, isLoading: Boolean): Boolean 
     return isLoading && itemCount > 0
 }
 
-
 @Composable
 private fun InitialLoadingIndicator() {
     Box(
@@ -212,17 +198,15 @@ private fun InitialLoadingIndicator() {
     }
 }
 
-
 @Composable
 private fun SearchResultsGrid(
     searchResults: LazyPagingItems<MediaWithFaces>,
     isLoading: Boolean
 ) {
     println("isAppending in UI: $isLoading")
-
     val gridState = rememberLazyGridState()
-
     LazyVerticalGrid(
+        state = gridState,
         columns = GridCells.Fixed(3),
         modifier = Modifier.fillMaxSize(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -260,13 +244,13 @@ private fun GridItemLoader() {
     ) {
         CircularProgressIndicator(
             color = Color.White,
-            modifier = Modifier.size(32.dp) // Smaller loader
+            modifier = Modifier.size(32.dp)
         )
     }
 }
 
 @Composable
-fun ThumbnailItem(thumbnailUri: String) {
+fun ThumbnailItem(thumbnailUri: String?) {
     Box(
         modifier = Modifier
             .aspectRatio(1f)
