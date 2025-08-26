@@ -11,7 +11,7 @@ interface MediaWithFacesDao {
     @Transaction
     @Query("""
         SELECT * FROM media
-        ORDER BY dateModified DESC
+        ORDER BY dateModified DESC, mediaId DESC
     """)
     fun pagingAll(): PagingSource<Int, MediaWithFaces>
 
@@ -23,7 +23,7 @@ interface MediaWithFacesDao {
             WHERE f.mediaOwnerId = m.mediaId
             LIMIT 1
         )
-        ORDER BY dateModified DESC
+        ORDER BY dateModified DESC, mediaId DESC
     """)
     fun pagingFacesOnly(): PagingSource<Int, MediaWithFaces>
 }

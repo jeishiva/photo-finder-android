@@ -212,7 +212,6 @@ private fun SearchResultsGrid(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         content = {
-            // Main grid items
             items(
                 count = searchResults.itemCount,
                 key = { index -> searchResults[index]?.media?.mediaId ?: "item-$index" }
