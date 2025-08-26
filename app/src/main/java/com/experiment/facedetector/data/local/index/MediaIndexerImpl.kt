@@ -173,10 +173,11 @@ class MediaIndexerImpl(
 
     private suspend fun generateAndStoreThumbnail(item: SourceMediaItem) {
         try {
+            LogManager.d(tag, "generating thumbnail for ${item.contentUri}")
             val thumbPath = thumbnails.generateFromFile(
                 filePath = item.contentUri.toString(), mediaId = item.stableId
             )
-
+            LogManager.d(tag, "generated path=$thumbPath")
             if (thumbPath != null) {
                 mediaRepo.updateThumbnail(item.stableId, thumbPath)
             } else {
@@ -194,7 +195,6 @@ class MediaIndexerImpl(
             if (vectors.isEmpty()) {
                 return facesSaved
             }
-
             val faces = ArrayList<FaceEntity>(vectors.size)
             for ((faceId, vector) in vectors) {
                 val face = FaceEntity(
@@ -204,7 +204,6 @@ class MediaIndexerImpl(
                 )
                 faces.add(face)
             }
-
             if (faces.isNotEmpty()) {
                 faceRepo.upsertAll(faces)
                 facesSaved = faces.size

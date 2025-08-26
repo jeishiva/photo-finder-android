@@ -21,7 +21,7 @@ class ThumbnailGeneratorImpl(
 ) : ThumbnailGenerator {
 
     override suspend fun generateFromFile(filePath: String, mediaId: Long): String? {
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             var decoded = null as android.graphics.Bitmap?
             var thumb = null as android.graphics.Bitmap?
             try {

@@ -85,10 +85,6 @@ class BitmapHelper(val context: Context) {
     }
 
 
-    private fun canUseForInBitmap(bitmap: Bitmap, width: Int, height: Int): Boolean {
-        return bitmap.width == width && bitmap.height == height && !bitmap.isRecycled && bitmap.isMutable
-    }
-
     fun decodeBitmap(
         uriString: String,
         targetHeight: Int,
@@ -103,50 +99,139 @@ class BitmapHelper(val context: Context) {
         targetHeight: Int,
         targetWidth: Int
     ): Bitmap {
-        context.contentResolver.openInputStream(contentUri)?.let { inputStream ->
+        LogManager.d(TAG, "Decoding bitmap from $contentUri")
+
+        return context.contentResolver.openInputStream(contentUri)?.use { inputStream ->
             BufferedInputStream(inputStream, 8192).use { bufferedStream ->
-                bufferedStream.mark(Int.MAX_VALUE)
-                val rotationDegrees = getImageRotation(bufferedStream)
-                //  Get dimensions
-                val (originalWidth, originalHeight) = getImageDimensions(bufferedStream)
+                var pooledBitmap: Bitmap? = null
 
-                //  Adjust dimensions for rotation
-                val (adjustedWidth, adjustedHeight) = if (rotationDegrees == 90 || rotationDegrees == 270) {
-                    originalHeight to originalWidth
-                } else {
-                    originalWidth to originalHeight
-                }
+                try {
+                    // Mark the stream for reset capability
+                    bufferedStream.mark(Int.MAX_VALUE)
 
-                // get from pool
-                val sampleSize =
-                    calculateInSampleSize(adjustedWidth, adjustedHeight, targetWidth, targetHeight)
-                val finalWidth = adjustedWidth / sampleSize
-                val finalHeight = adjustedHeight / sampleSize
-                val pooledBitmap = BitmapPool.get(finalWidth, finalHeight, Bitmap.Config.ARGB_8888)
-                // Decode bitmap
-                val options = BitmapFactory.Options().apply {
-                    inSampleSize = sampleSize
-                    inPreferredConfig = Bitmap.Config.ARGB_8888
-                    if (canUseForInBitmap(pooledBitmap, finalWidth, finalHeight)) {
-                        inBitmap = pooledBitmap
-                        inMutable = true
+                    // Get rotation
+                    val rotationDegrees = getImageRotation(bufferedStream)
+                    LogManager.v(TAG, "Image rotation: $rotationDegrees degrees")
+
+                    // Reset stream and get dimensions
+                    bufferedStream.reset()
+                    val (originalWidth, originalHeight) = getImageDimensions(bufferedStream)
+                    LogManager.v(TAG, "Original dimensions: ${originalWidth}x${originalHeight}")
+
+                    // Adjust dimensions for rotation
+                    val (adjustedWidth, adjustedHeight) = if (rotationDegrees == 90 || rotationDegrees == 270) {
+                        originalHeight to originalWidth
+                    } else {
+                        originalWidth to originalHeight
                     }
-                }
+                    LogManager.v(TAG, "Adjusted dimensions: ${adjustedWidth}x${adjustedHeight}")
 
-                // Reset stream to start for decoding
-                bufferedStream.reset()
-                val decodedBitmap = BitmapFactory.decodeStream(bufferedStream, null, options)
-                    ?: throw IllegalArgumentException("Failed to decode bitmap from URI: $contentUri")
+                    // Calculate sample size
+                    val sampleSize = calculateInSampleSize(adjustedWidth, adjustedHeight, targetWidth, targetHeight)
+                    val finalWidth = adjustedWidth / sampleSize
+                    val finalHeight = adjustedHeight / sampleSize
+                    LogManager.v(TAG, "Sample size: $sampleSize, Final dimensions: ${finalWidth}x${finalHeight}")
 
-                val resultBitmap = rotateBitmapIfNeeded(decodedBitmap, rotationDegrees)
-                if (resultBitmap != decodedBitmap) {
-                    BitmapPool.put(decodedBitmap)
+                    // Try to get pooled bitmap
+                    pooledBitmap = BitmapPool.get(finalWidth, finalHeight, Bitmap.Config.ARGB_8888)
+
+                    // Setup decode options
+                    val options = BitmapFactory.Options().apply {
+                        inSampleSize = sampleSize
+                        inPreferredConfig = Bitmap.Config.ARGB_8888
+                        inMutable = true
+                        inBitmap = null // Default to null
+                    }
+
+                    // Check if we can use the pooled bitmap
+                    if (!pooledBitmap.isRecycled) {
+                        val canReuse = canUseForInBitmap(pooledBitmap, finalWidth, finalHeight)
+                        if (canReuse) {
+                            LogManager.v(TAG, "Using pooled bitmap: ${pooledBitmap.width}x${pooledBitmap.height}")
+                            options.inBitmap = pooledBitmap
+                        } else {
+                            LogManager.v(TAG, "Pooled bitmap not compatible - returning to pool")
+                            BitmapPool.put(pooledBitmap)
+                            pooledBitmap = null
+                        }
+                    } else {
+                        LogManager.v(TAG, "No suitable pooled bitmap available")
+                        pooledBitmap.let { BitmapPool.put(it) }
+                        pooledBitmap = null
+                    }
+
+                    // Reset stream to start for decoding
+                    bufferedStream.reset()
+
+                    // Decode bitmap with fallback strategy
+                    val decodedBitmap = try {
+                        BitmapFactory.decodeStream(bufferedStream, null, options)
+                    } catch (e: IllegalArgumentException) {
+                        LogManager.e(TAG, "Failed to decode with pooled bitmap, retrying without pool", e)
+
+                        // Return pooled bitmap to pool
+                        pooledBitmap?.let { BitmapPool.put(it) }
+                        pooledBitmap = null
+
+                        // Retry without pooled bitmap
+                        options.inBitmap = null
+                        bufferedStream.reset()
+                        BitmapFactory.decodeStream(bufferedStream, null, options)
+                    } ?: throw IllegalArgumentException("Failed to decode bitmap from URI: $contentUri")
+
+                    LogManager.v(TAG, "Decoded bitmap: ${decodedBitmap.width}x${decodedBitmap.height}")
+
+                    // Apply rotation if needed
+                    val resultBitmap = rotateBitmapIfNeeded(decodedBitmap, rotationDegrees)
+
+                    // Clean up if rotation created a new bitmap
+                    if (resultBitmap != decodedBitmap) {
+                        BitmapPool.put(decodedBitmap)
+                    }
+
+                    LogManager.d(TAG, "Successfully decoded and processed bitmap")
+                    resultBitmap
+
+                } catch (e: Exception) {
+                    // Clean up pooled bitmap on error
+                    pooledBitmap?.let {
+                        if (!it.isRecycled) {
+                            BitmapPool.put(it)
+                        }
+                    }
+                    throw e
                 }
-                return resultBitmap
             }
         } ?: throw IOException("Unable to open input stream for URI: $contentUri")
     }
 
+    // Enhanced compatibility check
+    private fun canUseForInBitmap(
+        candidate: Bitmap?,
+        targetWidth: Int,
+        targetHeight: Int
+    ): Boolean {
+        if (candidate == null || candidate.isRecycled) {
+            return false
+        }
+        // Check if bitmap has enough space
+        val candidateByteCount = candidate.allocationByteCount
+        val targetByteCount = targetWidth * targetHeight * getBytesPerPixel(candidate.config ?: Bitmap.Config.ARGB_8888)
+        val canReuse = candidateByteCount >= targetByteCount
+        LogManager.v(TAG, "Bitmap reuse check - Candidate: ${candidate.width}x${candidate.height} (${candidateByteCount} bytes), " +
+                "Target: ${targetWidth}x${targetHeight} (${targetByteCount} bytes), Can reuse: $canReuse")
+        return canReuse
+    }
+
+    private fun getBytesPerPixel(config: Bitmap.Config): Int {
+        return when (config) {
+            Bitmap.Config.ARGB_8888 -> 4
+            Bitmap.Config.RGB_565 -> 2
+            Bitmap.Config.ARGB_4444 -> 2
+            Bitmap.Config.ALPHA_8 -> 1
+            else -> 4
+        }
+    }
     /**
      * Retrieves the rotation angle from EXIF metadata using a provided stream.
      *
@@ -349,6 +434,10 @@ class BitmapHelper(val context: Context) {
         } catch (e: Exception) {
             null
         }
+    }
+
+    companion object {
+        private const val TAG = "BitmapHelper"
     }
 
 }
