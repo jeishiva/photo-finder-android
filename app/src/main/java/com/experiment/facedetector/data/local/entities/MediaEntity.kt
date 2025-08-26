@@ -61,8 +61,7 @@ data class MediaWithFaces(
     @Embedded val media: MediaEntity,
     @Relation(
         parentColumn = "mediaId",
-        entityColumn = "mediaOwnerId",
-        entity = FaceEntity::class,
+        entityColumn = "mediaOwnerId"
     )
     val faces: List<FaceEntity>
 )

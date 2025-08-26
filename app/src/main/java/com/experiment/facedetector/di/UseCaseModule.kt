@@ -2,6 +2,7 @@ package com.experiment.facedetector.di
 
 import ExtractEmbeddingsUseCase
 import com.experiment.facedetector.domain.usecase.FaceDetectionUseCase
+import com.experiment.facedetector.domain.usecase.facesearch.SearchPhotosPagedUseCase
 import org.koin.dsl.module
 
 val useCaseModule = module {
@@ -13,6 +14,11 @@ val useCaseModule = module {
         ExtractEmbeddingsUseCase(
             embeddingExtractor = get(),
             imageHelper = get()
+        )
+    }
+    factory<SearchPhotosPagedUseCase> {
+        SearchPhotosPagedUseCase(
+            mediaPagingRepository = get(),
         )
     }
 }

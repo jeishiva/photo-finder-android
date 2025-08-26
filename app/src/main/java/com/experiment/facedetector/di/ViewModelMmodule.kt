@@ -18,6 +18,7 @@ val viewModelModule = module {
             savedStateHandle = handle,
             mediaIndexerFactory = get(),
             embeddingUseCase = get(),
+            searchPhotosPagedUseCase = get(),
         )
     }
 }

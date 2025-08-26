@@ -2,6 +2,7 @@ package com.experiment.facedetector.image
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Bitmap.createScaledBitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
@@ -36,7 +37,7 @@ class BitmapHelper(val context: Context) {
                 out.flush()
             }
             val sizeInKB = file.length() / 1024
-            println("Saved thumbnail file size: $sizeInKB KB")
+            LogManager.d(message = "Saved thumbnail file size: $sizeInKB KB")
             return file
         } catch (e: IOException) {
             e.printStackTrace()
@@ -60,8 +61,9 @@ class BitmapHelper(val context: Context) {
     private fun Bitmap.CompressFormat.toFileExtension(): String = when (this) {
         Bitmap.CompressFormat.JPEG -> ".jpg"
         Bitmap.CompressFormat.PNG -> ".png"
-        Bitmap.CompressFormat.WEBP_LOSSY, Bitmap.CompressFormat.WEBP_LOSSLESS, Bitmap.CompressFormat.WEBP -> ".webp"
-        else -> throw IllegalArgumentException("Unsupported CompressFormat: $this")
+        Bitmap.CompressFormat.WEBP_LOSSY,
+        Bitmap.CompressFormat.WEBP_LOSSLESS,
+        Bitmap.CompressFormat.WEBP -> ".webp"
     }
 
     fun drawFaceBoundingBoxes(
@@ -288,11 +290,42 @@ class BitmapHelper(val context: Context) {
     }
 
     fun scaleFromPool(source: Bitmap, targetWidth: Int, targetHeight: Int): Bitmap {
-        return try {
-            val pooledBitmap =
-                BitmapPool.get(targetWidth, targetHeight, source.config ?: Bitmap.Config.ARGB_8888)
+        // Input validation
+        if (source.isRecycled) {
+            throw IllegalArgumentException("Source bitmap is recycled")
+        }
+        if (targetWidth <= 0 || targetHeight <= 0) {
+            throw IllegalArgumentException("Target dimensions must be positive: ${targetWidth}x${targetHeight}")
+        }
 
-            if (pooledBitmap.width == targetWidth && pooledBitmap.height == targetHeight && !pooledBitmap.isRecycled) {
+        // Check if scaling is needed
+        if (source.width == targetWidth && source.height == targetHeight) {
+            LogManager.v("BitmapScale", "No scaling needed, returning original bitmap")
+            return source
+        }
+
+        var pooledBitmap: Bitmap? = null
+
+        return try {
+            // Get pooled bitmap
+            pooledBitmap = BitmapPool.get(targetWidth, targetHeight, source.config ?: Bitmap.Config.ARGB_8888)
+
+            // Check if pooled bitmap is usable
+            val canUsePooledBitmap = pooledBitmap?.let { bitmap ->
+                !bitmap.isRecycled &&
+                        bitmap.isMutable &&
+                        bitmap.width == targetWidth &&
+                        bitmap.height == targetHeight &&
+                        bitmap.config == (source.config ?: Bitmap.Config.ARGB_8888)
+            } ?: false
+
+            if (canUsePooledBitmap) {
+                LogManager.v("BitmapScale", "Using pooled bitmap for scaling: ${targetWidth}x${targetHeight}")
+
+                // Clear the pooled bitmap first
+                pooledBitmap.eraseColor(Color.TRANSPARENT)
+
+                // Create canvas and draw scaled bitmap
                 val canvas = Canvas(pooledBitmap)
                 val matrix = Matrix().apply {
                     setScale(
@@ -300,19 +333,60 @@ class BitmapHelper(val context: Context) {
                         targetHeight.toFloat() / source.height
                     )
                 }
-                canvas.drawBitmap(source, matrix, null)
+
+                // Use high quality paint for better scaling
+                val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+                canvas.drawBitmap(source, matrix, paint)
+
+                LogManager.v("BitmapScale", "Successfully scaled using pooled bitmap")
                 pooledBitmap
+
             } else {
-                // Fallback to creating new bitmap
+                // Return unusable pooled bitmap to pool
+                pooledBitmap?.let {
+                    if (!it.isRecycled) {
+                        BitmapPool.put(it)
+                    }
+                }
+                pooledBitmap = null
+
+                LogManager.v("BitmapScale", "Pooled bitmap not suitable, creating new scaled bitmap")
+                createScaledBitmap(source, targetWidth, targetHeight)
+            }
+
+        } catch (e: Exception) {
+            LogManager.e("BitmapScale", "Failed to scale bitmap using pool", e)
+            // Clean up pooled bitmap on error
+            pooledBitmap?.let { bitmap ->
+                if (!bitmap.isRecycled) {
+                    try {
+                        BitmapPool.put(bitmap)
+                    } catch (cleanupException: Exception) {
+                        LogManager.e("BitmapScale", "Failed to return bitmap to pool during cleanup", cleanupException)
+                    }
+                }
+            }
+            // Fallback to direct creation
+            createScaledBitmap(source, targetWidth, targetHeight)
+        }
+    }
+    /**
+     * Creates a new scaled bitmap using the most appropriate method
+     */
+    private fun createScaledBitmap(source: Bitmap, targetWidth: Int, targetHeight: Int): Bitmap {
+        return try {
+            // Use Bitmap.createScaledBitmap for better quality and performance
+            source.scale(targetWidth, targetHeight)
+        } catch (e: OutOfMemoryError) {
+            LogManager.e("BitmapScale", "OutOfMemoryError creating scaled bitmap, trying alternative method", e)
+            // Fallback: try with filtering disabled
+            try {
+                source.scale(targetWidth, targetHeight, false)
+            } catch (e2: OutOfMemoryError) {
+                LogManager.e("BitmapScale", "Still out of memory, using extension function", e2)
+                // Last resort: use extension function (assuming you have this)
                 source.scale(targetWidth, targetHeight)
             }
-        } catch (e: Exception) {
-            LogManager.e(
-                "BitmapScale",
-                "Failed to scale bitmap using pool, falling back to direct creation",
-                e
-            )
-            source.scale(targetWidth, targetHeight)
         }
     }
 

@@ -5,38 +5,63 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.common.safeCancel
 import com.experiment.facedetector.data.local.entities.MediaWithFaces
 import com.experiment.facedetector.di.MediaIndexerFactory
 import com.experiment.facedetector.domain.entities.FaceSearchItem
+import com.experiment.facedetector.domain.filter.MediaFilter
 import com.experiment.facedetector.domain.source.MediaSourceType
+import com.experiment.facedetector.domain.usecase.facesearch.SearchPhotosPagedUseCase
 import com.experiment.facedetector.ui.SearchUiState
 import com.experiment.facedetector.ui.common.UiStateHolder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class SearchViewModel(
     savedStateHandle: SavedStateHandle,
     val embeddingUseCase: ExtractEmbeddingsUseCase,
+    val searchPhotosPagedUseCase: SearchPhotosPagedUseCase,
     val mediaIndexerFactory: MediaIndexerFactory
 ) : ViewModel() {
 
     private val _uiState = UiStateHolder<SearchUiState>(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.state
-    var searchJob: Job? = null
-    private val searchTrigger = MutableStateFlow<List<FloatArray>>(emptyList())
 
+    var searchJob: Job? = null
+
+    private val searchTrigger = MutableStateFlow<List<FloatArray>>(emptyList())
     private var searchSessionId: String = savedStateHandle.get<String>("sessionId")!!
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val pagedSearchFlow: Flow<PagingData<MediaWithFaces>> =  flowOf<PagingData<MediaWithFaces>>(PagingData.empty())
+
+    private val _filter = MutableStateFlow(MediaFilter())
+    val filter: StateFlow<MediaFilter> = _filter.asStateFlow()
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val pagedSearchFlow: StateFlow<PagingData<MediaWithFaces>> =
+        _filter
+            .flatMapLatest { searchPhotosPagedUseCase(it) }
+            .cachedIn(viewModelScope)
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Lazily,
+                initialValue = PagingData.empty()
+            )
+
+    fun setFacesOnly(enabled: Boolean) {
+        _filter.update { it.copy(facesOnly = enabled) }
+    }
 
     fun searchFaces(searchItems: List<FaceSearchItem>) {
         LogManager.d(TAG, "Search faces: ${searchItems.size}")
@@ -76,6 +101,7 @@ class SearchViewModel(
         when (intent) {
             is SearchIntent.Start -> {
                 searchFaces(intent.searchFaces)
+                setFacesOnly(true)
             }
         }
     }

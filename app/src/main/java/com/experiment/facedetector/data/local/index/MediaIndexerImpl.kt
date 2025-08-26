@@ -84,7 +84,6 @@ class MediaIndexerImpl(
         var totalFaces = 0
         for ((index, chunk) in chunks.withIndex()) {
             LogManager.d(tag, "processing chunk $index size=${chunk.size}")
-
             val results = processChunkWithFlow(chunk).toList()
             val facesInChunk = results.sumOf { it.facesSaved }
             totalFaces += facesInChunk
@@ -142,7 +141,6 @@ class MediaIndexerImpl(
             )
             rows.add(row)
         }
-
         try {
             mediaRepo.upsertAll(rows)
         } catch (e: Exception) {
