@@ -6,6 +6,9 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.experiment.facedetector.data.local.entities.MediaEntity
+import com.experiment.facedetector.data.local.entities.MediaIdFingerprintRow
+import com.experiment.facedetector.data.local.entities.StableIdFingerprintRow
+import com.experiment.facedetector.data.local.entities.StableIdToMediaIdRow
 
 @Dao
 interface MediaDao {
@@ -32,5 +35,30 @@ interface MediaDao {
         WHERE mediaId = :mediaId
     """)
     suspend fun updateThumbnail(mediaId: Long, thumbnailUri: String?)
+
+    @Query("SELECT mediaId, fingerprint FROM media WHERE mediaId IN (:ids)")
+    suspend fun getFingerprints(ids: List<Long>): List<MediaIdFingerprintRow>
+
+
+    @Query("""
+        SELECT sourceStableId, mediaId
+        FROM media
+        WHERE source = :source
+          AND sourceStableId IN (:stableIds)
+    """)
+    suspend fun getIdsForSourceRows(
+        source: String,
+        stableIds: List<String>
+    ): List<StableIdToMediaIdRow>
+
+    @Query("""
+        SELECT sourceStableId, fingerprint
+        FROM media
+        WHERE source = :source AND sourceStableId IN (:stableIds)
+    """)
+    suspend fun getFingerprintsBySourceRows(
+        source: String,
+        stableIds: List<String>
+    ): List<StableIdFingerprintRow>
 
 }

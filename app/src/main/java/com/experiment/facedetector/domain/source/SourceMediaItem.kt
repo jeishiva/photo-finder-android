@@ -4,5 +4,7 @@ import android.net.Uri
 
 data class SourceMediaItem(
     val stableId: Long,
-    val contentUri: Uri
+    val contentUri: Uri,
+    val fileSize : Long,
+    val lastModifiedTime : Long,
 )

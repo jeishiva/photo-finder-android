@@ -18,7 +18,8 @@ val indexerModule = module {
             mediaRepo = get(),
             faceRepo = get(),
             embeddings = get(),
-            thumbnails = get()
+            thumbnails = get(),
+            fingerPrint = get(),
         )
     }
 

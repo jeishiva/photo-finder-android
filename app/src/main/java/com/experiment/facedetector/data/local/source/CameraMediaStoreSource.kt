@@ -19,12 +19,11 @@ class CameraMediaStoreSource(
     override suspend fun list(offset: Int, limit: Int): List<SourceMediaItem> {
         LogManager.d(TAG, "camera list ($offset, $limit)")
         val results = mutableListOf<SourceMediaItem>()
-
         val projection = arrayOf(
             MediaStore.Images.Media._ID,
-            MediaStore.Images.Media.RELATIVE_PATH
+            MediaStore.MediaColumns.SIZE,
+            MediaStore.MediaColumns.DATE_MODIFIED
         )
-
         val args = Bundle().apply {
             putStringArray(
                 ContentResolver.QUERY_ARG_SORT_COLUMNS,
@@ -45,26 +44,36 @@ class CameraMediaStoreSource(
                 arrayOf("%DCIM/Camera%")
             )
         }
-
         val uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-
         val resolver = context.contentResolver
         val cursor = resolver.query(uri, projection, args, null)
-
         cursor?.use { c ->
             val idCol = c.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+            val sizeCol = c.getColumnIndex(MediaStore.MediaColumns.SIZE)
+            val modCol  = c.getColumnIndex(MediaStore.MediaColumns.DATE_MODIFIED)
             while (c.moveToNext()) {
                 val id = c.getLong(idCol)
                 val contentUri = ContentUris.withAppendedId(uri, id)
+                val sizeBytes: Long = if (sizeCol >= 0) {
+                    c.getLong(sizeCol)
+                } else {
+                    0
+                }
+                val modifiedSeconds: Long = if (modCol >= 0) {
+                    c.getLong(modCol)
+                } else {
+                    0
+                }
                 results.add(
                     SourceMediaItem(
                         stableId = id,
-                        contentUri = contentUri
+                        contentUri = contentUri,
+                        fileSize = sizeBytes,
+                        lastModifiedTime = modifiedSeconds
                     )
                 )
             }
         }
-
         return results
     }
 

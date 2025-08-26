@@ -24,12 +24,4 @@ interface MediaIndexer {
      */
     suspend fun refreshPage(offset: Int, limit: Int)
 
-    /**
-     * Process a single media item by its stable id from the source.
-     * Useful for retrying failed items or targeted updates.
-     *
-     * @param mediaId The stable id of the media item in the index.
-     * @return true if processed successfully, false otherwise.
-     */
-    suspend fun processSingleItem(mediaId: Long): Boolean
 }

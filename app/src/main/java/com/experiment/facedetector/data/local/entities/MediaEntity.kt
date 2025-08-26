@@ -12,26 +12,28 @@ import com.experiment.facedetector.data.local.converter.FloatArrayConverter
 
 @Entity(tableName = "media")
 data class MediaEntity(
-    @PrimaryKey val mediaId: Long,
+    @PrimaryKey(autoGenerate = true) val mediaId: Long = 0L,
     // --- source identity ---
-/*    val source: String,                   // e.g. "CAMERA", "MEDIASTORE", "FOLDER", "CLOUD"
-    val sourceStableId: String,   */        // stable ID from that source (e.g. MediaStore _ID, file path, cloud fileId)
+    val source: String,                   // e.g. "CAMERA", "MEDIASTORE", "FOLDER", "CLOUD"
+    val sourceStableId: String,         // stable ID from that source (e.g. MediaStore _ID, file path, cloud fileId)
 
     // --- uris / paths ---
     val contentUri: String,               // where to open the full image
     val thumbnailUri: String?,            // cached/generated thumbnail on disk
+    val dateModified: Long? = null,       // last modified from source (epoch millis)
+    val sizeBytes: Long? = null,          // file size
+    val fingerprint: String? = null       // digest of size+modified+hash for reprocessing checks*/
 
     // --- processed bitmap dimensions ---
-/*    val procWidth: Int,
+/*  val procWidth: Int,
     val procHeight: Int,
     val orientationApplied: Boolean = true,*/
 
     // --- lifecycle & consistency fields ---
-/*    val processedState: Int = 0,          // 0 = NONE, 1 = QUEUED, 2 = DONE, 3 = FAILED, 4 = STALE
-    val dateModified: Long? = null,       // last modified from source (epoch millis)
+/*  val processedState: Int = 0,          // 0 = NONE, 1 = QUEUED, 2 = DONE, 3 = FAILED, 4 = STALE
     val isDeleted: Boolean = false,       // marked deleted if source no longer returns it
-    val sizeBytes: Long? = null,          // file size
-    val fingerprint: String? = null       // digest of size+modified+hash for reprocessing checks*/
+
+ */
 )
 
 @Entity(
@@ -50,8 +52,8 @@ data class MediaEntity(
 )
 @TypeConverters(FloatArrayConverter::class)
 data class FaceEntity(
-    @PrimaryKey val faceId: String,     // UUID/ULID
-    val mediaOwnerId: Long,             // FK → media.mediaId
+    @PrimaryKey val faceId: String,
+    val mediaOwnerId: Long,
     val embeddingData: FloatArray,      // stored as BLOB via converter
     val createdAt: Long = System.currentTimeMillis()
 )

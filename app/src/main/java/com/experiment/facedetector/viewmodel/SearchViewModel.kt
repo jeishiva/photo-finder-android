@@ -8,6 +8,7 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.common.safeCancel
+import com.experiment.facedetector.common.throttleFirst
 import com.experiment.facedetector.data.local.entities.MediaWithFaces
 import com.experiment.facedetector.di.MediaIndexerFactory
 import com.experiment.facedetector.domain.entities.FaceSearchItem
@@ -23,6 +24,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -51,6 +53,8 @@ class SearchViewModel(
     @OptIn(ExperimentalCoroutinesApi::class)
     val pagedSearchFlow: StateFlow<PagingData<MediaWithFaces>> =
         _filter
+            .throttleFirst(200)
+            .distinctUntilChanged()
             .flatMapLatest { searchPhotosPagedUseCase(it) }
             .cachedIn(viewModelScope)
             .stateIn(

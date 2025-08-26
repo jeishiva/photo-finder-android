@@ -3,13 +3,14 @@ package com.experiment.facedetector.data.local.index
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.data.local.entities.FaceEntity
 import com.experiment.facedetector.data.local.entities.MediaEntity
+import com.experiment.facedetector.domain.entities.toMediaEntity
 import com.experiment.facedetector.domain.index.MediaIndexer
 import com.experiment.facedetector.domain.processing.FaceEmbeddingPipeline
 import com.experiment.facedetector.domain.processing.ThumbnailGenerator
 import com.experiment.facedetector.domain.repo.FaceRepository
+import com.experiment.facedetector.domain.repo.MediaFingerPrint
 import com.experiment.facedetector.domain.repo.MediaRepository
 import com.experiment.facedetector.domain.source.MediaSource
-import com.experiment.facedetector.domain.source.MediaSourceWithLookup
 import com.experiment.facedetector.domain.source.SourceMediaItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,103 +21,67 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withContext
 
-/**
- * MediaIndexManager implementation that:
- *  - pages the MediaSource (offset/limit)
- *  - upserts media
- *  - generates thumbnails
- *  - extracts embeddings and upserts faces
- *  - processes each page in chunks, with flow-based concurrency
- */
 class MediaIndexerImpl(
     private val source: MediaSource,
     private val mediaRepo: MediaRepository,
     private val faceRepo: FaceRepository,
     private val embeddings: FaceEmbeddingPipeline,
     private val thumbnails: ThumbnailGenerator,
-    private val pageSize: Int = 100,
-    private val chunkSize: Int = 5,
-    private val maxConcurrency: Int = 3
+    private val fingerPrint: MediaFingerPrint,
+    private val pageSize: Int = 50,
+    private val chunkSize: Int = 10,
+    private val maxConcurrency: Int = 5
 ) : MediaIndexer {
 
     private val tag = "MediaIndexManager"
 
     override suspend fun refreshAll() = withContext(Dispatchers.IO) {
-        LogManager.d(
-            tag,
-            "refreshAll start: pageSize=$pageSize, chunkSize=$chunkSize, concurrency=$maxConcurrency"
-        )
+        LogManager.d(tag, "refreshAll start: pageSize=$pageSize, chunkSize=$chunkSize, concurrency=$maxConcurrency")
         var offset = 0
         var totalItems = 0
         var totalFaces = 0
+
         while (true) {
             val page = loadPage(offset, pageSize)
-            if (page.isEmpty()) {
-                break
-            }
-            upsertMediaRows(page)
-            val chunks = page.chunked(chunkSize)
+            if (page.isEmpty()) break
+            val plan = upsertAndDetectChanges(page) // ids + changed subset
+            val chunks = plan.changedItems.chunked(chunkSize)
             for ((index, chunk) in chunks.withIndex()) {
                 LogManager.d(tag, "processing chunk $index size=${chunk.size} offset=$offset")
-                val results = processChunkWithFlow(chunk).toList()
+                val results = processChunkWithFlow(chunk, plan.idByStable).toList()
                 val facesInChunk = results.sumOf { it.facesSaved }
                 totalItems += results.size
                 totalFaces += facesInChunk
-                LogManager.d(
-                    tag,
-                    "chunk $index done: items=${results.size}, facesSaved=$facesInChunk"
-                )
+                LogManager.d(tag, "chunk $index done: items=${results.size}, facesSaved=$facesInChunk")
             }
             offset += page.size
         }
+
         LogManager.d(tag, "refreshAll complete: totalItems=$totalItems, totalFaces=$totalFaces")
     }
 
     override suspend fun refreshPage(offset: Int, limit: Int) = withContext(Dispatchers.IO) {
         LogManager.d(tag, "refreshPage start: offset=$offset, limit=$limit")
+
         val page = loadPage(offset, limit)
         if (page.isEmpty()) {
             LogManager.d(tag, "refreshPage: empty page")
             return@withContext
         }
-        upsertMediaRows(page)
-        val chunks = page.chunked(chunkSize)
+
+        val plan = upsertAndDetectChanges(page)
+
+        val chunks = plan.changedItems.chunked(chunkSize)
         var totalFaces = 0
         for ((index, chunk) in chunks.withIndex()) {
             LogManager.d(tag, "processing chunk $index size=${chunk.size}")
-            val results = processChunkWithFlow(chunk).toList()
+            val results = processChunkWithFlow(chunk, plan.idByStable).toList()
             val facesInChunk = results.sumOf { it.facesSaved }
             totalFaces += facesInChunk
             LogManager.d(tag, "chunk $index done: items=${results.size}, facesSaved=$facesInChunk")
         }
+
         LogManager.d(tag, "refreshPage complete: facesSaved=$totalFaces")
-    }
-
-    override suspend fun processSingleItem(mediaId: Long): Boolean = withContext(Dispatchers.IO) {
-        // For processSingle we need to fetch a SourceMediaItem by its stable id.
-        // If your MediaSource supports lookup, use it; otherwise return false.
-        val item = getByStableIdIfSupported(mediaId)
-        if (item == null) {
-            LogManager.d(
-                tag,
-                "processSingle: source does not support lookup or item not found (mediaId=$mediaId)"
-            )
-            return@withContext false
-        }
-        try {
-            val row = MediaEntity(
-                mediaId = item.stableId,
-                contentUri = item.contentUri.toString(),
-                thumbnailUri = null
-            )
-            mediaRepo.upsertAll(listOf(row))
-        } catch (e: Exception) {
-            LogManager.e(tag, "processSingle: failed to upsert media row", e)
-            return@withContext false
-        }
-
-        val facesSaved = processOneItemAndPersist(item)
-        return@withContext facesSaved > 0
     }
 
     private suspend fun loadPage(offset: Int, limit: Int): List<SourceMediaItem> {
@@ -128,56 +93,98 @@ class MediaIndexerImpl(
         }
     }
 
-    private suspend fun upsertMediaRows(items: List<SourceMediaItem>) {
-        if (items.isEmpty()) {
-            return
+    private suspend fun upsertAndDetectChanges(items: List<SourceMediaItem>): ChangePlan {
+        if (items.isEmpty()) return ChangePlan(emptyMap(), emptyList())
+
+        // Build NEW rows (mediaId=0 for auto-inc); compute new fingerprints in-memory
+        val newRows: List<MediaEntity> = items.map {
+            it.toMediaEntity(source.sourceType, fingerPrint /* auto-inc variant */)
         }
-        val rows = ArrayList<MediaEntity>(items.size)
+
+        // 1) Read OLD fingerprints by (source, sourceStableId) BEFORE upsert
+        val stableIdsStr = items.map { it.stableId.toString() }
+        val oldFpByStable: Map<String, String?> =
+            mediaRepo.getFingerprintsBySource(source.sourceType.id, stableIdsStr) // NEW API (see below)
+
+        // 2) Decide which items changed
+        val changed = ArrayList<SourceMediaItem>(items.size)
         for (item in items) {
-            val row = MediaEntity(
-                mediaId = item.stableId,
-                contentUri = item.contentUri.toString(),
-                thumbnailUri = null
-            )
-            rows.add(row)
+            val newFp = newRows.first { it.sourceStableId == item.stableId.toString() }.fingerprint
+            val oldFp = oldFpByStable[item.stableId.toString()]
+            val isChanged = (oldFp == null) || (oldFp != newFp)
+            if (isChanged) changed.add(item)
         }
+
+        // 3) Upsert ALL rows to keep metadata fresh (insert new / update existing)
         try {
-            mediaRepo.upsertAll(rows)
+            mediaRepo.upsertAll(newRows)
         } catch (e: Exception) {
-            LogManager.e(tag, "upsertMediaRows failed for count=${rows.size}", e)
+            LogManager.e(tag, "upsertMediaRows failed for count=${newRows.size}", e)
         }
+
+        // 4) Resolve DB-assigned mediaIds AFTER upsert
+        val idsForPage: Map<String, Long> =
+            mediaRepo.getIdsForSource(source.sourceType.id, stableIdsStr)
+
+        // Convert to Long->Long for fast lookup
+        val idByStable = HashMap<Long, Long>(idsForPage.size)
+        for (item in items) {
+            idsForPage[item.stableId.toString()]?.let { mediaId ->
+                idByStable[item.stableId] = mediaId
+            }
+        }
+
+        return ChangePlan(
+            idByStable = idByStable,
+            changedItems = changed
+        )
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private fun processChunkWithFlow(chunk: List<SourceMediaItem>): Flow<ItemProcessResult> {
+    private fun processChunkWithFlow(
+        chunk: List<SourceMediaItem>,
+        idByStable: Map<Long, Long>
+    ): Flow<ItemProcessResult> {
         return chunk
             .asFlow()
             .flatMapMerge(concurrency = maxConcurrency) { item ->
-                processSingleItemFlow(item)
+                processSingleItemFlow(item, idByStable)
             }
     }
 
-    private fun processSingleItemFlow(item: SourceMediaItem): Flow<ItemProcessResult> {
+    private fun processSingleItemFlow(
+        item: SourceMediaItem,
+        idByStable: Map<Long, Long>
+    ): Flow<ItemProcessResult> {
         return flow {
-            val facesSaved = processOneItemAndPersist(item)
+            val facesSaved = processOneItemAndPersist(item, idByStable)
             emit(ItemProcessResult(facesSaved = facesSaved))
         }
     }
 
-    private suspend fun processOneItemAndPersist(item: SourceMediaItem): Int {
-        generateAndStoreThumbnail(item)
-        return extractAndStoreEmbeddings(item)
+    private suspend fun processOneItemAndPersist(
+        item: SourceMediaItem,
+        idByStable: Map<Long, Long>
+    ): Int {
+        val mediaId = idByStable[item.stableId]
+        if (mediaId == null) {
+            LogManager.w(tag, "mediaId not resolved for ${item.contentUri} (stableId=${item.stableId})")
+            return 0
+        }
+        generateAndStoreThumbnail(item, mediaId)
+        return extractAndStoreEmbeddings(item, mediaId)
     }
 
-    private suspend fun generateAndStoreThumbnail(item: SourceMediaItem) {
+    private suspend fun generateAndStoreThumbnail(item: SourceMediaItem, mediaId: Long) {
         try {
             LogManager.d(tag, "generating thumbnail for ${item.contentUri}")
             val thumbPath = thumbnails.generateFromFile(
-                filePath = item.contentUri.toString(), mediaId = item.stableId
+                filePath = item.contentUri.toString(),
+                mediaId = mediaId
             )
             LogManager.d(tag, "generated path=$thumbPath")
             if (thumbPath != null) {
-                mediaRepo.updateThumbnail(item.stableId, thumbPath)
+                mediaRepo.updateThumbnail(mediaId, thumbPath)
             } else {
                 LogManager.d(tag, "thumbnail not generated for ${item.contentUri}")
             }
@@ -186,21 +193,26 @@ class MediaIndexerImpl(
         }
     }
 
-    private suspend fun extractAndStoreEmbeddings(item: SourceMediaItem): Int {
+    private suspend fun extractAndStoreEmbeddings(
+        item: SourceMediaItem,
+        mediaId: Long
+    ): Int {
         var facesSaved = 0
         try {
             val vectors = embeddings.extractEmbeddings(item)
             if (vectors.isEmpty()) {
+                LogManager.d(tag, "No faces for mediaId=$mediaId")
                 return facesSaved
             }
             val faces = ArrayList<FaceEntity>(vectors.size)
             for ((faceId, vector) in vectors) {
-                val face = FaceEntity(
-                    faceId = faceId,
-                    mediaOwnerId = item.stableId,
-                    embeddingData = vector
+                faces.add(
+                    FaceEntity(
+                        faceId = faceId,
+                        mediaOwnerId = mediaId,
+                        embeddingData = vector
+                    )
                 )
-                faces.add(face)
             }
             if (faces.isNotEmpty()) {
                 faceRepo.upsertAll(faces)
@@ -212,21 +224,10 @@ class MediaIndexerImpl(
         return facesSaved
     }
 
-    private suspend fun getByStableIdIfSupported(mediaId: Long): SourceMediaItem? {
-        if (source is MediaSourceWithLookup) {
-            try {
-                return source.getByStableId(mediaId)
-            } catch (e: Exception) {
-                LogManager.e(tag, "getByStableId failed for mediaId=$mediaId", e)
-                return null
-            }
-        } else {
-            return null
-        }
-    }
+    private data class ItemProcessResult(val facesSaved: Int)
 
-    private data class ItemProcessResult(
-        val facesSaved: Int
+    private data class ChangePlan(
+        val idByStable: Map<Long, Long>,
+        val changedItems: List<SourceMediaItem>
     )
 }
-

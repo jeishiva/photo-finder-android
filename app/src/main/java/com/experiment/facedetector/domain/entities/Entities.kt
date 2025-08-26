@@ -19,12 +19,13 @@ data class FaceDetectedItem(
     val faceBitmap: Bitmap,
 )
 
-
 data class FaceSearchItem(
     val faceId: String,
     val faceBoundingBox: FaceBoundingBox,
     val faceBitmap: Bitmap,
 )
+
+data class MediaIdFingerprint(val mediaId: Long, val fingerprint: String?)
 
 data class FaceEmbedding(
     val id: String,

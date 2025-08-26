@@ -1,6 +1,7 @@
 package com.experiment.facedetector.domain.repo
 
 import com.experiment.facedetector.data.local.entities.MediaEntity
+import com.experiment.facedetector.domain.entities.MediaIdFingerprint
 
 /**
  * Abstraction over media persistence.
@@ -8,19 +9,21 @@ import com.experiment.facedetector.data.local.entities.MediaEntity
  */
 interface MediaRepository {
 
-    /**
-     * Insert or update a batch of media rows.
-     */
     suspend fun upsertAll(items: List<MediaEntity>)
 
-    /**
-     * Update the thumbnail path/uri for a media row.
-     */
     suspend fun updateThumbnail(mediaId: Long, thumbnailUri: String?)
 
-    /**
-     * Optional convenience for filtering already-known media.
-     * Returns the subset of ids that already exist.
-     */
-    suspend fun getExistingMediaIds(ids: List<Long>): List<Long>
+    suspend fun getFingerprints(ids: List<Long>): List<MediaIdFingerprint>
+
+    suspend fun getIdsForSource(
+        source: String,
+        stableIds: List<String>
+    ): Map<String, Long>
+
+    suspend fun getFingerprintsBySource(
+        source: String,
+        stableIds: List<String>
+    ): Map<String, String?>
+
+
 }
