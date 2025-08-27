@@ -67,7 +67,8 @@ class BitmapHelper(val context: Context) {
     }
 
     fun drawFaceBoundingBoxes(
-        originalBitmap: Bitmap, faces: List<Face>
+        originalBitmap: Bitmap,
+        faces: List<Face>
     ): Bitmap {
         if (faces.isEmpty()) {
             return originalBitmap
@@ -343,7 +344,7 @@ class BitmapHelper(val context: Context) {
 
             } else {
                 // Return unusable pooled bitmap to pool
-                pooledBitmap?.let {
+                pooledBitmap.let {
                     if (!it.isRecycled) {
                         BitmapPool.put(it)
                     }

@@ -139,7 +139,6 @@ class SelectPhotoViewModel(
         }
     }
 
-
     fun markShowSelectedFacesHandled() {
         _uiState.setState {
             copy(showSelectedFaces = false)
