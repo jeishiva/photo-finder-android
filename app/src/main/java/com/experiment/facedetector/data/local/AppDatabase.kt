@@ -6,6 +6,7 @@ import androidx.room.TypeConverters
 import com.experiment.facedetector.data.local.converter.FloatArrayConverter
 import com.experiment.facedetector.data.local.dao.FaceDao
 import com.experiment.facedetector.data.local.dao.MediaDao
+import com.experiment.facedetector.data.local.dao.MediaSourceCursorDao
 import com.experiment.facedetector.data.local.dao.MediaWithFacesDao
 import com.experiment.facedetector.data.local.entities.FaceEntity
 import com.experiment.facedetector.data.local.entities.MediaEntity
@@ -23,4 +24,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun mediaDao(): MediaDao
     abstract fun faceDao(): FaceDao
     abstract fun mediaWithFacesDao(): MediaWithFacesDao
+    abstract fun mediaSourceCursorDao(): MediaSourceCursorDao
 }

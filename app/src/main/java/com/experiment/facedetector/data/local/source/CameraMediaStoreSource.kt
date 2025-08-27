@@ -25,21 +25,7 @@ class CameraMediaStoreSource(
     override suspend fun list(offset: Int, limit: Int): List<SourceMediaItem> {
         LogManager.d(TAG, "camera list ($offset, $limit)")
         val results = mutableListOf<SourceMediaItem>()
-
-        val projection = arrayOf(
-            MediaStore.Images.Media._ID,
-            MediaStore.MediaColumns.MIME_TYPE,
-            MediaStore.MediaColumns.WIDTH,
-            MediaStore.MediaColumns.HEIGHT,
-            MediaStore.MediaColumns.SIZE,
-            MediaStore.MediaColumns.DATE_MODIFIED,   // seconds
-            MediaStore.MediaColumns.DATE_ADDED,      // seconds
-            MediaStore.Images.Media.DATE_TAKEN,      // millis
-            MediaStore.Images.ImageColumns.ORIENTATION,
-            MediaStore.Images.Media.BUCKET_ID,
-            MediaStore.Images.Media.BUCKET_DISPLAY_NAME
-        )
-
+        val projection = getMediaStoreProjection()
         val args = Bundle().apply {
             putStringArray(
                 ContentResolver.QUERY_ARG_SORT_COLUMNS,
@@ -121,6 +107,20 @@ class CameraMediaStoreSource(
         }
         return results
     }
+
+    private fun getMediaStoreProjection(): Array<String> = arrayOf(
+        MediaStore.Images.Media._ID,
+        MediaStore.MediaColumns.MIME_TYPE,
+        MediaStore.MediaColumns.WIDTH,
+        MediaStore.MediaColumns.HEIGHT,
+        MediaStore.MediaColumns.SIZE,
+        MediaStore.MediaColumns.DATE_MODIFIED,   // seconds
+        MediaStore.MediaColumns.DATE_ADDED,      // seconds
+        MediaStore.Images.Media.DATE_TAKEN,      // millis
+        MediaStore.Images.ImageColumns.ORIENTATION,
+        MediaStore.Images.Media.BUCKET_ID,
+        MediaStore.Images.Media.BUCKET_DISPLAY_NAME
+    )
 
     companion object {
         const val TAG = "CameraMediaStoreSource"

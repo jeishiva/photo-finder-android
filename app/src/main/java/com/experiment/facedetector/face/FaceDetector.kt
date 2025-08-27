@@ -1,6 +1,5 @@
 package com.experiment.facedetector.face
 
-import SourceMediaItem
 import com.experiment.facedetector.common.await
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

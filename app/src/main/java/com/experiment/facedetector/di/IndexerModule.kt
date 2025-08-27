@@ -12,9 +12,9 @@ interface MediaIndexerFactory {
 }
 
 val indexerModule = module {
-    single<MediaIndexer>(named(MediaSourceType.MediaStoreCamera.identifier)) {
+    single<MediaIndexer>(named(MediaSourceType.MediaStoreCamera.key)) {
         MediaIndexerImpl(
-            source = get<MediaSource>(qualifier = named(MediaSourceType.MediaStoreCamera.identifier)),
+            source = get<MediaSource>(qualifier = named(MediaSourceType.MediaStoreCamera.key)),
             mediaRepo = get(),
             faceRepo = get(),
             embeddings = get(),
@@ -26,7 +26,7 @@ val indexerModule = module {
     single<MediaIndexerFactory> {
         object : MediaIndexerFactory {
             override fun getIndexer(type: MediaSourceType): MediaIndexer {
-                return get(qualifier = named(type.identifier))
+                return get(qualifier = named(type.key))
             }
         }
     }

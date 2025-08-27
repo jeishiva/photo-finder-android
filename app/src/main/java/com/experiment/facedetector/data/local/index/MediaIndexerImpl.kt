@@ -86,7 +86,7 @@ class MediaIndexerImpl(
 
     private suspend fun loadPage(offset: Int, limit: Int): List<SourceMediaItem> {
         return try {
-            source.list(offset = offset, limit = limit)
+            source.l    (offset = offset, limit = limit)
         } catch (e: Exception) {
             LogManager.e(tag, "loadPage failed: offset=$offset limit=$limit", e)
             emptyList()
@@ -104,7 +104,7 @@ class MediaIndexerImpl(
         // 1) Read OLD fingerprints by (source, sourceStableId) BEFORE upsert
         val stableIdsStr = items.map { it.stableId.toString() }
         val oldFpByStable: Map<String, String?> =
-            mediaRepo.getFingerprintsBySource(source.sourceType.identifier, stableIdsStr) // NEW API (see below)
+            mediaRepo.getFingerprintsBySource(source.sourceType.key, stableIdsStr) // NEW API (see below)
 
         // 2) Decide which items changed
         val changed = ArrayList<SourceMediaItem>(items.size)
@@ -124,7 +124,7 @@ class MediaIndexerImpl(
 
         // 4) Resolve DB-assigned mediaIds AFTER upsert
         val idsForPage: Map<String, Long> =
-            mediaRepo.getIdsForSource(source.sourceType.identifier, stableIdsStr)
+            mediaRepo.getIdsForSource(source.sourceType.key, stableIdsStr)
 
         // Convert to Long->Long for fast lookup
         val idByStable = HashMap<Long, Long>(idsForPage.size)

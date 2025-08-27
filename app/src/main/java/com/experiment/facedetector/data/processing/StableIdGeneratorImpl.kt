@@ -11,7 +11,7 @@ class StableIdGeneratorImpl : StableIdGenerator {
         mediaSourceType: MediaSourceType,
         sourceMediaItem: SourceMediaItem
     ): Long {
-        val input = "${mediaSourceType.identifier}|${sourceMediaItem.stableId}"
+        val input = "${mediaSourceType.key}|${sourceMediaItem.stableId}"
         val digest = MessageDigest.getInstance("SHA-1").digest(input.toByteArray())
         // given the expected scale (tens of thousands of local photos),
         // using a 64-bit hash provides a practically collision-free identifier.

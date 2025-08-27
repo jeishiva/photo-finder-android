@@ -8,11 +8,11 @@ import org.koin.dsl.module
 
 val mediaSourceModule = module {
 
-    single<MediaSource>(qualifier = named(MediaSourceType.MediaStoreCamera.identifier)) {
+    single<MediaSource>(qualifier = named(MediaSourceType.MediaStoreCamera.key)) {
         CameraMediaStoreSource(get())
     }
 
     single<MediaSource> {
-        get(qualifier = named(MediaSourceType.MediaStoreCamera.identifier))
+        get(qualifier = named(MediaSourceType.MediaStoreCamera.key))
     }
 }
