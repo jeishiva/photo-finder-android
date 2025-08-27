@@ -1,18 +1,17 @@
 package com.experiment.facedetector.data.local.dao
 
 import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import com.experiment.facedetector.data.local.entities.FaceEntity
 
 @Dao
 interface FaceDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun upsert(face: FaceEntity)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun upsertAll(faces: List<FaceEntity>)
 
     @Query("""

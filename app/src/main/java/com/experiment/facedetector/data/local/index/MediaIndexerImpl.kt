@@ -28,8 +28,8 @@ class MediaIndexerImpl(
     private val embeddings: FaceEmbeddingPipeline,
     private val thumbnails: ThumbnailGenerator,
     private val fingerPrint: MediaFingerPrint,
-    private val pageSize: Int = 50,
-    private val chunkSize: Int = 10,
+    private val pageSize: Int = 25,
+    private val chunkSize: Int = 5,
     private val maxConcurrency: Int = 5
 ) : MediaIndexer {
 
@@ -148,6 +148,7 @@ class MediaIndexerImpl(
         return chunk
             .asFlow()
             .flatMapMerge(concurrency = maxConcurrency) { item ->
+                LogManager.d(tag, "processing item ${item.lastModifiedTime}")
                 processSingleItemFlow(item, idByStable)
             }
     }

@@ -13,6 +13,7 @@ import com.experiment.facedetector.data.local.entities.MediaWithFaces
 import com.experiment.facedetector.di.MediaIndexerFactory
 import com.experiment.facedetector.domain.entities.FaceSearchItem
 import com.experiment.facedetector.domain.filter.MediaFilter
+import com.experiment.facedetector.domain.repo.DbInvalidationRepository
 import com.experiment.facedetector.domain.source.MediaSourceType
 import com.experiment.facedetector.domain.usecase.facesearch.SearchPhotosPagedUseCase
 import com.experiment.facedetector.ui.SearchUiState
@@ -20,21 +21,23 @@ import com.experiment.facedetector.ui.common.UiStateHolder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.onStart
 
 class SearchViewModel(
     savedStateHandle: SavedStateHandle,
     val embeddingUseCase: ExtractEmbeddingsUseCase,
     val searchPhotosPagedUseCase: SearchPhotosPagedUseCase,
-    val mediaIndexerFactory: MediaIndexerFactory
+    val mediaIndexerFactory: MediaIndexerFactory,
+    val invalidationRepo: DbInvalidationRepository,
 ) : ViewModel() {
 
     private val _uiState = UiStateHolder<SearchUiState>(SearchUiState())
@@ -45,27 +48,25 @@ class SearchViewModel(
     private val searchTrigger = MutableStateFlow<List<FloatArray>>(emptyList())
     private var searchSessionId: String = savedStateHandle.get<String>("sessionId")!!
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-
     private val _filter = MutableStateFlow(MediaFilter())
     val filter: StateFlow<MediaFilter> = _filter.asStateFlow()
 
+    private val refreshes: Flow<Unit> =
+        invalidationRepo
+            .changes("media", "face")
+            .onStart { emit(Unit) }
+
     @OptIn(ExperimentalCoroutinesApi::class)
-    val pagedSearchFlow: StateFlow<PagingData<MediaWithFaces>> =
-        _filter
-            .throttleFirst(200)
-            .distinctUntilChanged()
-            .flatMapLatest { searchPhotosPagedUseCase(it) }
+    val pagedFaces: StateFlow<PagingData<MediaWithFaces>> =
+        refreshes.throttleFirst(500).flatMapLatest {
+                searchPhotosPagedUseCase().flow
+            }
             .cachedIn(viewModelScope)
             .stateIn(
                 scope = viewModelScope,
-                started = SharingStarted.Lazily,
+                started = SharingStarted.WhileSubscribed(5_000),
                 initialValue = PagingData.empty()
             )
-
-    fun setFacesOnly(enabled: Boolean) {
-        _filter.update { it.copy(facesOnly = enabled) }
-    }
 
     fun searchFaces(searchItems: List<FaceSearchItem>) {
         LogManager.d(TAG, "Search faces: ${searchItems.size}")
@@ -105,7 +106,6 @@ class SearchViewModel(
         when (intent) {
             is SearchIntent.Start -> {
                 searchFaces(intent.searchFaces)
-                setFacesOnly(true)
             }
         }
     }

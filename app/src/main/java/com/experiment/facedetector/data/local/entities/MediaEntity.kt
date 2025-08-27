@@ -10,7 +10,12 @@ import androidx.room.Relation
 import androidx.room.TypeConverters
 import com.experiment.facedetector.data.local.converter.FloatArrayConverter
 
-@Entity(tableName = "media")
+@Entity(
+    tableName = "media",
+    indices = [
+        Index(value = ["dateModified", "mediaId"])
+    ]
+)
 data class MediaEntity(
     @PrimaryKey(autoGenerate = true) val mediaId: Long = 0L,
     val source: String,                   // e.g. "CAMERA", "WHATSAPP, "CLOUD"
@@ -43,7 +48,6 @@ data class FaceEntity(
     val embeddingData: FloatArray,      // stored as BLOB via converter
     val createdAt: Long = System.currentTimeMillis()
 )
-
 
 data class MediaWithFaces(
     @Embedded val media: MediaEntity,

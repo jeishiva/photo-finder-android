@@ -22,7 +22,7 @@ val useCaseModule = module {
 
     factory<SearchPhotosPagedUseCase> {
         SearchPhotosPagedUseCase(
-            mediaPagingRepository = get(),
+            mediaWithFacesRepository = get(),
         )
     }
 

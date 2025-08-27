@@ -2,9 +2,8 @@ package com.experiment.facedetector.data.local.dao
 
 
 import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import com.experiment.facedetector.data.local.entities.MediaEntity
 import com.experiment.facedetector.data.local.entities.MediaIdFingerprintRow
 import com.experiment.facedetector.data.local.entities.StableIdFingerprintRow
@@ -12,11 +11,10 @@ import com.experiment.facedetector.data.local.entities.StableIdToMediaIdRow
 
 @Dao
 interface MediaDao {
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun upsert(media: MediaEntity)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun upsertAll(items: List<MediaEntity>)
 
     @Query("SELECT * FROM media WHERE mediaId = :mediaId LIMIT 1")
@@ -60,5 +58,8 @@ interface MediaDao {
         source: String,
         stableIds: List<String>
     ): List<StableIdFingerprintRow>
+
+
+
 
 }

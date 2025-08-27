@@ -15,7 +15,7 @@ import com.experiment.facedetector.data.local.entities.MediaEntity
         MediaEntity::class,
         FaceEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(FloatArrayConverter::class)

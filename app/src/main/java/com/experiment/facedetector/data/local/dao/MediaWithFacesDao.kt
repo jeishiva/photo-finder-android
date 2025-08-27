@@ -1,5 +1,5 @@
 package com.experiment.facedetector.data.local.dao
-import androidx.paging.PagingSource
+
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Transaction
@@ -7,23 +7,42 @@ import com.experiment.facedetector.data.local.entities.MediaWithFaces
 
 @Dao
 interface MediaWithFacesDao {
-
     @Transaction
-    @Query("""
+    @Query(
+        """
         SELECT * FROM media
+        WHERE (dateModified < :cursorDate)
+           OR (dateModified = :cursorDate AND mediaId < :cursorId)
         ORDER BY dateModified DESC, mediaId DESC
-    """)
-    fun pagingAll(): PagingSource<Int, MediaWithFaces>
+        LIMIT :limit
+        """
+    )
+    suspend fun pageAfterAll(
+        cursorDate: Long,
+        cursorId: Long,
+        limit: Int
+    ): List<MediaWithFaces>
 
     @Transaction
-    @Query("""
-        SELECT m.* FROM media AS m
+    @Query(
+        """
+        SELECT m.*
+        FROM media AS m
         WHERE EXISTS (
-            SELECT 1 FROM face f
+            SELECT 1 FROM face AS f
             WHERE f.mediaOwnerId = m.mediaId
-            LIMIT 1
         )
-        ORDER BY dateModified DESC, mediaId DESC
-    """)
-    fun pagingFacesOnly(): PagingSource<Int, MediaWithFaces>
+        AND (
+            m.dateModified < :cursorDate
+            OR (m.dateModified = :cursorDate AND m.mediaId < :cursorId)
+        )
+        ORDER BY m.dateModified DESC, m.mediaId DESC
+        LIMIT :limit
+        """
+    )
+    suspend fun pageAfterFacesOnly(
+        cursorDate: Long,
+        cursorId: Long,
+        limit: Int
+    ): List<MediaWithFaces>
 }

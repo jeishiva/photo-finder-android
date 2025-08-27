@@ -1,6 +1,7 @@
 package com.experiment.facedetector.ui.screen
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -45,6 +47,8 @@ import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
 import com.experiment.facedetector.R
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.data.local.entities.MediaWithFaces
@@ -66,7 +70,7 @@ fun SearchScreen(searchScreenParams: SearchScreenParams) {
     val backClick: () -> Unit = remember {
         { navController.popBackStack() }
     }
-    val searchResultPagedItems = searchViewModel.pagedSearchFlow.collectAsLazyPagingItems()
+    val searchResultPagedItems = searchViewModel.pagedFaces.collectAsLazyPagingItems()
     LaunchedEffect(Unit) {
         val result = selectPhotoViewModel.getSearchItems()
         LogManager.d("SearchViewModel", "Selected faces in search: ${result.size}")
@@ -214,13 +218,14 @@ private fun SearchResultsGrid(
         content = {
             items(
                 count = searchResults.itemCount,
-                key = { index -> searchResults[index]?.media?.mediaId ?: "item-$index" }
+                key = { index -> searchResults[index]?.media?.sourceStableId ?: "item-$index" }
             ) { index ->
                 searchResults[index]?.let { item ->
-                    ThumbnailItem(thumbnailUri = item.media.thumbnailUri)
+                    Box(modifier = Modifier.animateItem()) {
+                        ThumbnailItem(thumbnailUri = item.media.thumbnailUri)
+                    }
                 }
             }
-            // Bottom loader as separate item
             if (shouldShowBottomLoader(searchResults.itemCount, isLoading)) {
                 item(
                     key = "bottom-loader",
@@ -255,19 +260,30 @@ fun ThumbnailItem(thumbnailUri: String?) {
             .aspectRatio(1f)
             .clip(RoundedCornerShape(8.dp))
     ) {
-        AsyncImage(
-            model = thumbnailUri,
+        val context = LocalContext.current
+        SubcomposeAsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(thumbnailUri)
+                .crossfade(true)          // optional
+                .build(),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
-            placeholder = ColorPainter(MildGray),
-            error = painterResource(id = android.R.drawable.stat_notify_error),
-            onError = { error ->
-                println("Error loading image: $error.message")
+            loading = {
+                Box(Modifier.fillMaxSize().background(MildGray))
             },
+            error = {
+                Image(
+                    painter = painterResource(id = android.R.drawable.stat_notify_error),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Inside
+                )
+            }
         )
     }
 }
+
 
 @Composable
 @Preview(showBackground = true)

@@ -19,6 +19,7 @@ val viewModelModule = module {
             mediaIndexerFactory = get(),
             embeddingUseCase = get(),
             searchPhotosPagedUseCase = get(),
+            invalidationRepo = get(),
         )
     }
 }
