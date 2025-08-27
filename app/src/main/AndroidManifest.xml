@@ -17,7 +17,7 @@
         android:name=".PhotoFinderApp"
         android:theme="@style/Theme.AndroidFaceDetector">
         <activity
-            android:name=".ui.MainActivity"
+            android:name=".presentation.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.AndroidFaceDetector" >
             <intent-filter>

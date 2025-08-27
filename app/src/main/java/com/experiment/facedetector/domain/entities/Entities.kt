@@ -1,7 +1,6 @@
 package com.experiment.facedetector.domain.entities
 
 import android.graphics.Bitmap
-import com.experiment.facedetector.data.local.entities.MediaEntity
 
 data class LocalImageItem(
     val uriString: String
@@ -15,12 +14,6 @@ data class FaceBoundingBox(
 )
 
 data class FaceDetectedItem(
-    val faceId: String,
-    val faceBoundingBox: FaceBoundingBox,
-    val faceBitmap: Bitmap,
-)
-
-data class FaceSearchItem(
     val faceId: String,
     val faceBoundingBox: FaceBoundingBox,
     val faceBitmap: Bitmap,

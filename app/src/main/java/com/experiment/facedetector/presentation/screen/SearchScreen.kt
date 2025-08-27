@@ -1,4 +1,4 @@
-package com.experiment.facedetector.ui.screen
+package com.experiment.facedetector.presentation.screen
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -35,7 +35,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -46,20 +45,18 @@ import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
-import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import com.experiment.facedetector.R
 import com.experiment.facedetector.common.LogManager
-import com.experiment.facedetector.data.local.entities.MediaWithFaces
-import com.experiment.facedetector.domain.entities.FaceSearchItem
-import com.experiment.facedetector.ui.entities.MediaWithFacesUi
-import com.experiment.facedetector.ui.entities.SearchScreenParams
-import com.experiment.facedetector.ui.entities.SearchUiModel
-import com.experiment.facedetector.ui.entities.SearchUiState
-import com.experiment.facedetector.ui.theme.AndroidFaceDetectorTheme
-import com.experiment.facedetector.ui.theme.MildGray
-import com.experiment.facedetector.ui.widgets.AppBar
+import com.experiment.facedetector.presentation.entities.FaceSearchItemUi
+import com.experiment.facedetector.presentation.entities.MediaWithFacesUi
+import com.experiment.facedetector.presentation.entities.SearchScreenParams
+import com.experiment.facedetector.presentation.entities.SearchUiModel
+import com.experiment.facedetector.presentation.entities.SearchUiState
+import com.experiment.facedetector.presentation.theme.AndroidFaceDetectorTheme
+import com.experiment.facedetector.presentation.theme.MildGray
+import com.experiment.facedetector.presentation.widgets.AppBar
 import com.experiment.facedetector.viewmodel.SearchViewModel.SearchIntent
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -143,7 +140,7 @@ fun SearchResultSection(
 }
 
 @Composable
-fun SearchHeaderCard(faces: List<FaceSearchItem>) {
+fun SearchHeaderCard(faces: List<FaceSearchItemUi>) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -300,7 +297,7 @@ fun SearchScreenPreview() {
 
 @Composable
 fun FaceListSection(
-    faces: List<FaceSearchItem>,
+    faces: List<FaceSearchItemUi>,
 ) {
     LogManager.d("SearchViewModel", "Faces: ${faces.size}")
     LazyRow(
@@ -314,7 +311,7 @@ fun FaceListSection(
 }
 
 @Composable
-fun FaceListItem(face: FaceSearchItem) {
+fun FaceListItem(face: FaceSearchItemUi) {
     Box(
         modifier = Modifier
             .size(56.dp)

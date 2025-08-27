@@ -1,4 +1,4 @@
-package com.experiment.facedetector.ui.widgets
+package com.experiment.facedetector.presentation.widgets
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,8 +21,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import com.experiment.facedetector.ui.theme.GradientEndMildBlack
-import com.experiment.facedetector.ui.theme.GradientStartMildGrey
+import com.experiment.facedetector.presentation.theme.GradientEndMildBlack
+import com.experiment.facedetector.presentation.theme.GradientStartMildGrey
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

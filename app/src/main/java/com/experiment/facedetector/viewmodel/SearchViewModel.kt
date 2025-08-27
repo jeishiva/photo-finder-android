@@ -10,18 +10,17 @@ import androidx.paging.map
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.common.safeCancel
 import com.experiment.facedetector.common.throttleFirst
-import com.experiment.facedetector.data.local.entities.MediaWithFaces
 import com.experiment.facedetector.di.MediaIndexerFactory
-import com.experiment.facedetector.domain.entities.FaceSearchItem
 import com.experiment.facedetector.domain.entities.MediaWithFacesDomain
 import com.experiment.facedetector.domain.filter.MediaFilter
 import com.experiment.facedetector.domain.repo.DbInvalidationRepository
 import com.experiment.facedetector.domain.source.MediaSourceType
 import com.experiment.facedetector.domain.usecase.facesearch.SearchPhotosPagedUseCase
-import com.experiment.facedetector.ui.entities.SearchUiState
-import com.experiment.facedetector.ui.common.UiStateHolder
-import com.experiment.facedetector.ui.entities.MediaWithFacesUi
-import com.experiment.facedetector.ui.entities.toUi
+import com.experiment.facedetector.presentation.entities.SearchUiState
+import com.experiment.facedetector.presentation.common.UiStateHolder
+import com.experiment.facedetector.presentation.entities.FaceSearchItemUi
+import com.experiment.facedetector.presentation.entities.MediaWithFacesUi
+import com.experiment.facedetector.presentation.entities.toUi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -77,7 +76,7 @@ class SearchViewModel(
                 initialValue = PagingData.empty()
             )
 
-    fun searchFaces(searchItems: List<FaceSearchItem>) {
+    fun searchFaces(searchItems: List<FaceSearchItemUi>) {
         LogManager.d(TAG, "Search faces: ${searchItems.size}")
         searchJob?.safeCancel()
         searchJob = viewModelScope.launch(Dispatchers.IO) {
@@ -128,7 +127,7 @@ class SearchViewModel(
         }
     }
 
-    fun updateSearchItems(searchFaces: List<FaceSearchItem>) {
+    fun updateSearchItems(searchFaces: List<FaceSearchItemUi>) {
         LogManager.d(TAG, "updateSearchItems ${searchFaces.size}")
         _uiState.setState {
             copy(
@@ -150,7 +149,7 @@ class SearchViewModel(
     }
 
     sealed class SearchIntent {
-        data class Start(val searchFaces: List<FaceSearchItem>) : SearchIntent()
+        data class Start(val searchFaces: List<FaceSearchItemUi>) : SearchIntent()
     }
 
     companion object {

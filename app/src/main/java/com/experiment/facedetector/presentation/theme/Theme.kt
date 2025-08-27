@@ -1,4 +1,4 @@
-package com.experiment.facedetector.ui.theme
+package com.experiment.facedetector.presentation.theme
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme

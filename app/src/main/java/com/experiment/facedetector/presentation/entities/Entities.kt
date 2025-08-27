@@ -1,11 +1,12 @@
-package com.experiment.facedetector.ui.entities
+package com.experiment.facedetector.presentation.entities
 
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.navigation.NavHostController
+import com.experiment.facedetector.domain.entities.FaceBoundingBox
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
-import com.experiment.facedetector.domain.entities.FaceSearchItem
 import com.experiment.facedetector.viewmodel.SearchViewModel
 import com.experiment.facedetector.viewmodel.SelectPhotoViewModel
 
@@ -72,7 +73,7 @@ data class SearchUiState(
     val isEmptySearchResult: Boolean = false,
     val message: String? = null,
     val errorMessage: String? = "",
-    val faceList: List<FaceSearchItem> = emptyList(),
+    val faceList: List<FaceSearchItemUi> = emptyList(),
 )
 
 data class SearchUiModel(
@@ -88,4 +89,10 @@ data class SearchUiModel(
 data class MediaWithFacesUi(
     val id: Long,
     val thumbnailUri: String?
+)
+
+data class FaceSearchItemUi(
+    val faceId: String,
+    val faceBoundingBox: FaceBoundingBox,
+    val faceBitmap: Bitmap,
 )

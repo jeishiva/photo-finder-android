@@ -29,11 +29,3 @@ data class FaceEmbeddingRequest(
     val image: Bitmap,
 )
 
-/**
- *  processed to detect faces and thumbnail locally saved
- */
-data class ProcessedMediaItem(
-    val mediaId: Long,
-    val file : File,
-)
-

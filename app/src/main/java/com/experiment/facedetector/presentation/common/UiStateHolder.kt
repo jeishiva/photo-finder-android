@@ -1,4 +1,4 @@
-package com.experiment.facedetector.ui.common
+package com.experiment.facedetector.presentation.common
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

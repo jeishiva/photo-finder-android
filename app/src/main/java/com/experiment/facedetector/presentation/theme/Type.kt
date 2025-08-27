@@ -1,4 +1,4 @@
-package com.experiment.facedetector.ui.theme
+package com.experiment.facedetector.presentation.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

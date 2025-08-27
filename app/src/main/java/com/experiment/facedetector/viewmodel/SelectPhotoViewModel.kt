@@ -5,12 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
-import com.experiment.facedetector.domain.entities.FaceSearchItem
 import com.experiment.facedetector.domain.entities.LocalImageItem
-import com.experiment.facedetector.domain.entities.toFaceSearchItem
 import com.experiment.facedetector.domain.usecase.FaceDetectionUseCase
-import com.experiment.facedetector.ui.entities.HomeUiState
-import com.experiment.facedetector.ui.common.UiStateHolder
+import com.experiment.facedetector.presentation.entities.HomeUiState
+import com.experiment.facedetector.presentation.common.UiStateHolder
+import com.experiment.facedetector.presentation.entities.FaceSearchItemUi
+import com.experiment.facedetector.presentation.entities.toFaceSearchItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -86,7 +86,7 @@ class SelectPhotoViewModel(
         }
     }
 
-    fun getSearchItems(): List<FaceSearchItem> {
+    fun getSearchItems(): List<FaceSearchItemUi> {
         val selectedIds = _selectedFaceIds.value
         val faceList = uiState.value.faceList
         LogManager.d(TAG, "Total faces: ${faceList.size}, Selected: ${selectedIds.size}")

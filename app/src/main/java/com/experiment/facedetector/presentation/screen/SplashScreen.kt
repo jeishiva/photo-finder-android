@@ -1,4 +1,4 @@
-package com.experiment.facedetector.ui.screen
+package com.experiment.facedetector.presentation.screen
 
 import android.app.Activity
 import android.content.Context
@@ -29,7 +29,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.experiment.facedetector.R
 import com.experiment.facedetector.common.RequestPermission
-import com.experiment.facedetector.ui.theme.AndroidFaceDetectorTheme
+import com.experiment.facedetector.presentation.theme.AndroidFaceDetectorTheme
 import android.provider.Settings
 import androidx.navigation.NavHostController
 import com.experiment.facedetector.navigation.AppRoute

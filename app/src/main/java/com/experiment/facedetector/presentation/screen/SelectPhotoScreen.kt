@@ -1,4 +1,4 @@
-package com.experiment.facedetector.ui.screen
+package com.experiment.facedetector.presentation.screen
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -56,14 +56,14 @@ import com.experiment.facedetector.R
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
 import com.experiment.facedetector.navigation.AppRoute
-import com.experiment.facedetector.ui.entities.HomeScreenParams
-import com.experiment.facedetector.ui.entities.HomeUiModel
-import com.experiment.facedetector.ui.entities.HomeUiState
-import com.experiment.facedetector.ui.entities.TimeRange
-import com.experiment.facedetector.ui.components.StatusMessage
-import com.experiment.facedetector.ui.theme.AndroidFaceDetectorTheme
-import com.experiment.facedetector.ui.theme.GradientStartMildGrey
-import com.experiment.facedetector.ui.widgets.AppBar
+import com.experiment.facedetector.presentation.entities.HomeScreenParams
+import com.experiment.facedetector.presentation.entities.HomeUiModel
+import com.experiment.facedetector.presentation.entities.HomeUiState
+import com.experiment.facedetector.presentation.entities.TimeRange
+import com.experiment.facedetector.presentation.components.StatusMessage
+import com.experiment.facedetector.presentation.theme.AndroidFaceDetectorTheme
+import com.experiment.facedetector.presentation.theme.GradientStartMildGrey
+import com.experiment.facedetector.presentation.widgets.AppBar
 import com.experiment.facedetector.viewmodel.HomeIntent
 import com.experiment.facedetector.viewmodel.SelectPhotoViewModel
 
