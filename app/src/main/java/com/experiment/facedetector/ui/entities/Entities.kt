@@ -1,4 +1,4 @@
-package com.experiment.facedetector.ui
+package com.experiment.facedetector.ui.entities
 
 import android.net.Uri
 import androidx.compose.runtime.Immutable
@@ -6,8 +6,8 @@ import androidx.compose.runtime.Stable
 import androidx.navigation.NavHostController
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
 import com.experiment.facedetector.domain.entities.FaceSearchItem
-import com.experiment.facedetector.viewmodel.SelectPhotoViewModel
 import com.experiment.facedetector.viewmodel.SearchViewModel
+import com.experiment.facedetector.viewmodel.SelectPhotoViewModel
 
 sealed class TimeRange(val label: String) {
     object OneMonth : TimeRange("1 Month")
@@ -85,4 +85,7 @@ data class SearchUiModel(
     )
 }
 
-
+data class MediaWithFacesUi(
+    val id: Long,
+    val thumbnailUri: String?
+)

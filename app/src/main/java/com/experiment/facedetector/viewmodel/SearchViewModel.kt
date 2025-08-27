@@ -6,18 +6,22 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import androidx.paging.map
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.common.safeCancel
 import com.experiment.facedetector.common.throttleFirst
 import com.experiment.facedetector.data.local.entities.MediaWithFaces
 import com.experiment.facedetector.di.MediaIndexerFactory
 import com.experiment.facedetector.domain.entities.FaceSearchItem
+import com.experiment.facedetector.domain.entities.MediaWithFacesDomain
 import com.experiment.facedetector.domain.filter.MediaFilter
 import com.experiment.facedetector.domain.repo.DbInvalidationRepository
 import com.experiment.facedetector.domain.source.MediaSourceType
 import com.experiment.facedetector.domain.usecase.facesearch.SearchPhotosPagedUseCase
-import com.experiment.facedetector.ui.SearchUiState
+import com.experiment.facedetector.ui.entities.SearchUiState
 import com.experiment.facedetector.ui.common.UiStateHolder
+import com.experiment.facedetector.ui.entities.MediaWithFacesUi
+import com.experiment.facedetector.ui.entities.toUi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -27,8 +31,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.onStart
 
@@ -57,9 +61,14 @@ class SearchViewModel(
             .onStart { emit(Unit) }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val pagedFaces: StateFlow<PagingData<MediaWithFaces>> =
-        refreshes.throttleFirst(500).flatMapLatest {
-                searchPhotosPagedUseCase().flow
+    val pagedFaces: StateFlow<PagingData<MediaWithFacesUi>> =
+        refreshes
+            .throttleFirst(500)
+            .flatMapLatest { _ ->
+                searchPhotosPagedUseCase()
+            }
+            .map { pagingData: PagingData<MediaWithFacesDomain> ->
+                pagingData.map { it.toUi() }
             }
             .cachedIn(viewModelScope)
             .stateIn(

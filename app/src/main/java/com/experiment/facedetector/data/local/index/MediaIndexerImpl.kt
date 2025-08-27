@@ -3,7 +3,7 @@ package com.experiment.facedetector.data.local.index
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.data.local.entities.FaceEntity
 import com.experiment.facedetector.data.local.entities.MediaEntity
-import com.experiment.facedetector.domain.entities.toMediaEntity
+import com.experiment.facedetector.data.local.entities.toMediaEntity
 import com.experiment.facedetector.domain.index.MediaIndexer
 import com.experiment.facedetector.domain.processing.FaceEmbeddingPipeline
 import com.experiment.facedetector.domain.processing.ThumbnailGenerator
@@ -28,8 +28,8 @@ class MediaIndexerImpl(
     private val embeddings: FaceEmbeddingPipeline,
     private val thumbnails: ThumbnailGenerator,
     private val fingerPrint: MediaFingerPrint,
-    private val pageSize: Int = 25,
-    private val chunkSize: Int = 5,
+    private val pageSize: Int = 50,
+    private val chunkSize: Int = 25,
     private val maxConcurrency: Int = 5
 ) : MediaIndexer {
 

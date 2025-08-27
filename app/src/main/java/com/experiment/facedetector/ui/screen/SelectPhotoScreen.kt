@@ -56,10 +56,10 @@ import com.experiment.facedetector.R
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
 import com.experiment.facedetector.navigation.AppRoute
-import com.experiment.facedetector.ui.HomeScreenParams
-import com.experiment.facedetector.ui.HomeUiModel
-import com.experiment.facedetector.ui.HomeUiState
-import com.experiment.facedetector.ui.TimeRange
+import com.experiment.facedetector.ui.entities.HomeScreenParams
+import com.experiment.facedetector.ui.entities.HomeUiModel
+import com.experiment.facedetector.ui.entities.HomeUiState
+import com.experiment.facedetector.ui.entities.TimeRange
 import com.experiment.facedetector.ui.components.StatusMessage
 import com.experiment.facedetector.ui.theme.AndroidFaceDetectorTheme
 import com.experiment.facedetector.ui.theme.GradientStartMildGrey

@@ -1,6 +1,7 @@
 package com.experiment.facedetector.domain.entities
 
 import android.graphics.Bitmap
+import com.experiment.facedetector.data.local.entities.MediaEntity
 
 data class LocalImageItem(
     val uriString: String
@@ -26,6 +27,17 @@ data class FaceSearchItem(
 )
 
 data class MediaIdFingerprint(val mediaId: Long, val fingerprint: String?)
+
+data class Media(
+    val id: Long,
+    val thumbnailUri: String?,
+    val dateModified: Long? = null,
+    val sourceStableId: String
+)
+data class MediaWithFacesDomain(
+    val media: Media,
+    val faces: List<FaceEmbedding>
+)
 
 data class FaceEmbedding(
     val id: String,

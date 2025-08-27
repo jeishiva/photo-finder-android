@@ -47,7 +47,6 @@ fun AppEntryPoint() {
 @Composable
 fun MainApp() {
     val navController = rememberNavController()
-    val activity = LocalContext.current as ComponentActivity
     AndroidFaceDetectorTheme {
         AppNavGraph(navController = navController)
     }

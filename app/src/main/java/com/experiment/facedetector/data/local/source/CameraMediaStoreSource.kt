@@ -13,7 +13,6 @@ import com.experiment.facedetector.domain.source.SourceMediaItem
 class CameraMediaStoreSource(
     private val context: Context
 ) : MediaSource {
-
     override val sourceType: MediaSourceType = MediaSourceType.MediaStoreCamera
 
     override suspend fun list(offset: Int, limit: Int): List<SourceMediaItem> {

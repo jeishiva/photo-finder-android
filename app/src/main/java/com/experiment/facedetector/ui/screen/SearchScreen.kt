@@ -53,9 +53,10 @@ import com.experiment.facedetector.R
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.data.local.entities.MediaWithFaces
 import com.experiment.facedetector.domain.entities.FaceSearchItem
-import com.experiment.facedetector.ui.SearchScreenParams
-import com.experiment.facedetector.ui.SearchUiModel
-import com.experiment.facedetector.ui.SearchUiState
+import com.experiment.facedetector.ui.entities.MediaWithFacesUi
+import com.experiment.facedetector.ui.entities.SearchScreenParams
+import com.experiment.facedetector.ui.entities.SearchUiModel
+import com.experiment.facedetector.ui.entities.SearchUiState
 import com.experiment.facedetector.ui.theme.AndroidFaceDetectorTheme
 import com.experiment.facedetector.ui.theme.MildGray
 import com.experiment.facedetector.ui.widgets.AppBar
@@ -92,7 +93,7 @@ fun SearchScreen(searchScreenParams: SearchScreenParams) {
 @Composable
 fun ScreenContent(
     uiModel: SearchUiModel,
-    searchResultPagedItems: LazyPagingItems<MediaWithFaces>,
+    searchResultPagedItems: LazyPagingItems<MediaWithFacesUi>,
 ) {
     AndroidFaceDetectorTheme {
         Scaffold(
@@ -123,7 +124,7 @@ fun ScreenContent(
 
 @Composable
 fun SearchResultSection(
-    searchResults: LazyPagingItems<MediaWithFaces>,
+    searchResults: LazyPagingItems<MediaWithFacesUi>,
     isLoading: Boolean
 ) {
     Card(
@@ -166,7 +167,7 @@ fun SearchHeaderCard(faces: List<FaceSearchItem>) {
 
 @Composable
 private fun SearchResultsContent(
-    searchResults: LazyPagingItems<MediaWithFaces>,
+    searchResults: LazyPagingItems<MediaWithFacesUi>,
     isLoading: Boolean
 ) {
     Column(
@@ -204,7 +205,7 @@ private fun InitialLoadingIndicator() {
 
 @Composable
 private fun SearchResultsGrid(
-    searchResults: LazyPagingItems<MediaWithFaces>,
+    searchResults: LazyPagingItems<MediaWithFacesUi>,
     isLoading: Boolean
 ) {
     println("isAppending in UI: $isLoading")
@@ -218,12 +219,10 @@ private fun SearchResultsGrid(
         content = {
             items(
                 count = searchResults.itemCount,
-                key = { index -> searchResults[index]?.media?.sourceStableId ?: "item-$index" }
+                key = { index -> searchResults[index]?.id ?: "item-$index" }
             ) { index ->
                 searchResults[index]?.let { item ->
-                    Box(modifier = Modifier.animateItem()) {
-                        ThumbnailItem(thumbnailUri = item.media.thumbnailUri)
-                    }
+                        ThumbnailItem(thumbnailUri = item.thumbnailUri)
                 }
             }
             if (shouldShowBottomLoader(searchResults.itemCount, isLoading)) {
@@ -284,14 +283,12 @@ fun ThumbnailItem(thumbnailUri: String?) {
     }
 }
 
-
 @Composable
 @Preview(showBackground = true)
 fun SearchScreenPreview() {
     val dummyPagingItems = remember {
-        MutableStateFlow(PagingData.empty<MediaWithFaces>())
+        MutableStateFlow(PagingData.empty<MediaWithFacesUi>())
     }.collectAsLazyPagingItems()
-
     ScreenContent(
         uiModel = SearchUiModel(
             actions = SearchUiModel.Actions(),

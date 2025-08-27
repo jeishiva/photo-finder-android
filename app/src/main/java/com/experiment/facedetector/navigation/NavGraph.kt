@@ -9,8 +9,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import com.experiment.facedetector.common.LogManager
-import com.experiment.facedetector.ui.HomeScreenParams
-import com.experiment.facedetector.ui.SearchScreenParams
+import com.experiment.facedetector.ui.entities.HomeScreenParams
+import com.experiment.facedetector.ui.entities.SearchScreenParams
 import com.experiment.facedetector.ui.screen.SelectPhotoScreen
 import com.experiment.facedetector.ui.screen.SearchScreen
 import com.experiment.facedetector.ui.screen.SplashScreen

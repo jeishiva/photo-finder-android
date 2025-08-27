@@ -17,7 +17,9 @@ class ForwardKeysetPagingSource(
     override fun getRefreshKey(
         state: PagingState<Pair<Long, Long>, MediaWithFaces>
     ): Pair<Long, Long>? {
-        return Pair(initialCursorDate, initialCursorId)
+        val anchor = state.anchorPosition ?: return null
+        val closest = state.closestItemToPosition(anchor) ?: return null
+        return Pair(closest.media.dateModified ?: 0, closest.media.mediaId)
     }
 
     override suspend fun load(

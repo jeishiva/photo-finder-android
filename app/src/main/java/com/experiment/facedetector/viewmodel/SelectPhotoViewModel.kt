@@ -9,7 +9,7 @@ import com.experiment.facedetector.domain.entities.FaceSearchItem
 import com.experiment.facedetector.domain.entities.LocalImageItem
 import com.experiment.facedetector.domain.entities.toFaceSearchItem
 import com.experiment.facedetector.domain.usecase.FaceDetectionUseCase
-import com.experiment.facedetector.ui.HomeUiState
+import com.experiment.facedetector.ui.entities.HomeUiState
 import com.experiment.facedetector.ui.common.UiStateHolder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
