@@ -34,7 +34,7 @@ class ForwardKeysetPagingSource(
             val items: List<MediaWithFaces> = loader(key.first, key.second, params.loadSize)
             val nextKey: Pair<Long, Long>? = if (items.isNotEmpty()) {
                 val last: MediaWithFaces = items.last()
-                val lastDate: Long = last.media.dateModified ?: (System.currentTimeMillis() / 1000)
+                val lastDate: Long = last.media.dateModified
                 val lastId: Long = last.media.mediaId
                 Pair(lastDate, lastId)
             } else {

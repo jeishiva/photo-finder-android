@@ -22,7 +22,7 @@ data class MediaEntity(
     val sourceStableId: String,           // stable ID from that source (e.g. MediaStore _ID, file path, cloud fileId)
     val contentUri: String,               // where to open the full image
     val thumbnailUri: String?,            // cached/generated thumbnail on disk
-    val dateModified: Long? = null,       // last modified from source (epoch millis)
+    val dateModified: Long,               // last modified from source (epoch millis)
     val sizeBytes: Long? = null,          // file size
     val fingerprint: String? = null       // digest of size+modified+hash for reprocessing checks*/
 )
@@ -47,7 +47,29 @@ data class FaceEntity(
     val mediaOwnerId: Long,
     val embeddingData: FloatArray,      // stored as BLOB via converter
     val createdAt: Long = System.currentTimeMillis()
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as FaceEntity
+
+        if (mediaOwnerId != other.mediaOwnerId) return false
+        if (createdAt != other.createdAt) return false
+        if (faceId != other.faceId) return false
+        if (!embeddingData.contentEquals(other.embeddingData)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = mediaOwnerId.hashCode()
+        result = 31 * result + createdAt.hashCode()
+        result = 31 * result + faceId.hashCode()
+        result = 31 * result + embeddingData.contentHashCode()
+        return result
+    }
+}
 
 data class MediaWithFaces(
     @Embedded val media: MediaEntity,

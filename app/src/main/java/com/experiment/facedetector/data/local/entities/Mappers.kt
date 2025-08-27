@@ -4,8 +4,8 @@ import com.experiment.facedetector.domain.entities.FaceEmbedding
 import com.experiment.facedetector.domain.entities.Media
 import com.experiment.facedetector.domain.entities.MediaWithFacesDomain
 import com.experiment.facedetector.domain.repo.MediaFingerPrint
-import com.experiment.facedetector.domain.source.MediaSourceType
-import com.experiment.facedetector.domain.source.SourceMediaItem
+import com.experiment.facedetector.domain.entities.MediaSourceType
+import com.experiment.facedetector.domain.entities.SourceMediaItem
 
 fun SourceMediaItem.toMediaEntity(
     sourceType: MediaSourceType,
@@ -13,17 +13,17 @@ fun SourceMediaItem.toMediaEntity(
 ): MediaEntity {
     val fp = fingerprint.generate(
         sourceStableId = this.stableId.toString(),
-        lastModified = this.lastModifiedTime,
-        sizeBytes = this.fileSize
+        lastModified = this.lastModifiedAtMs,
+        sizeBytes = this.sizeBytes
     )
     return MediaEntity(
         mediaId = 0L,
         contentUri = this.contentUri.toString(),
         thumbnailUri = null,
-        source = sourceType.id,
+        source = sourceType.identifier,
         sourceStableId = this.stableId.toString(),
-        dateModified = this.lastModifiedTime,
-        sizeBytes = this.fileSize,
+        dateModified = this.lastModifiedAtMs,
+        sizeBytes = this.sizeBytes,
         fingerprint = fp
     )
 }

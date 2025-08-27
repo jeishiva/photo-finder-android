@@ -14,7 +14,7 @@ import com.experiment.facedetector.di.MediaIndexerFactory
 import com.experiment.facedetector.domain.entities.MediaWithFacesDomain
 import com.experiment.facedetector.domain.filter.MediaFilter
 import com.experiment.facedetector.domain.repo.DbInvalidationRepository
-import com.experiment.facedetector.domain.source.MediaSourceType
+import com.experiment.facedetector.domain.entities.MediaSourceType
 import com.experiment.facedetector.domain.usecase.facesearch.SearchPhotosPagedUseCase
 import com.experiment.facedetector.presentation.entities.SearchUiState
 import com.experiment.facedetector.presentation.common.UiStateHolder

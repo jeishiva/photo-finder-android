@@ -7,7 +7,7 @@ import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.domain.processing.FaceEmbeddingPipeline
 import com.experiment.facedetector.face.FaceDetectionProcessor
 import com.experiment.facedetector.domain.entities.FaceEmbeddingRequest
-import com.experiment.facedetector.domain.source.SourceMediaItem
+import com.experiment.facedetector.domain.entities.SourceMediaItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

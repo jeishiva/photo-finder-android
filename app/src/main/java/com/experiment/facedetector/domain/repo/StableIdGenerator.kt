@@ -1,7 +1,7 @@
 package com.experiment.facedetector.domain.repo
 
-import com.experiment.facedetector.domain.source.MediaSource
-import com.experiment.facedetector.domain.source.MediaSourceType
+import com.experiment.facedetector.domain.entities.MediaSourceType
+import com.experiment.facedetector.domain.entities.SourceMediaItem
 import com.experiment.facedetector.domain.source.SourceMediaItem
 
 interface StableIdGenerator {

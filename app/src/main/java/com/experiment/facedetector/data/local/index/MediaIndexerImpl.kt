@@ -4,6 +4,7 @@ import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.data.local.entities.FaceEntity
 import com.experiment.facedetector.data.local.entities.MediaEntity
 import com.experiment.facedetector.data.local.entities.toMediaEntity
+import com.experiment.facedetector.domain.entities.SourceMediaItem
 import com.experiment.facedetector.domain.index.MediaIndexer
 import com.experiment.facedetector.domain.processing.FaceEmbeddingPipeline
 import com.experiment.facedetector.domain.processing.ThumbnailGenerator
@@ -11,7 +12,6 @@ import com.experiment.facedetector.domain.repo.FaceRepository
 import com.experiment.facedetector.domain.repo.MediaFingerPrint
 import com.experiment.facedetector.domain.repo.MediaRepository
 import com.experiment.facedetector.domain.source.MediaSource
-import com.experiment.facedetector.domain.source.SourceMediaItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -104,7 +104,7 @@ class MediaIndexerImpl(
         // 1) Read OLD fingerprints by (source, sourceStableId) BEFORE upsert
         val stableIdsStr = items.map { it.stableId.toString() }
         val oldFpByStable: Map<String, String?> =
-            mediaRepo.getFingerprintsBySource(source.sourceType.id, stableIdsStr) // NEW API (see below)
+            mediaRepo.getFingerprintsBySource(source.sourceType.identifier, stableIdsStr) // NEW API (see below)
 
         // 2) Decide which items changed
         val changed = ArrayList<SourceMediaItem>(items.size)
@@ -124,7 +124,7 @@ class MediaIndexerImpl(
 
         // 4) Resolve DB-assigned mediaIds AFTER upsert
         val idsForPage: Map<String, Long> =
-            mediaRepo.getIdsForSource(source.sourceType.id, stableIdsStr)
+            mediaRepo.getIdsForSource(source.sourceType.identifier, stableIdsStr)
 
         // Convert to Long->Long for fast lookup
         val idByStable = HashMap<Long, Long>(idsForPage.size)
@@ -148,7 +148,7 @@ class MediaIndexerImpl(
         return chunk
             .asFlow()
             .flatMapMerge(concurrency = maxConcurrency) { item ->
-                LogManager.d(tag, "processing item ${item.lastModifiedTime}")
+                LogManager.d(tag, "processing item ${item.lastModifiedAtMs}")
                 processSingleItemFlow(item, idByStable)
             }
     }

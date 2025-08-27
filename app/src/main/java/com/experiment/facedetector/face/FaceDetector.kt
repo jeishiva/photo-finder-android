@@ -1,5 +1,6 @@
 package com.experiment.facedetector.face
 
+import SourceMediaItem
 import com.experiment.facedetector.common.await
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -9,7 +10,7 @@ import com.google.mlkit.vision.face.Face
 import com.google.mlkit.vision.face.FaceDetector
 import android.graphics.Bitmap
 import com.experiment.facedetector.config.FullImageConfig
-import com.experiment.facedetector.domain.source.SourceMediaItem
+import com.experiment.facedetector.domain.entities.SourceMediaItem
 import com.experiment.facedetector.image.BitmapHelper
 
 class FaceDetectionProcessor(

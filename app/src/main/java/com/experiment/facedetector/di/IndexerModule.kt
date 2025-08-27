@@ -3,7 +3,7 @@ package com.experiment.facedetector.di
 import com.experiment.facedetector.data.local.index.MediaIndexerImpl
 import com.experiment.facedetector.domain.index.MediaIndexer
 import com.experiment.facedetector.domain.source.MediaSource
-import com.experiment.facedetector.domain.source.MediaSourceType
+import com.experiment.facedetector.domain.entities.MediaSourceType
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
@@ -12,9 +12,9 @@ interface MediaIndexerFactory {
 }
 
 val indexerModule = module {
-    single<MediaIndexer>(named(MediaSourceType.MediaStoreCamera.id)) {
+    single<MediaIndexer>(named(MediaSourceType.MediaStoreCamera.identifier)) {
         MediaIndexerImpl(
-            source = get<MediaSource>(qualifier = named(MediaSourceType.MediaStoreCamera.id)),
+            source = get<MediaSource>(qualifier = named(MediaSourceType.MediaStoreCamera.identifier)),
             mediaRepo = get(),
             faceRepo = get(),
             embeddings = get(),
@@ -26,7 +26,7 @@ val indexerModule = module {
     single<MediaIndexerFactory> {
         object : MediaIndexerFactory {
             override fun getIndexer(type: MediaSourceType): MediaIndexer {
-                return get(qualifier = named(type.id))
+                return get(qualifier = named(type.identifier))
             }
         }
     }
