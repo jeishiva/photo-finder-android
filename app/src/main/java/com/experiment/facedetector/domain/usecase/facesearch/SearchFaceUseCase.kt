@@ -16,7 +16,7 @@ class SearchSimilarPhotoUseCase(
     private val faceEmbeddingMatcher: FaceEmbeddingMatcher,
 ) {
     operator fun invoke(searchEmbeddings: List<FloatArray>): Flow<PagingData<MediaWithFacesDomain>> {
-        return mediaWithFacesRepository.pagerFacesOnly(pageSize = 10).flow.map { pagingData ->
+        return mediaWithFacesRepository.pagerFacesOnly(pageSize = 20).flow.map { pagingData ->
             pagingData.map {
                 it.toDomain()
             }.filter {

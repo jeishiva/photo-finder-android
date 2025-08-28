@@ -16,6 +16,7 @@ class MediaWithFacesRepositoryImpl(
         return Pager(
             config = PagingConfig(
                 pageSize = pageSize,
+                prefetchDistance = pageSize / 2,
                 enablePlaceholders = false
             ),
             pagingSourceFactory = {
@@ -43,7 +44,8 @@ class MediaWithFacesRepositoryImpl(
         return Pager(
             config = PagingConfig(
                 pageSize = pageSize,
-                enablePlaceholders = false
+                prefetchDistance = pageSize / 2,
+                enablePlaceholders = true
             ),
             pagingSourceFactory = {
                 BidirectionalKeysetPagingSource(
