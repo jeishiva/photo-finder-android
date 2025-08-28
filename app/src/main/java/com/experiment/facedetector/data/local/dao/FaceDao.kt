@@ -24,7 +24,7 @@ interface FaceDao {
     @Query("""
         SELECT * FROM face
         WHERE mediaOwnerId = :mediaId
-        ORDER BY createdAt ASC
+        ORDER BY createdAtMs ASC
     """)
     suspend fun getByMediaId(mediaId: Long): List<FaceEntity>
 

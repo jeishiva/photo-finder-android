@@ -2,7 +2,7 @@ package com.experiment.facedetector.data.local.repo
 import androidx.room.withTransaction
 import com.experiment.facedetector.data.local.AppDatabase
 import com.experiment.facedetector.data.local.dao.MediaSourceCursorDao
-import com.experiment.facedetector.data.local.entities.MediaSourceCursorEntity
+import com.experiment.facedetector.data.local.entities.SourceMediaCursor
 import com.experiment.facedetector.domain.entities.MediaSourceCursor
 import com.experiment.facedetector.domain.entities.MediaSourceType
 import com.experiment.facedetector.domain.repo.MediaSourceCursorRepo
@@ -30,7 +30,7 @@ class MediaSourceCursorRepoImpl(
     }
 
     override suspend fun upsert(source: MediaSourceType, cursor: MediaSourceCursor, nowMs: Long) {
-        val entity = MediaSourceCursorEntity.fromDomain(
+        val entity = SourceMediaCursor.fromDomain(
             sourceType = source,
             cursor = cursor,
             updatedAtMs = nowMs
@@ -51,7 +51,7 @@ class MediaSourceCursorRepoImpl(
             val current = dao.getOnce(source.key)
             if (current == null) {
                 dao.upsert(
-                    MediaSourceCursorEntity.fromDomain(
+                    SourceMediaCursor.fromDomain(
                         sourceType = source,
                         cursor = newCursor,
                         updatedAtMs = nowMs

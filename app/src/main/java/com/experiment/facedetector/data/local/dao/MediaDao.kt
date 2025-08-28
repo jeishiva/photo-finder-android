@@ -29,7 +29,7 @@ interface MediaDao {
 
     @Query("""
         UPDATE media
-        SET thumbnailUri = :thumbnailUri
+        SET thumbnailPath = :thumbnailUri
         WHERE mediaId = :mediaId
     """)
     suspend fun updateThumbnail(mediaId: Long, thumbnailUri: String?)
@@ -41,7 +41,7 @@ interface MediaDao {
     @Query("""
         SELECT sourceStableId, mediaId
         FROM media
-        WHERE source = :source
+        WHERE sourceKey = :source
           AND sourceStableId IN (:stableIds)
     """)
     suspend fun getIdsForSourceRows(
@@ -52,7 +52,7 @@ interface MediaDao {
     @Query("""
         SELECT sourceStableId, fingerprint
         FROM media
-        WHERE source = :source AND sourceStableId IN (:stableIds)
+        WHERE sourceKey = :source AND sourceStableId IN (:stableIds)
     """)
     suspend fun getFingerprintsBySourceRows(
         source: String,

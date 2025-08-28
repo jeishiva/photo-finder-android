@@ -1,81 +1,149 @@
 package com.experiment.facedetector.data.local.entities
 
-import androidx.room.Embedded
+import androidx.room.ColumnInfo
 import androidx.room.Entity
-import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import androidx.room.Relation
+import com.experiment.facedetector.domain.entities.MediaKind
 
-import androidx.room.TypeConverters
-import com.experiment.facedetector.data.local.converter.FloatArrayConverter
-
+/**
+ * Canonical local copy of a media item (image/video) used by UI and pipelines.
+ *
+ * Notes:
+ * - All timestamps are UTC in milliseconds.
+ * - `sourceKey` + `sourceStableId` uniquely identify the item within a source.
+ * - `processedState` tracks thumbnail/embedding pipeline results per item.
+ */
 @Entity(
     tableName = "media",
     indices = [
-        Index(value = ["dateModified", "mediaId"])
+        Index(value = ["sourceKey", "sourceStableId"], unique = true),
+        Index(value = ["sourceKey"]),
+        Index(value = ["processedState"]),
+        Index(value = ["isDeleted"])
     ]
 )
 data class MediaEntity(
-    @PrimaryKey(autoGenerate = true) val mediaId: Long = 0L,
-    val source: String,                   // e.g. "CAMERA", "WHATSAPP, "CLOUD"
-    val sourceStableId: String,           // stable ID from that source (e.g. MediaStore _ID, file path, cloud fileId)
-    val contentUri: String,               // where to open the full image
-    val thumbnailUri: String?,            // cached/generated thumbnail on disk
-    val dateModified: Long,               // last modified from source (epoch millis)
-    val sizeBytes: Long? = null,          // file size
-    val fingerprint: String? = null       // digest of size+modified+hash for reprocessing checks*/
+
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = "mediaId")
+    val mediaId: Long = 0L,
+
+    // ---- Identity (per source) ----
+    @ColumnInfo(name = "sourceKey")
+    val sourceKey: String,
+
+    @ColumnInfo(name = "sourceStableId")
+    val sourceStableId: String,
+
+    // Optional: keep for direct file access / debug
+    @ColumnInfo(name = "contentUri")
+    val contentUri: String,
+
+    // ---- Descriptive ----
+    @ColumnInfo(name = "mimeType")
+    val mimeType: String,
+
+    @ColumnInfo(name = "width")
+    val width: Int,
+
+    @ColumnInfo(name = "height")
+    val height: Int,
+
+    @ColumnInfo(name = "sizeBytes")
+    val sizeBytes: Long,
+
+    // Album grouping (if available)
+    @ColumnInfo(name = "bucketId")
+    val bucketId: Long?,
+
+    @ColumnInfo(name = "bucketDisplayName")
+    val bucketDisplayName: String?,
+
+    //---- Image Specific ----
+    // Images: display rotation (0/90/180/270). For videos this may be null.
+    @ColumnInfo(name = "orientationDeg")
+    val orientationDeg: Int?,
+
+    @ColumnInfo(name = "mediaKind")
+    val mediaKind: MediaKind,
+
+    //---- video Specific ----
+    @ColumnInfo(name = "durationMs")
+    val durationMs: Long?,
+
+    @ColumnInfo(name = "rotationDeg")
+    val rotationDeg: Int?,
+
+    // ---- Timeline ----
+    /** For UI chronology (EXIF/DATE_TAKEN/DATE_ADDED fallback). */
+    @ColumnInfo(name = "createdAtMs")
+    val createdAtMs: Long,
+
+    /** For sync/change detection (GENERATION_MODIFIED or DATE_MODIFIED). */
+    @ColumnInfo(name = "modifiedAtMs")
+    val modifiedAtMs: Long,
+
+    /** Raw generation value when present (API 29+). */
+    @ColumnInfo(name = "generationModified")
+    val generationModified: Long?,
+
+    // ---- Pipeline / Rendering ----
+    /** Path to generated thumbnail on disk, if any. */
+    @ColumnInfo(name = "thumbnailPath")
+    val thumbnailPath: String?,
+
+    /** Fingerprint used to detect changes (e.g., derived from size+modified+mime or a hash). */
+    @ColumnInfo(name = "fingerprint")
+    val fingerprint: String,
+
+    /** Processing state for thumbnail + embeddings. */
+    @ColumnInfo(name = "processedState")
+    val processedState: ProcessedState = ProcessedState.PENDING,
+
+    /** Last pipeline stage we attempted. */
+    @ColumnInfo(name = "lastProcessedStage")
+    val lastProcessedStage: ProcessStage? = null,
+
+    /** When we last completed or failed a stage. */
+    @ColumnInfo(name = "lastProcessedAtMs")
+    val lastProcessedAtMs: Long? = null,
+
+    /** Number of processing attempts (sum of all stages). */
+    @ColumnInfo(name = "attemptCount")
+    val attemptCount: Int = 0,
+
+    /** Short error code for last failure (e.g., FILE_NOT_FOUND, IO_TIMEOUT). */
+    @ColumnInfo(name = "lastErrorCode")
+    val lastErrorCode: String? = null,
+
+    /** Truncated error message from last failure (keep small, e.g., <= 512 chars). */
+    @ColumnInfo(name = "lastErrorMessage")
+    val lastErrorMessage: String? = null,
+
+    // ---- Lifecycle / housekeeping ----
+    /** Soft-deletion flag (presence sweep can flip this). UI should filter out deleted items. */
+    @ColumnInfo(name = "isDeleted")
+    val isDeleted: Boolean = false,
+
+    /** Row update time for observability. */
+    @ColumnInfo(name = "updatedAtMs")
+    val updatedAtMs: Long
 )
 
-@Entity(
-    tableName = "face",
-    foreignKeys = [
-        ForeignKey(
-            entity = MediaEntity::class,
-            parentColumns = ["mediaId"],
-            childColumns = ["mediaOwnerId"],
-            onDelete = ForeignKey.CASCADE
-        )
-    ],
-    indices = [
-        Index(value = ["mediaOwnerId"])
-    ]
-)
-@TypeConverters(FloatArrayConverter::class)
-data class FaceEntity(
-    @PrimaryKey val faceId: String,
-    val mediaOwnerId: Long,
-    val embeddingData: FloatArray,      // stored as BLOB via converter
-    val createdAt: Long = System.currentTimeMillis()
-) {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as FaceEntity
-
-        if (mediaOwnerId != other.mediaOwnerId) return false
-        if (createdAt != other.createdAt) return false
-        if (faceId != other.faceId) return false
-        if (!embeddingData.contentEquals(other.embeddingData)) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = mediaOwnerId.hashCode()
-        result = 31 * result + createdAt.hashCode()
-        result = 31 * result + faceId.hashCode()
-        result = 31 * result + embeddingData.contentHashCode()
-        return result
-    }
+/** High-level state of the processing pipeline for this media. */
+enum class ProcessedState {
+    PENDING,         // never attempted (new)
+    SKIPPED,         // unchanged this run (no processing needed)
+    PROCESSING,      // optional transient state if you want to set it
+    PROCESSED,       // all required stages done
+    FAILED_THUMBNAIL,
+    FAILED_EMBEDDING,
+    FAILED_OTHER
 }
 
-data class MediaWithFaces(
-    @Embedded val media: MediaEntity,
-    @Relation(
-        parentColumn = "mediaId",
-        entityColumn = "mediaOwnerId"
-    )
-    val faces: List<FaceEntity>
-)
+/** Which stage we touched last (helps with targeted retries or debugging). */
+enum class ProcessStage {
+    THUMBNAIL,
+    EMBEDDING
+}

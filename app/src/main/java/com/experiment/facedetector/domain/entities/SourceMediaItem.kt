@@ -1,15 +1,29 @@
 package com.experiment.facedetector.domain.entities
 
-sealed class SourceMediaItem {
-    abstract val stableId: Long
-    abstract val contentUri: String
-    abstract val mimeType: String
-    abstract val width: Int
-    abstract val height: Int
-    abstract val sizeBytes: Long
-    abstract val createdAtMs: Long
-    abstract val lastModifiedAtMs: Long
-    abstract val bucketId: Long?
-    abstract val generationModified: Long?
-    abstract val bucketDisplayName: String?
-}
+enum class MediaKind { IMAGE, VIDEO }
+
+data class SourceMediaItem(
+    val stableId: Long,
+    val contentUri: String,
+    val mimeType: String,
+    val width: Int,
+    val height: Int,
+    val sizeBytes: Long,
+    val createdAtMs: Long,
+    val lastModifiedAtMs: Long,
+    val generationModified: Long?,
+    val bucketId: Long?,
+    val bucketDisplayName: String?,
+    val kind: MediaKind,
+    val image: ImageInfo? = null,
+    val video: VideoInfo? = null
+)
+
+data class ImageInfo(
+    val orientationDeg: Int
+)
+
+data class VideoInfo(
+    val durationMs: Long,
+    val rotationDeg: Int? = null
+)

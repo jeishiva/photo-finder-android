@@ -9,7 +9,7 @@ import com.experiment.facedetector.domain.entities.MediaSourceType
  * Persists the last processed cursor per source so workers can resume stateless.
  */
 @Entity(tableName = "media_source_cursor")
-data class MediaSourceCursorEntity(
+data class SourceMediaCursor(
     @PrimaryKey
     val sourceKey: MediaSourceType,
 
@@ -38,8 +38,8 @@ data class MediaSourceCursorEntity(
             sourceType: MediaSourceType,
             cursor: MediaSourceCursor,
             updatedAtMs: Long
-        ): MediaSourceCursorEntity {
-            return MediaSourceCursorEntity(
+        ): SourceMediaCursor {
+            return SourceMediaCursor(
                 sourceKey = sourceType,
                 lastGenerationModified = cursor.generationModified,
                 lastDateModifiedSec = cursor.lastModifiedSeconds,

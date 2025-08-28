@@ -10,11 +10,10 @@ import androidx.paging.map
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.common.safeCancel
 import com.experiment.facedetector.common.throttleFirst
-import com.experiment.facedetector.di.MediaIndexerFactory
+import com.experiment.facedetector.data.local.index.CameraMediaScanner
 import com.experiment.facedetector.domain.entities.MediaWithFacesDomain
 import com.experiment.facedetector.domain.filter.MediaFilter
 import com.experiment.facedetector.domain.repo.DbInvalidationRepository
-import com.experiment.facedetector.domain.entities.MediaSourceType
 import com.experiment.facedetector.domain.usecase.facesearch.SearchPhotosPagedUseCase
 import com.experiment.facedetector.presentation.entities.SearchUiState
 import com.experiment.facedetector.presentation.common.UiStateHolder
@@ -39,7 +38,7 @@ class SearchViewModel(
     savedStateHandle: SavedStateHandle,
     val embeddingUseCase: ExtractEmbeddingsUseCase,
     val searchPhotosPagedUseCase: SearchPhotosPagedUseCase,
-    val mediaIndexerFactory: MediaIndexerFactory,
+    val mediaScanner: CameraMediaScanner,
     val invalidationRepo: DbInvalidationRepository,
 ) : ViewModel() {
 
@@ -105,8 +104,7 @@ class SearchViewModel(
 
     fun startIndex() {
         viewModelScope.launch(Dispatchers.IO) {
-            val indexer = mediaIndexerFactory.getIndexer(MediaSourceType.MediaStoreCamera)
-            indexer.refreshAll()
+            mediaScanner.sync()
         }
     }
 

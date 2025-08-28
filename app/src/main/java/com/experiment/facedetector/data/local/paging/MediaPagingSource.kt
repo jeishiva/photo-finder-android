@@ -19,7 +19,7 @@ class ForwardKeysetPagingSource(
     ): Pair<Long, Long>? {
         val anchor = state.anchorPosition ?: return null
         val closest = state.closestItemToPosition(anchor) ?: return null
-        return Pair(closest.media.dateModified ?: 0, closest.media.mediaId)
+        return Pair(closest.media.modifiedAtMs, closest.media.mediaId)
     }
 
     override suspend fun load(
@@ -34,7 +34,7 @@ class ForwardKeysetPagingSource(
             val items: List<MediaWithFaces> = loader(key.first, key.second, params.loadSize)
             val nextKey: Pair<Long, Long>? = if (items.isNotEmpty()) {
                 val last: MediaWithFaces = items.last()
-                val lastDate: Long = last.media.dateModified
+                val lastDate: Long = last.media.modifiedAtMs
                 val lastId: Long = last.media.mediaId
                 Pair(lastDate, lastId)
             } else {

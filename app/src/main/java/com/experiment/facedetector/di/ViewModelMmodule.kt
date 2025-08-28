@@ -16,10 +16,10 @@ val viewModelModule = module {
     viewModel { (handle: SavedStateHandle) ->
         SearchViewModel(
             savedStateHandle = handle,
-            mediaIndexerFactory = get(),
             embeddingUseCase = get(),
             searchPhotosPagedUseCase = get(),
             invalidationRepo = get(),
+            mediaScanner = get()
         )
     }
 }

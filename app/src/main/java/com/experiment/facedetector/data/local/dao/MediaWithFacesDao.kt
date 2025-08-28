@@ -11,9 +11,9 @@ interface MediaWithFacesDao {
     @Query(
         """
         SELECT * FROM media
-        WHERE (dateModified < :cursorDate)
-           OR (dateModified = :cursorDate AND mediaId < :cursorId)
-        ORDER BY dateModified DESC, mediaId DESC
+        WHERE (modifiedAtMs < :cursorDate)
+           OR (modifiedAtMs = :cursorDate AND mediaId < :cursorId)
+        ORDER BY modifiedAtMs DESC, mediaId DESC
         LIMIT :limit
         """
     )
@@ -33,10 +33,10 @@ interface MediaWithFacesDao {
             WHERE f.mediaOwnerId = m.mediaId
         )
         AND (
-            m.dateModified < :cursorDate
-            OR (m.dateModified = :cursorDate AND m.mediaId < :cursorId)
+            m.modifiedAtMs < :cursorDate
+            OR (m.modifiedAtMs = :cursorDate AND m.mediaId < :cursorId)
         )
-        ORDER BY m.dateModified DESC, m.mediaId DESC
+        ORDER BY m.modifiedAtMs DESC, m.mediaId DESC
         LIMIT :limit
         """
     )
