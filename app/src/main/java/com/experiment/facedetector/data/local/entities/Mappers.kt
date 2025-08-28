@@ -31,7 +31,7 @@ fun SourceMediaItem.toMediaEntity(
     }
 
     return MediaEntity(
-        mediaId = 0L, // auto-increment in Room
+        id = 0L, // auto-increment in Room
 
         // identity
         sourceKey = sourceType.key,
@@ -80,7 +80,7 @@ fun SourceMediaItem.toMediaEntity(
 fun MediaWithFaces.toDomain(): MediaWithFacesDomain {
     return MediaWithFacesDomain(
         media = Media(
-            id = media.mediaId,
+            id = media.id,
             thumbnailUri = media.thumbnailPath,
             dateModified = media.modifiedAtMs,
             sourceStableId = media.sourceStableId

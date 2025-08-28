@@ -27,7 +27,7 @@ data class MediaEntity(
 
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "mediaId")
-    val mediaId: Long = 0L,
+    val id: Long = 0L,
 
     // ---- Identity (per source) ----
     @ColumnInfo(name = "sourceKey")

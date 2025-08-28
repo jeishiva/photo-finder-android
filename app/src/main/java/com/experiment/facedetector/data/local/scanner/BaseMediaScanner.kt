@@ -1,4 +1,4 @@
-package com.experiment.facedetector.data.local.index
+package com.experiment.facedetector.data.local.scanner
 
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.data.local.entities.FaceEntity

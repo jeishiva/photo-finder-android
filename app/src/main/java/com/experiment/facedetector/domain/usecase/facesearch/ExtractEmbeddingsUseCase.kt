@@ -5,6 +5,8 @@ import com.experiment.facedetector.domain.entities.FaceEmbedding
 import com.experiment.facedetector.domain.entities.FaceEmbeddingRequest
 import com.experiment.facedetector.domain.processing.FaceEmbeddingExtractor
 import com.experiment.facedetector.image.BitmapHelper
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.util.UUID
 
 /**
@@ -22,9 +24,11 @@ class ExtractEmbeddingsUseCase(
      */
     suspend operator fun invoke(request: FaceEmbeddingRequest): Result<List<FaceEmbedding>> {
         return try {
-            embeddingExtractor.initialize()
-            val embeddings = extractEmbeddingsForFaces(request)
-            Result.success(embeddings)
+            withContext(Dispatchers.Default) {
+                embeddingExtractor.initialize()
+                val embeddings = extractEmbeddingsForFaces(request)
+                Result.success(embeddings)
+            }
         } catch (e: Exception) {
             LogManager.e(TAG, "Failed to extract embeddings from request", e)
             Result.failure(e)
@@ -48,7 +52,7 @@ class ExtractEmbeddingsUseCase(
     }
 
     private suspend fun extractEmbeddingsForFaces(
-        faceEmbeddingRequest: FaceEmbeddingRequest
+        faceEmbeddingRequest: FaceEmbeddingRequest,
     ): List<FaceEmbedding> {
         return try {
             faceEmbeddingRequest.faces.mapNotNull { face ->

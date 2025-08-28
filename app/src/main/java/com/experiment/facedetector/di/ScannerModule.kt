@@ -1,6 +1,6 @@
 package com.experiment.facedetector.di
 
-import com.experiment.facedetector.data.local.index.CameraMediaScanner
+import com.experiment.facedetector.data.local.scanner.CameraMediaScanner
 import org.koin.dsl.module
 
 val scannerModule = module {
@@ -15,5 +15,4 @@ val scannerModule = module {
             cursorRepo = get()
         )
     }
-
 }
