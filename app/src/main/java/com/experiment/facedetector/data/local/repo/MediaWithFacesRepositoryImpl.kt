@@ -5,7 +5,7 @@ import com.experiment.facedetector.data.local.dao.MediaWithFacesDao
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import com.experiment.facedetector.data.local.entities.MediaWithFaces
-import com.experiment.facedetector.data.local.paging.ForwardKeysetPagingSource
+import com.experiment.facedetector.data.local.paging.BidirectionalKeysetPagingSource
 import com.experiment.facedetector.domain.repo.MediaWithFacesRepository
 
 class MediaWithFacesRepositoryImpl(
@@ -19,12 +19,19 @@ class MediaWithFacesRepositoryImpl(
                 enablePlaceholders = false
             ),
             pagingSourceFactory = {
-                ForwardKeysetPagingSource(
-                    loader = { date, id, limit ->
-                        dao.pageAfterAll(
+                BidirectionalKeysetPagingSource(
+                    forwardLoader = { date, id, limit ->
+                        dao.pageAfterFacesOnly(
                             cursorDate = date,
                             cursorId = id,
-                            limit = limit
+                            limit = pageSize
+                        )
+                    },
+                    backwardLoader = { date, id, limit ->
+                        dao.pageBeforeFacesOnly(
+                            cursorDate = date,
+                            cursorId = id,
+                            limit = pageSize
                         )
                     }
                 )
@@ -39,12 +46,19 @@ class MediaWithFacesRepositoryImpl(
                 enablePlaceholders = false
             ),
             pagingSourceFactory = {
-                ForwardKeysetPagingSource(
-                    loader = { date, id, limit ->
-                        dao.pageAfterFacesOnly(
+                BidirectionalKeysetPagingSource(
+                    forwardLoader = { date, id, limit ->
+                        dao.pageAfterAll(
                             cursorDate = date,
                             cursorId = id,
-                            limit = limit
+                            limit = pageSize
+                        )
+                    },
+                    backwardLoader = { date, id, limit ->
+                        dao.pageBeforeAll(
+                            cursorDate = date,
+                            cursorId = id,
+                            limit = pageSize
                         )
                     }
                 )

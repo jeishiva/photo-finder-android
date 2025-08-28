@@ -11,7 +11,6 @@ import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.common.safeCancel
 import com.experiment.facedetector.common.throttleFirst
 import com.experiment.facedetector.data.local.scanner.CameraMediaScanner
-import com.experiment.facedetector.domain.entities.MediaWithFacesDomain
 import com.experiment.facedetector.domain.filter.MediaFilter
 import com.experiment.facedetector.domain.repo.DbInvalidationRepository
 import com.experiment.facedetector.domain.usecase.facesearch.SearchSimilarPhotoUseCase
@@ -23,58 +22,36 @@ import com.experiment.facedetector.presentation.entities.toUi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.onStart
 
 class SearchViewModel(
     savedStateHandle: SavedStateHandle,
     val embeddingUseCase: ExtractEmbeddingsUseCase,
     val searchPhotosPagedUseCase: SearchSimilarPhotoUseCase,
     val mediaScanner: CameraMediaScanner,
-    val invalidationRepo: DbInvalidationRepository,
 ) : ViewModel() {
 
     private val _uiState = UiStateHolder<SearchUiState>(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.state
-
     var searchJob: Job? = null
-
     private var searchSessionId: String = savedStateHandle.get<String>("sessionId")!!
-
     private val _filter = MutableStateFlow(MediaFilter())
     val filter: StateFlow<MediaFilter> = _filter.asStateFlow()
-
     private val searchTrigger: MutableStateFlow<List<FloatArray>> = MutableStateFlow(emptyList())
-
-    private val refreshes: Flow<Unit> =
-        invalidationRepo
-            .changes("media", "face")
-            .onStart { emit(Unit) } // initial tick (ignored until embeddings arrive)
-            .throttleFirst(500)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val pagedFaces: StateFlow<PagingData<MediaWithFacesUi>> =
         // new embeddings OR DB change → consider re-running,
         // but only proceed when embeddings are non-empty.
-        merge(
-            searchTrigger.drop(1).map { Unit },
-            refreshes
-        )
-        .combine(searchTrigger) { _, embeddings ->
-            embeddings
-        }
+        searchTrigger
         .filter { embeddings ->
             embeddings.isNotEmpty()
         }

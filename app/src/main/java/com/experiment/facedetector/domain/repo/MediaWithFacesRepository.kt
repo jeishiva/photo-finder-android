@@ -8,16 +8,13 @@ import com.experiment.facedetector.data.local.entities.MediaWithFaces
  * Uses forward-only keyset pagination (newest → older).
  */
 interface MediaWithFacesRepository {
-
     /**
      * Newest-first pager for all media.
      */
-    fun pagerAll(pageSize: Int = 60): Pager<Pair<Long, Long>, MediaWithFaces>
+    fun pagerAll(pageSize: Int): Pager<Pair<Long, Long>, MediaWithFaces>
 
     /**
      * Newest-first pager for media that has at least one face.
      */
-    fun pagerFacesOnly(pageSize: Int = 60): Pager<Pair<Long, Long>, MediaWithFaces>
-
-
+    fun pagerFacesOnly(pageSize: Int): Pager<Pair<Long, Long>, MediaWithFaces>
 }

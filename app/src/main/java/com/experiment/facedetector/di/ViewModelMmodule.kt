@@ -18,7 +18,6 @@ val viewModelModule = module {
             savedStateHandle = handle,
             embeddingUseCase = get(),
             searchPhotosPagedUseCase = get(),
-            invalidationRepo = get(),
             mediaScanner = get()
         )
     }

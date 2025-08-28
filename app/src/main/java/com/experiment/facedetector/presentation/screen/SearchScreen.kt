@@ -112,7 +112,6 @@ fun ScreenContent(
                 SearchHeaderCard(faces = uiModel.state.faceList)
                 SearchResultSection(
                     searchResults = searchResultPagedItems,
-                    isLoading =  searchResultPagedItems.loadState.append == LoadState.Loading
                 )
             }
         }
@@ -122,8 +121,9 @@ fun ScreenContent(
 @Composable
 fun SearchResultSection(
     searchResults: LazyPagingItems<MediaWithFacesUi>,
-    isLoading: Boolean
 ) {
+    val isRefreshing = searchResults.loadState.refresh is LoadState.Loading
+    val isAppending = searchResults.loadState.append is LoadState.Loading
     Card(
         modifier = Modifier
             .fillMaxSize()
@@ -134,7 +134,8 @@ fun SearchResultSection(
     ) {
         SearchResultsContent(
             searchResults = searchResults,
-            isLoading = isLoading
+            isRefreshing = isRefreshing,
+            isAppending = isAppending
         )
     }
 }
@@ -165,17 +166,21 @@ fun SearchHeaderCard(faces: List<FaceSearchItemUi>) {
 @Composable
 private fun SearchResultsContent(
     searchResults: LazyPagingItems<MediaWithFacesUi>,
-    isLoading: Boolean
+    isRefreshing: Boolean,
+    isAppending: Boolean
 ) {
     Column(
         modifier = Modifier
             .padding(16.dp)
             .fillMaxWidth()
     ) {
-        if (shouldShowInitialLoader(searchResults.itemCount, isLoading)) {
+        if (shouldShowInitialLoader(searchResults.itemCount, isRefreshing)) {
             InitialLoadingIndicator()
         } else {
-            SearchResultsGrid(searchResults, isLoading)
+            SearchResultsGrid(
+                searchResults = searchResults,
+                isAppending = isAppending
+            )
         }
     }
 }
@@ -203,9 +208,9 @@ private fun InitialLoadingIndicator() {
 @Composable
 private fun SearchResultsGrid(
     searchResults: LazyPagingItems<MediaWithFacesUi>,
-    isLoading: Boolean
+    isAppending: Boolean
 ) {
-    println("isAppending in UI: $isLoading")
+    println("isAppending in UI: $isAppending")
     val gridState = rememberLazyGridState()
     LazyVerticalGrid(
         state = gridState,
@@ -222,7 +227,7 @@ private fun SearchResultsGrid(
                         ThumbnailItem(thumbnailUri = item.thumbnailUri)
                 }
             }
-            if (shouldShowBottomLoader(searchResults.itemCount, isLoading)) {
+            if (shouldShowBottomLoader(searchResults.itemCount, isAppending)) {
                 item(
                     key = "bottom-loader",
                     span = { GridItemSpan(3) }
