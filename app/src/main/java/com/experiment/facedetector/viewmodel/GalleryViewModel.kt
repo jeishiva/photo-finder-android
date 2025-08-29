@@ -13,7 +13,7 @@ import com.experiment.facedetector.domain.entities.LocalImageItem
 import com.experiment.facedetector.domain.repo.DbInvalidationRepository
 import com.experiment.facedetector.domain.usecase.FaceDetectionUseCase
 import com.experiment.facedetector.domain.usecase.GetSyncedMediaUseCase
-import com.experiment.facedetector.presentation.entities.HomeUiState
+import com.experiment.facedetector.presentation.entities.GalleryUiState
 import com.experiment.facedetector.presentation.common.UiStateHolder
 import com.experiment.facedetector.presentation.entities.FaceSearchItemUi
 import com.experiment.facedetector.presentation.entities.MediaItemUi
@@ -33,14 +33,14 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 
-class SelectPhotoViewModel(
+class GalleryViewModel(
     val faceDetectionUseCase: FaceDetectionUseCase,
     val getSyncedMediaUseCase: GetSyncedMediaUseCase,
     val invalidationRepository: DbInvalidationRepository,
 ) : ViewModel() {
 
-    private val _uiState = UiStateHolder<HomeUiState>(HomeUiState())
-    val uiState: StateFlow<HomeUiState> = _uiState.state
+    private val _uiState = UiStateHolder<GalleryUiState>(GalleryUiState())
+    val uiState: StateFlow<GalleryUiState> = _uiState.state
 
     private val _selectedFaceIds = MutableStateFlow<Set<String>>(emptySet())
     val selectedFaceIds: StateFlow<Set<String>> = _selectedFaceIds
@@ -128,7 +128,7 @@ class SelectPhotoViewModel(
     fun startFaceDetection() {
         _uiState.setState {
             val selectedImageUri = uiState.value.selectedImageUri
-            HomeUiState(
+            GalleryUiState(
                 isLoading = true,
                 selectedImageUri = selectedImageUri
             )

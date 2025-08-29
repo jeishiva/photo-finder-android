@@ -5,7 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import com.experiment.facedetector.viewmodel.AppViewModel
 import com.experiment.facedetector.viewmodel.SearchViewModel
 import com.experiment.facedetector.viewmodel.SplashViewModel
-import com.experiment.facedetector.viewmodel.SelectPhotoViewModel
+import com.experiment.facedetector.viewmodel.GalleryViewModel
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
@@ -14,7 +14,7 @@ val viewModelModule = module {
         SplashViewModel()
     }
     viewModel {
-        SelectPhotoViewModel(
+        GalleryViewModel(
             faceDetectionUseCase = get(),
             getSyncedMediaUseCase = get(),
             invalidationRepository = get(),

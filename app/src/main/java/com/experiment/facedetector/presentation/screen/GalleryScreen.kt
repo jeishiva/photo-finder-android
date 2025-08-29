@@ -64,9 +64,9 @@ import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.config.AppConfig
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
 import com.experiment.facedetector.navigation.AppRoute
-import com.experiment.facedetector.presentation.entities.HomeScreenParams
-import com.experiment.facedetector.presentation.entities.HomeUiModel
-import com.experiment.facedetector.presentation.entities.HomeUiState
+import com.experiment.facedetector.presentation.entities.GalleryScreenParams
+import com.experiment.facedetector.presentation.entities.GalleryUiModel
+import com.experiment.facedetector.presentation.entities.GalleryUiState
 import com.experiment.facedetector.presentation.components.StatusMessage
 import com.experiment.facedetector.presentation.entities.MediaItemUi
 import com.experiment.facedetector.presentation.theme.AndroidFaceDetectorTheme
@@ -74,37 +74,37 @@ import com.experiment.facedetector.presentation.theme.GradientStartMildGrey
 import com.experiment.facedetector.presentation.theme.MildGray
 import com.experiment.facedetector.presentation.widgets.AppBar
 import com.experiment.facedetector.viewmodel.HomeIntent
-import com.experiment.facedetector.viewmodel.SelectPhotoViewModel
+import com.experiment.facedetector.viewmodel.GalleryViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 
 @Composable
-fun SelectPhotoScreen(
-    homeScreenParams: HomeScreenParams,
-    homeViewModel: SelectPhotoViewModel,
+fun GalleryScreen(
+    params: GalleryScreenParams,
+    viewModel: GalleryViewModel,
 ) {
-    val navController = homeScreenParams.navController
-    val uiState by homeViewModel.uiState.collectAsState()
-    val selectedFaceIds by homeViewModel.selectedFaceIds.collectAsState()
-    val mediaPagedItems = homeViewModel.pagedSyncedMediaFlow.collectAsLazyPagingItems()
-    val actions = remember(navController, homeViewModel) {
-        HomeUiModel.Actions(onImageSelected = { uri ->
-            homeViewModel.handleIntent(HomeIntent.Search(uri))
+    val navController = params.navController
+    val uiState by viewModel.uiState.collectAsState()
+    val selectedFaceIds by viewModel.selectedFaceIds.collectAsState()
+    val mediaPagedItems = viewModel.pagedSyncedMediaFlow.collectAsLazyPagingItems()
+    val actions = remember(navController, viewModel) {
+        GalleryUiModel.Actions(onImageSelected = { uri ->
+            viewModel.handleIntent(HomeIntent.Search(uri))
         }, onSearchClick = {
-            homeViewModel.triggerSearch()
+            viewModel.triggerSearch()
         }, toggleFaceSelection = { faceId ->
-            homeViewModel.toggleFaceSelection(faceId)
+            viewModel.toggleFaceSelection(faceId)
         }, onFaceSelectionSheetShown = {
-            homeViewModel.markShowSelectedFacesHandled()
+            viewModel.markShowSelectedFacesHandled()
         }, onThumbnailClicked = { mediaItemUi ->
-            homeViewModel.handleIntent(
+            viewModel.handleIntent(
                 HomeIntent.ImageSelected(mediaItemUi)
             )
         })
     }
-    val uiModel = HomeUiModel(
+    val uiModel = GalleryUiModel(
         actions = actions, state = uiState
     )
-    HomeContent(
+    GalleryContent(
         uiModel = uiModel,
         selectedFaceIds = selectedFaceIds,
         mediaPagedItems = mediaPagedItems,
@@ -116,7 +116,7 @@ fun SelectPhotoScreen(
             navController.navigate(
                 AppRoute.Search.createRoute(uiState.sessionId!!)
             )
-            homeViewModel.markNavigationHandled()
+            viewModel.markNavigationHandled()
         }
     }
 }
@@ -124,7 +124,7 @@ fun SelectPhotoScreen(
 @Composable
 private fun GalleryGrid(
     mediaPagedItems: LazyPagingItems<MediaItemUi>,
-    onThumbnailClicked: (MediaItemUi) -> Unit
+    onThumbnailClicked: (MediaItemUi) -> Unit,
 ) {
     val gridState = rememberLazyGridState()
     LazyVerticalGrid(
@@ -139,8 +139,7 @@ private fun GalleryGrid(
                 key = { index -> mediaPagedItems[index]?.id ?: "item-$index" }) { index ->
                 mediaPagedItems[index]?.let { item ->
                     GalleryThumbnailItem(
-                        item = item,
-                        onThumbnailClicked = onThumbnailClicked
+                        item = item, onThumbnailClicked = onThumbnailClicked
                     )
                 }
             }
@@ -162,10 +161,7 @@ fun GalleryThumbnailItem(
     ) {
         val context = LocalContext.current
         SubcomposeAsyncImage(
-            model = ImageRequest.Builder(context)
-                .data(item.thumbnailUri)
-                .crossfade(true)          // optional
-                .build(),
+            model = ImageRequest.Builder(context).data(item.thumbnailUri).crossfade(true).build(),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
@@ -185,14 +181,13 @@ fun GalleryThumbnailItem(
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Inside
                 )
-            }
-        )
+            })
     }
 }
 
 @Composable
-fun HomeContent(
-    uiModel: HomeUiModel,
+fun GalleryContent(
+    uiModel: GalleryUiModel,
     selectedFaceIds: Set<String>,
     mediaPagedItems: LazyPagingItems<MediaItemUi>,
 ) {
@@ -215,8 +210,7 @@ fun HomeContent(
                         .padding(8.dp)
                 ) {
                     GalleryGrid(
-                        mediaPagedItems = mediaPagedItems,
-                        uiModel.actions.onThumbnailClicked
+                        mediaPagedItems = mediaPagedItems, uiModel.actions.onThumbnailClicked
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     StatusMessage(
@@ -301,13 +295,11 @@ fun HomeContentPreview() {
     val dummyPagingItems = remember {
         MutableStateFlow(PagingData.empty<MediaItemUi>())
     }.collectAsLazyPagingItems()
-    HomeContent(
-        uiModel = HomeUiModel(
-            actions = HomeUiModel.Actions(),
-            state = HomeUiState(),
-        ),
-        selectedFaceIds = emptySet(),
-        mediaPagedItems = dummyPagingItems
+    GalleryContent(
+        uiModel = GalleryUiModel(
+            actions = GalleryUiModel.Actions(),
+            state = GalleryUiState(),
+        ), selectedFaceIds = emptySet(), mediaPagedItems = dummyPagingItems
     )
 }
 
@@ -363,7 +355,7 @@ fun SelectPhotoIcon(onImageSelected: (Uri?) -> Unit) {
 
 @Composable
 fun FaceDetectedSheetSection(
-    uiModel: HomeUiModel,
+    uiModel: GalleryUiModel,
     selectedFaceIds: Set<String>,
     onFaceClick: (String) -> Unit,
     onDismiss: () -> Unit,
@@ -380,7 +372,7 @@ fun FaceDetectedSheetSection(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FaceDetectedBottomSheetDialog(
-    uiModel: HomeUiModel,
+    uiModel: GalleryUiModel,
     selectedFaceIds: Set<String>,
     onFaceClick: (String) -> Unit,
     onDismiss: () -> Unit,

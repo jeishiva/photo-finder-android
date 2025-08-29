@@ -8,22 +8,22 @@ import androidx.navigation.NavHostController
 import com.experiment.facedetector.domain.entities.FaceBoundingBox
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
 import com.experiment.facedetector.viewmodel.SearchViewModel
-import com.experiment.facedetector.viewmodel.SelectPhotoViewModel
+import com.experiment.facedetector.viewmodel.GalleryViewModel
 
-data class HomeScreenParams(
+data class GalleryScreenParams(
     val navController: NavHostController,
-    val viewModel: SelectPhotoViewModel,
+    val viewModel: GalleryViewModel,
 )
 
 data class SearchScreenParams(
     val navController: NavHostController,
     val searchViewModel: SearchViewModel,
-    val selectPhotoViewModel: SelectPhotoViewModel,
+    val selectPhotoViewModel: GalleryViewModel,
 )
 
-data class HomeUiModel(
+data class GalleryUiModel(
     val actions: Actions,
-    val state: HomeUiState,
+    val state: GalleryUiState,
 ) {
     @Stable
     data class Actions(
@@ -38,7 +38,7 @@ data class HomeUiModel(
 }
 
 @Immutable
-data class HomeUiState(
+data class GalleryUiState(
     val isLoading: Boolean = false,
     val message: String? = null,
     val errorMessage: String? = null,
