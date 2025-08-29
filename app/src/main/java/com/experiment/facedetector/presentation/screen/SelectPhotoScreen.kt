@@ -113,7 +113,6 @@ fun SelectPhotoScreen(
     }
 }
 
-
 @Composable
 private fun GalleryGrid(
     mediaPagedItems: LazyPagingItems<MediaWithFacesUi>,

@@ -4,32 +4,33 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
 import com.experiment.facedetector.navigation.AppNavGraph
-import com.experiment.facedetector.R
 import com.experiment.facedetector.presentation.theme.AndroidFaceDetectorTheme
+import com.experiment.facedetector.viewmodel.AppViewModel
+import org.koin.android.ext.android.inject
 
 class MainActivity : ComponentActivity() {
+
+    private val appViewModel: AppViewModel by inject()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        startMediaScanning()
         setContent {
             AppEntryPoint()
         }
+    }
+
+    fun startMediaScanning() {
+        appViewModel.startMediaScanning()
     }
 }
 
@@ -37,7 +38,10 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppEntryPoint() {
     AndroidFaceDetectorTheme {
-        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        ) {
             MainApp()
         }
     }
@@ -50,29 +54,4 @@ fun MainApp() {
         AppNavGraph(navController = navController)
     }
 }
-
-@Composable
-fun TestScreen() {
-    AndroidFaceDetectorTheme {
-        Scaffold(
-            containerColor = Color.Transparent, modifier = Modifier.fillMaxSize()
-        ) { innerPadding ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = stringResource(id = R.string.gallery),
-                        style = MaterialTheme.typography.headlineLarge,
-                        color = Color.White
-                    )
-                }
-            }
-        }
-    }
-}
-
 

@@ -2,6 +2,7 @@ package com.experiment.facedetector.di
 
 
 import androidx.lifecycle.SavedStateHandle
+import com.experiment.facedetector.viewmodel.AppViewModel
 import com.experiment.facedetector.viewmodel.SearchViewModel
 import com.experiment.facedetector.viewmodel.SplashViewModel
 import com.experiment.facedetector.viewmodel.SelectPhotoViewModel
@@ -12,9 +13,12 @@ val viewModelModule = module {
     viewModel {
         SplashViewModel()
     }
-    viewModel { SelectPhotoViewModel(
-        faceDetectionUseCase = get(),
-        getSyncedMediaUseCase = get())
+    viewModel {
+        SelectPhotoViewModel(
+            faceDetectionUseCase = get(),
+            getSyncedMediaUseCase = get(),
+            invalidationRepository = get(),
+        )
     }
     viewModel { (handle: SavedStateHandle) ->
         SearchViewModel(
@@ -24,4 +28,9 @@ val viewModelModule = module {
             mediaScanner = get()
         )
     }
+
+    viewModel {
+        AppViewModel(scanMediaUseCase = get())
+    }
+
 }
