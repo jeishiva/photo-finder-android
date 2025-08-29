@@ -1,9 +1,13 @@
 package com.experiment.facedetector.presentation.screen
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -34,6 +38,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -41,17 +47,19 @@ import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
+import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
 import com.experiment.facedetector.R
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.config.AppConfig
 import com.experiment.facedetector.presentation.entities.FaceSearchItemUi
-import com.experiment.facedetector.presentation.entities.MediaWithFacesUi
+import com.experiment.facedetector.presentation.entities.MediaItemUi
 import com.experiment.facedetector.presentation.entities.SearchScreenParams
 import com.experiment.facedetector.presentation.entities.SearchUiModel
 import com.experiment.facedetector.presentation.entities.SearchUiState
 import com.experiment.facedetector.presentation.theme.AndroidFaceDetectorTheme
+import com.experiment.facedetector.presentation.theme.MildGray
 import com.experiment.facedetector.presentation.widgets.AppBar
-import com.experiment.facedetector.presentation.widgets.ThumbnailItem
 import com.experiment.facedetector.viewmodel.SearchViewModel.SearchIntent
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -72,7 +80,10 @@ fun SearchScreen(searchScreenParams: SearchScreenParams) {
     val uiState by searchViewModel.uiState.collectAsState()
     val actions = remember(navController, searchScreenParams.searchViewModel) {
         SearchUiModel.Actions(
-            onBackClick = backClick
+            onBackClick = backClick,
+            onThumbnailClicked = { mediaWithFacesUi ->
+                searchViewModel.handleIntent(SearchIntent.ImageSelected(mediaWithFacesUi))
+            },
         )
     }
     val uiModel = SearchUiModel(
@@ -85,7 +96,7 @@ fun SearchScreen(searchScreenParams: SearchScreenParams) {
 @Composable
 fun ScreenContent(
     uiModel: SearchUiModel,
-    searchResultPagedItems: LazyPagingItems<MediaWithFacesUi>,
+    searchResultPagedItems: LazyPagingItems<MediaItemUi>,
 ) {
     AndroidFaceDetectorTheme {
         Scaffold(
@@ -108,6 +119,7 @@ fun ScreenContent(
                 SearchHeaderCard(faces = uiModel.state.faceList)
                 SearchResultSection(
                     searchResults = searchResultPagedItems,
+                    onSearchItemClicked = uiModel.actions.onThumbnailClicked
                 )
             }
         }
@@ -116,7 +128,8 @@ fun ScreenContent(
 
 @Composable
 fun SearchResultSection(
-    searchResults: LazyPagingItems<MediaWithFacesUi>,
+    searchResults: LazyPagingItems<MediaItemUi>,
+    onSearchItemClicked: (MediaItemUi) -> Unit,
 ) {
     val isRefreshing = searchResults.loadState.refresh is LoadState.Loading
     val isAppending = searchResults.loadState.append is LoadState.Loading
@@ -131,7 +144,8 @@ fun SearchResultSection(
         SearchResultsContent(
             searchResults = searchResults,
             isRefreshing = isRefreshing,
-            isAppending = isAppending
+            isAppending = isAppending,
+            onSearchItemClicked = onSearchItemClicked
         )
     }
 }
@@ -161,9 +175,10 @@ fun SearchHeaderCard(faces: List<FaceSearchItemUi>) {
 
 @Composable
 private fun SearchResultsContent(
-    searchResults: LazyPagingItems<MediaWithFacesUi>,
+    searchResults: LazyPagingItems<MediaItemUi>,
     isRefreshing: Boolean,
     isAppending: Boolean,
+    onSearchItemClicked: (MediaItemUi) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -175,7 +190,8 @@ private fun SearchResultsContent(
         } else {
             SearchResultsGrid(
                 searchResults = searchResults,
-                isAppending = isAppending
+                isAppending = isAppending,
+                onSearchItemClicked = onSearchItemClicked
             )
         }
     }
@@ -203,8 +219,9 @@ private fun InitialLoadingIndicator() {
 
 @Composable
 private fun SearchResultsGrid(
-    searchResults: LazyPagingItems<MediaWithFacesUi>,
+    searchResults: LazyPagingItems<MediaItemUi>,
     isAppending: Boolean,
+    onSearchItemClicked: (MediaItemUi) -> Unit,
 ) {
     println("isAppending in UI: $isAppending")
     val gridState = rememberLazyGridState()
@@ -220,7 +237,10 @@ private fun SearchResultsGrid(
                 key = { index -> searchResults[index]?.id ?: "item-$index" }
             ) { index ->
                 searchResults[index]?.let { item ->
-                    ThumbnailItem(thumbnailUri = item.thumbnailUri)
+                    ThumbnailItem(
+                        item,
+                        onThumbnailClicked = onSearchItemClicked
+                    )
                 }
             }
             if (shouldShowBottomLoader(searchResults.itemCount, isAppending)) {
@@ -233,6 +253,53 @@ private fun SearchResultsGrid(
             }
         }
     )
+}
+
+@Composable
+fun ThumbnailItem(
+    item: MediaItemUi,
+    onThumbnailClicked: (MediaItemUi) -> Unit,
+) {
+    val context = LocalContext.current
+    val onClick = remember(item.id) {
+        {
+            Toast.makeText(context, "Hello from Compose!", Toast.LENGTH_SHORT).show()
+            onThumbnailClicked(item)
+        }
+    }
+    Box(
+        modifier = Modifier
+            .aspectRatio(1f)
+            .clip(RoundedCornerShape(8.dp))
+    ) {
+        val context = LocalContext.current
+        SubcomposeAsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(item.thumbnailUri)
+                .crossfade(true)          // optional
+                .build(),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable(onClick = onClick),
+            loading = {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(MildGray)
+                )
+            },
+            error = {
+                Image(
+                    painter = painterResource(id = android.R.drawable.stat_notify_error),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Inside
+                )
+            }
+        )
+    }
 }
 
 @Composable
@@ -255,7 +322,7 @@ private fun GridItemLoader() {
 @Preview(showBackground = true)
 fun SearchScreenPreview() {
     val dummyPagingItems = remember {
-        MutableStateFlow(PagingData.empty<MediaWithFacesUi>())
+        MutableStateFlow(PagingData.empty<MediaItemUi>())
     }.collectAsLazyPagingItems()
     ScreenContent(
         uiModel = SearchUiModel(

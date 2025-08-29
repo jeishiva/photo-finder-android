@@ -9,6 +9,18 @@ import org.koin.dsl.module
 
 val useCaseModule = module {
 
+    factory<ScanMediaUseCase> {
+        ScanMediaUseCase(
+            mediaScanner = get()
+        )
+    }
+
+    factory<GetSyncedMediaUseCase> {
+        GetSyncedMediaUseCase(
+            mediaWithFacesRepository = get()
+        )
+    }
+
     factory<FaceDetectionUseCase> {
         FaceDetectionUseCase(
             faceDetectionRepo = get()
@@ -28,17 +40,4 @@ val useCaseModule = module {
             faceEmbeddingMatcher = get()
         )
     }
-
-    factory<GetSyncedMediaUseCase> {
-        GetSyncedMediaUseCase(
-            mediaWithFacesRepository = get()
-        )
-    }
-
-    factory<ScanMediaUseCase> {
-        ScanMediaUseCase(
-            mediaScanner = get()
-        )
-    }
-
 }

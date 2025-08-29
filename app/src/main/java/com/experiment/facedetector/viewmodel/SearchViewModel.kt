@@ -10,12 +10,13 @@ import androidx.paging.map
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.common.safeCancel
 import com.experiment.facedetector.data.local.scanner.CameraMediaScanner
+import com.experiment.facedetector.domain.entities.Media
 import com.experiment.facedetector.domain.filter.MediaFilter
 import com.experiment.facedetector.domain.usecase.facesearch.SearchSimilarPhotoUseCase
 import com.experiment.facedetector.presentation.entities.SearchUiState
 import com.experiment.facedetector.presentation.common.UiStateHolder
 import com.experiment.facedetector.presentation.entities.FaceSearchItemUi
-import com.experiment.facedetector.presentation.entities.MediaWithFacesUi
+import com.experiment.facedetector.presentation.entities.MediaItemUi
 import com.experiment.facedetector.presentation.entities.toUi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -46,7 +47,7 @@ class SearchViewModel(
     private val searchTrigger: MutableStateFlow<List<FloatArray>> = MutableStateFlow(emptyList())
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val pagedFaces: StateFlow<PagingData<MediaWithFacesUi>> =
+    val pagedFaces: StateFlow<PagingData<MediaItemUi>> =
         // new embeddings OR DB change → consider re-running,
         // but only proceed when embeddings are non-empty.
         searchTrigger
@@ -110,7 +111,14 @@ class SearchViewModel(
             is SearchIntent.Start -> {
                 searchFaces(intent.searchFaces)
             }
+            is SearchIntent.ImageSelected -> {
+                handleImageSelectedIntent(intent.mediaItemUi)
+            }
         }
+    }
+
+    private fun handleImageSelectedIntent(mediaItemUi: MediaItemUi) {
+        LogManager.d(TAG, "handle image selected $mediaItemUi")
     }
 
     fun invalidSessionState() {
@@ -145,6 +153,7 @@ class SearchViewModel(
 
     sealed class SearchIntent {
         data class Start(val searchFaces: List<FaceSearchItemUi>) : SearchIntent()
+        data class ImageSelected(val mediaItemUi: MediaItemUi) : SearchIntent()
     }
 
     companion object {

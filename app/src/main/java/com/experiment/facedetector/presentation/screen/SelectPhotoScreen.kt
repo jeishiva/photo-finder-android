@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -46,6 +47,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -54,6 +57,8 @@ import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
 import com.experiment.facedetector.R
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.config.AppConfig
@@ -63,11 +68,11 @@ import com.experiment.facedetector.presentation.entities.HomeScreenParams
 import com.experiment.facedetector.presentation.entities.HomeUiModel
 import com.experiment.facedetector.presentation.entities.HomeUiState
 import com.experiment.facedetector.presentation.components.StatusMessage
-import com.experiment.facedetector.presentation.entities.MediaWithFacesUi
+import com.experiment.facedetector.presentation.entities.MediaItemUi
 import com.experiment.facedetector.presentation.theme.AndroidFaceDetectorTheme
 import com.experiment.facedetector.presentation.theme.GradientStartMildGrey
+import com.experiment.facedetector.presentation.theme.MildGray
 import com.experiment.facedetector.presentation.widgets.AppBar
-import com.experiment.facedetector.presentation.widgets.ThumbnailItem
 import com.experiment.facedetector.viewmodel.HomeIntent
 import com.experiment.facedetector.viewmodel.SelectPhotoViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -90,8 +95,10 @@ fun SelectPhotoScreen(
             homeViewModel.toggleFaceSelection(faceId)
         }, onFaceSelectionSheetShown = {
             homeViewModel.markShowSelectedFacesHandled()
-        }, onThumbnailClicked = {
-            homeViewModel.handleIntent(HomeIntent.ShowDetectedFaces)
+        }, onThumbnailClicked = { mediaItemUi ->
+            homeViewModel.handleIntent(
+                HomeIntent.ImageSelected(mediaItemUi)
+            )
         })
     }
     val uiModel = HomeUiModel(
@@ -116,7 +123,8 @@ fun SelectPhotoScreen(
 
 @Composable
 private fun GalleryGrid(
-    mediaPagedItems: LazyPagingItems<MediaWithFacesUi>,
+    mediaPagedItems: LazyPagingItems<MediaItemUi>,
+    onThumbnailClicked: (MediaItemUi) -> Unit
 ) {
     val gridState = rememberLazyGridState()
     LazyVerticalGrid(
@@ -130,17 +138,63 @@ private fun GalleryGrid(
                 count = mediaPagedItems.itemCount,
                 key = { index -> mediaPagedItems[index]?.id ?: "item-$index" }) { index ->
                 mediaPagedItems[index]?.let { item ->
-                    ThumbnailItem(thumbnailUri = item.thumbnailUri)
+                    GalleryThumbnailItem(
+                        item = item,
+                        onThumbnailClicked = onThumbnailClicked
+                    )
                 }
             }
         })
 }
 
 @Composable
+fun GalleryThumbnailItem(
+    item: MediaItemUi,
+    onThumbnailClicked: (MediaItemUi) -> Unit,
+) {
+    val onClick = remember(item.id) {
+        { onThumbnailClicked(item) }
+    }
+    Box(
+        modifier = Modifier
+            .aspectRatio(1f)
+            .clip(RoundedCornerShape(8.dp))
+    ) {
+        val context = LocalContext.current
+        SubcomposeAsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(item.thumbnailUri)
+                .crossfade(true)          // optional
+                .build(),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable(onClick = onClick),
+            loading = {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(MildGray)
+                )
+            },
+            error = {
+                Image(
+                    painter = painterResource(id = android.R.drawable.stat_notify_error),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Inside
+                )
+            }
+        )
+    }
+}
+
+@Composable
 fun HomeContent(
     uiModel: HomeUiModel,
     selectedFaceIds: Set<String>,
-    mediaPagedItems: LazyPagingItems<MediaWithFacesUi>,
+    mediaPagedItems: LazyPagingItems<MediaItemUi>,
 ) {
     AndroidFaceDetectorTheme {
         Scaffold(
@@ -160,7 +214,10 @@ fun HomeContent(
                         .fillMaxSize()
                         .padding(8.dp)
                 ) {
-                    GalleryGrid(mediaPagedItems = mediaPagedItems)
+                    GalleryGrid(
+                        mediaPagedItems = mediaPagedItems,
+                        uiModel.actions.onThumbnailClicked
+                    )
                     Spacer(modifier = Modifier.height(16.dp))
                     StatusMessage(
                         isLoading = uiModel.state.isLoading,
@@ -242,7 +299,7 @@ fun FaceListItem(
 @Preview(showBackground = true)
 fun HomeContentPreview() {
     val dummyPagingItems = remember {
-        MutableStateFlow(PagingData.empty<MediaWithFacesUi>())
+        MutableStateFlow(PagingData.empty<MediaItemUi>())
     }.collectAsLazyPagingItems()
     HomeContent(
         uiModel = HomeUiModel(
@@ -257,7 +314,6 @@ fun HomeContentPreview() {
 @Composable
 fun ImageOrPlaceholderRoundedFullWidth(
     imageUri: Uri?,
-    onThumbnailClick: () -> Unit,
     modifier: Modifier = Modifier,
     cornerRadius: Dp = 24.dp,
 ) {
@@ -282,7 +338,6 @@ fun ImageOrPlaceholderRoundedFullWidth(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .fillMaxSize()
-                    .clickable(onClick = onThumbnailClick)
                     .clip(RoundedCornerShape(cornerRadius))
             )
         }
@@ -342,7 +397,6 @@ fun FaceDetectedBottomSheetDialog(
         ) {
             ImageOrPlaceholderRoundedFullWidth(
                 imageUri = uiModel.state.selectedImageUri,
-                onThumbnailClick = uiModel.actions.onThumbnailClicked,
             )
             Spacer(modifier = Modifier.height(16.dp))
             FaceListSection(

@@ -18,12 +18,12 @@ data class HomeScreenParams(
 data class SearchScreenParams(
     val navController: NavHostController,
     val searchViewModel: SearchViewModel,
-    val selectPhotoViewModel: SelectPhotoViewModel
+    val selectPhotoViewModel: SelectPhotoViewModel,
 )
 
 data class HomeUiModel(
     val actions: Actions,
-    val state: HomeUiState
+    val state: HomeUiState,
 ) {
     @Stable
     data class Actions(
@@ -32,8 +32,8 @@ data class HomeUiModel(
         val toggleFaceSelection: (String) -> Unit = {},
         val launchGalleryClicked: () -> Unit = {},
         val onFaceSelectionSheetShown: () -> Unit = {},
-        val onThumbnailClicked: () -> Unit = {},
-        )
+        val onThumbnailClicked: (MediaItemUi) -> Unit = {},
+    )
     val showSelectedFaces = state.showSelectedFaces
 }
 
@@ -60,17 +60,18 @@ data class SearchUiState(
 
 data class SearchUiModel(
     val actions: Actions,
-    val state: SearchUiState
+    val state: SearchUiState,
 ) {
     @Stable
     data class Actions(
         val onBackClick: () -> Unit = {},
+        val onThumbnailClicked: (MediaItemUi) -> Unit = {},
     )
 }
 
-data class MediaWithFacesUi(
+data class MediaItemUi(
     val id: Long,
-    val thumbnailUri: String?
+    val thumbnailUri: String?,
 )
 
 data class FaceSearchItemUi(
@@ -78,3 +79,4 @@ data class FaceSearchItemUi(
     val faceBoundingBox: FaceBoundingBox,
     val faceBitmap: Bitmap,
 )
+
