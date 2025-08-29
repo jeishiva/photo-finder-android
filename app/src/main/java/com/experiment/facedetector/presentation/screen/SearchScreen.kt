@@ -43,6 +43,7 @@ import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.experiment.facedetector.R
 import com.experiment.facedetector.common.LogManager
+import com.experiment.facedetector.config.AppConfig
 import com.experiment.facedetector.presentation.entities.FaceSearchItemUi
 import com.experiment.facedetector.presentation.entities.MediaWithFacesUi
 import com.experiment.facedetector.presentation.entities.SearchScreenParams
@@ -209,7 +210,7 @@ private fun SearchResultsGrid(
     val gridState = rememberLazyGridState()
     LazyVerticalGrid(
         state = gridState,
-        columns = GridCells.Fixed(3),
+        columns = GridCells.Fixed(AppConfig.GRID_SIZE),
         modifier = Modifier.fillMaxSize(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),

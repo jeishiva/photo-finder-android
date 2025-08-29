@@ -56,6 +56,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
 import com.experiment.facedetector.R
 import com.experiment.facedetector.common.LogManager
+import com.experiment.facedetector.config.AppConfig
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
 import com.experiment.facedetector.navigation.AppRoute
 import com.experiment.facedetector.presentation.entities.HomeScreenParams
@@ -120,7 +121,7 @@ private fun GalleryGrid(
     val gridState = rememberLazyGridState()
     LazyVerticalGrid(
         state = gridState,
-        columns = GridCells.Fixed(3),
+        columns = GridCells.Fixed(AppConfig.GRID_SIZE),
         modifier = Modifier.fillMaxSize(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),

@@ -24,9 +24,9 @@ val processorModule = module {
     single<ThumbnailGenerator> {
         ThumbnailGeneratorImpl(
             bitmapHelper = get(),
-            thumbnailSize = 200,
+            thumbnailSize = 100,
             compressFormat = Bitmap.CompressFormat.PNG,
-            quality = 85
+            quality = 100
         )
     }
 
