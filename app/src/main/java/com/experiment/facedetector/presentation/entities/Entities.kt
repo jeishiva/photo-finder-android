@@ -10,22 +10,6 @@ import com.experiment.facedetector.domain.entities.FaceDetectedItem
 import com.experiment.facedetector.viewmodel.SearchViewModel
 import com.experiment.facedetector.viewmodel.SelectPhotoViewModel
 
-sealed class TimeRange(val label: String) {
-    object OneMonth : TimeRange("1 Month")
-    object ThreeMonths : TimeRange("3 Months")
-    object SixMonths : TimeRange("6 Months")
-    object TwelveMonths : TimeRange("12 Months")
-
-    companion object {
-        fun toList(): List<TimeRange> = listOf(
-            OneMonth,
-            ThreeMonths,
-            SixMonths,
-            TwelveMonths
-        )
-    }
-}
-
 data class HomeScreenParams(
     val navController: NavHostController,
     val viewModel: SelectPhotoViewModel,
@@ -38,14 +22,12 @@ data class SearchScreenParams(
 )
 
 data class HomeUiModel(
-    val selectedOption: TimeRange = TimeRange.OneMonth,
     val actions: Actions,
     val state: HomeUiState
 ) {
     @Stable
     data class Actions(
         val onImageSelected: (Uri?) -> Unit = {},
-        val onOptionSelected: (TimeRange) -> Unit = {},
         val onSearchClick: () -> Unit = {},
         val toggleFaceSelection: (String) -> Unit = {},
         val launchGalleryClicked: () -> Unit = {},

@@ -38,9 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,7 +57,6 @@ import com.experiment.facedetector.navigation.AppRoute
 import com.experiment.facedetector.presentation.entities.HomeScreenParams
 import com.experiment.facedetector.presentation.entities.HomeUiModel
 import com.experiment.facedetector.presentation.entities.HomeUiState
-import com.experiment.facedetector.presentation.entities.TimeRange
 import com.experiment.facedetector.presentation.components.StatusMessage
 import com.experiment.facedetector.presentation.theme.AndroidFaceDetectorTheme
 import com.experiment.facedetector.presentation.theme.GradientStartMildGrey
@@ -67,12 +64,10 @@ import com.experiment.facedetector.presentation.widgets.AppBar
 import com.experiment.facedetector.viewmodel.HomeIntent
 import com.experiment.facedetector.viewmodel.SelectPhotoViewModel
 
-
 @Composable
 fun SelectPhotoScreen(
     homeScreenParams: HomeScreenParams, homeViewModel: SelectPhotoViewModel
 ) {
-    var selectedOption by remember { mutableStateOf<TimeRange>(TimeRange.OneMonth) }
     val navController = homeScreenParams.navController
     val uiState by homeViewModel.uiState.collectAsState()
     val selectedFaceIds by homeViewModel.selectedFaceIds.collectAsState()
@@ -80,8 +75,6 @@ fun SelectPhotoScreen(
         HomeUiModel.Actions(
             onImageSelected = { uri ->
                 homeViewModel.handleIntent(HomeIntent.Search(uri))
-            }, onOptionSelected = { option ->
-                selectedOption = option
             }, onSearchClick = {
                 homeViewModel.triggerSearch()
             }, toggleFaceSelection = { faceId ->
@@ -103,7 +96,7 @@ fun SelectPhotoScreen(
         }
     }
     val uiModel = HomeUiModel(
-        selectedOption = selectedOption, actions = actions, state = uiState
+        actions = actions, state = uiState
     )
     HomeContent(
         uiModel = uiModel, selectedFaceIds = selectedFaceIds
@@ -147,10 +140,7 @@ fun HomeContent(uiModel: HomeUiModel, selectedFaceIds: Set<String>) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    ImageOrPlaceholderRoundedFullWidth(
-                        imageUri = uiModel.state.selectedImageUri,
-                        onThumbnailClick = uiModel.actions.onThumbnailClicked,
-                    )
+
                 }
                 Column(
                     modifier = Modifier
@@ -203,7 +193,7 @@ fun FaceListItem(
 ) {
     Box(
         modifier = Modifier
-            .size(80.dp)
+            .size(72.dp)
             .clip(CircleShape)
             .clickable { onClick() }) {
         Image(
@@ -245,7 +235,8 @@ fun ImageOrPlaceholderRoundedFullWidth(
 ) {
     Box(
         modifier = modifier
-            .fillMaxSize()
+            .fillMaxWidth()
+            .height(height = 270.dp)
             .clip(
                 RoundedCornerShape(
                     topStart = cornerRadius,
@@ -287,24 +278,6 @@ fun SelectPhotoIcon(onImageSelected: (Uri?) -> Unit) {
             .padding(8.dp))
 }
 
-/*@Composable
-fun TimeRangeIcon(onOptionSelected: (TimeRange) -> Unit) {
-    var showBottomSheet by remember { mutableStateOf(false) }
-    Icon(
-        imageVector = Icons.Default.DateRange,
-        contentDescription = "Select Image",
-        tint = Color.White.copy(alpha = 0.85f),
-        modifier = Modifier
-            .size(48.dp)
-            .clickable { showBottomSheet = true }
-            .background(Color.Black.copy(alpha = 0.4f), shape = CircleShape)
-            .padding(8.dp))
-    if (showBottomSheet) {
-        TimeRangeBottomSheetDialog(
-            onOptionSelected = onOptionSelected, onDismiss = { showBottomSheet = false })
-    }
-}*/
-
 @Composable
 fun FaceDetectedSheetSection(
     uiModel: HomeUiModel,
@@ -331,21 +304,27 @@ fun FaceDetectedBottomSheetDialog(
     onFaceClick: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
                 .wrapContentHeight()
                 .padding(bottom = 16.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
+            ImageOrPlaceholderRoundedFullWidth(
+                imageUri = uiModel.state.selectedImageUri,
+                onThumbnailClick = uiModel.actions.onThumbnailClicked,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
             FaceListSection(
                 faces = uiModel.state.faceList,
                 selectedFaceIds = selectedFaceIds,
                 onFaceClick = onFaceClick
             )
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = {
                     onDismiss()
@@ -366,30 +345,7 @@ fun FaceDetectedBottomSheetDialog(
                     text = stringResource(R.string.search)
                 )
             }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TimeRangeBottomSheetDialog(
-    onOptionSelected: (TimeRange) -> Unit, onDismiss: () -> Unit
-) {
-    val sheetState = rememberModalBottomSheetState()
-    ModalBottomSheet(
-        onDismissRequest = onDismiss, sheetState = sheetState
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            TimeRange.toList().forEach { option ->
-                ListItem(
-                    headlineContent = { Text(option.label) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            onOptionSelected(option)
-                            onDismiss()
-                        })
-            }
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
