@@ -12,7 +12,10 @@ val viewModelModule = module {
     viewModel {
         SplashViewModel()
     }
-    viewModel { SelectPhotoViewModel(get()) }
+    viewModel { SelectPhotoViewModel(
+        faceDetectionUseCase = get(),
+        getSyncedMediaUseCase = get())
+    }
     viewModel { (handle: SavedStateHandle) ->
         SearchViewModel(
             savedStateHandle = handle,

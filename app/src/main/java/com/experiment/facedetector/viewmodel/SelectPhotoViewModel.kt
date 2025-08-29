@@ -3,23 +3,33 @@ package com.experiment.facedetector.viewmodel
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import androidx.paging.map
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
 import com.experiment.facedetector.domain.entities.LocalImageItem
 import com.experiment.facedetector.domain.usecase.FaceDetectionUseCase
+import com.experiment.facedetector.domain.usecase.GetSyncedMediaUseCase
 import com.experiment.facedetector.presentation.entities.HomeUiState
 import com.experiment.facedetector.presentation.common.UiStateHolder
 import com.experiment.facedetector.presentation.entities.FaceSearchItemUi
+import com.experiment.facedetector.presentation.entities.MediaWithFacesUi
 import com.experiment.facedetector.presentation.entities.toFaceSearchItem
+import com.experiment.facedetector.presentation.entities.toUi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 
 class SelectPhotoViewModel(
     val faceDetectionUseCase: FaceDetectionUseCase,
+    val getSyncedMediaUseCase: GetSyncedMediaUseCase,
 ) : ViewModel() {
 
     private val _uiState = UiStateHolder<HomeUiState>(HomeUiState())
@@ -27,6 +37,20 @@ class SelectPhotoViewModel(
 
     private val _selectedFaceIds = MutableStateFlow<Set<String>>(emptySet())
     val selectedFaceIds: StateFlow<Set<String>> = _selectedFaceIds
+
+    val pagedSyncedMediaFlow: StateFlow<PagingData<MediaWithFacesUi>> =
+
+    getSyncedMediaUseCase().map { pagingData ->
+        pagingData.map {
+            it.toUi()
+        }
+    }
+    .cachedIn(viewModelScope)
+    .stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = PagingData.empty()
+    )
 
     fun handleIntent(intent: HomeIntent) {
         when (intent) {
@@ -181,11 +205,10 @@ class SelectPhotoViewModel(
     }
 
     companion object {
-        private const val MAX_SELECTED_FACES = 3
+        private const val MAX_SELECTED_FACES = 4
         private const val TAG = "HomeViewModel"
     }
 }
-
 
 sealed class HomeIntent {
     data class Search(val selectedImageUri: Uri?) : HomeIntent()

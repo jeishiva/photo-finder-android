@@ -9,10 +9,8 @@ import androidx.paging.cachedIn
 import androidx.paging.map
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.common.safeCancel
-import com.experiment.facedetector.common.throttleFirst
 import com.experiment.facedetector.data.local.scanner.CameraMediaScanner
 import com.experiment.facedetector.domain.filter.MediaFilter
-import com.experiment.facedetector.domain.repo.DbInvalidationRepository
 import com.experiment.facedetector.domain.usecase.facesearch.SearchSimilarPhotoUseCase
 import com.experiment.facedetector.presentation.entities.SearchUiState
 import com.experiment.facedetector.presentation.common.UiStateHolder

@@ -10,7 +10,6 @@ import com.experiment.facedetector.domain.repo.MediaWithFacesRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-
 class SearchSimilarPhotoUseCase(
     private val mediaWithFacesRepository: MediaWithFacesRepository,
     private val faceEmbeddingMatcher: FaceEmbeddingMatcher,

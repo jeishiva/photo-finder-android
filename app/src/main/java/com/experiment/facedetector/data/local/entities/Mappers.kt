@@ -75,8 +75,6 @@ fun SourceMediaItem.toMediaEntity(
     )
 }
 
-
-
 fun MediaWithFaces.toDomain(): MediaWithFacesDomain {
     return MediaWithFacesDomain(
         media = Media(

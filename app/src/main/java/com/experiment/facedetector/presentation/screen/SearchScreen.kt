@@ -1,11 +1,9 @@
 package com.experiment.facedetector.presentation.screen
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -36,8 +34,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -45,8 +41,6 @@ import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
-import coil.compose.SubcomposeAsyncImage
-import coil.request.ImageRequest
 import com.experiment.facedetector.R
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.presentation.entities.FaceSearchItemUi
@@ -55,8 +49,8 @@ import com.experiment.facedetector.presentation.entities.SearchScreenParams
 import com.experiment.facedetector.presentation.entities.SearchUiModel
 import com.experiment.facedetector.presentation.entities.SearchUiState
 import com.experiment.facedetector.presentation.theme.AndroidFaceDetectorTheme
-import com.experiment.facedetector.presentation.theme.MildGray
 import com.experiment.facedetector.presentation.widgets.AppBar
+import com.experiment.facedetector.presentation.widgets.ThumbnailItem
 import com.experiment.facedetector.viewmodel.SearchViewModel.SearchIntent
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -103,7 +97,8 @@ fun ScreenContent(
             containerColor = Color.Transparent,
             modifier = Modifier.fillMaxSize()
         ) { innerPadding ->
-            Column(modifier = Modifier
+            Column(
+                modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -167,7 +162,7 @@ fun SearchHeaderCard(faces: List<FaceSearchItemUi>) {
 private fun SearchResultsContent(
     searchResults: LazyPagingItems<MediaWithFacesUi>,
     isRefreshing: Boolean,
-    isAppending: Boolean
+    isAppending: Boolean,
 ) {
     Column(
         modifier = Modifier
@@ -208,7 +203,7 @@ private fun InitialLoadingIndicator() {
 @Composable
 private fun SearchResultsGrid(
     searchResults: LazyPagingItems<MediaWithFacesUi>,
-    isAppending: Boolean
+    isAppending: Boolean,
 ) {
     println("isAppending in UI: $isAppending")
     val gridState = rememberLazyGridState()
@@ -224,7 +219,7 @@ private fun SearchResultsGrid(
                 key = { index -> searchResults[index]?.id ?: "item-$index" }
             ) { index ->
                 searchResults[index]?.let { item ->
-                        ThumbnailItem(thumbnailUri = item.thumbnailUri)
+                    ThumbnailItem(thumbnailUri = item.thumbnailUri)
                 }
             }
             if (shouldShowBottomLoader(searchResults.itemCount, isAppending)) {
@@ -254,36 +249,6 @@ private fun GridItemLoader() {
     }
 }
 
-@Composable
-fun ThumbnailItem(thumbnailUri: String?) {
-    Box(
-        modifier = Modifier
-            .aspectRatio(1f)
-            .clip(RoundedCornerShape(8.dp))
-    ) {
-        val context = LocalContext.current
-        SubcomposeAsyncImage(
-            model = ImageRequest.Builder(context)
-                .data(thumbnailUri)
-                .crossfade(true)          // optional
-                .build(),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize(),
-            loading = {
-                Box(Modifier.fillMaxSize().background(MildGray))
-            },
-            error = {
-                Image(
-                    painter = painterResource(id = android.R.drawable.stat_notify_error),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Inside
-                )
-            }
-        )
-    }
-}
 
 @Composable
 @Preview(showBackground = true)
