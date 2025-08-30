@@ -9,6 +9,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class AppViewModel(val scanMediaUseCase: ScanMediaUseCase) : ViewModel() {
+
     var indexingJob : Job? = null
 
     fun startMediaScanning() {

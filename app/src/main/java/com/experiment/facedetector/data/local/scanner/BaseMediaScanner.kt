@@ -15,6 +15,7 @@ import com.experiment.facedetector.domain.repo.FaceRepository
 import com.experiment.facedetector.domain.repo.MediaFingerPrint
 import com.experiment.facedetector.domain.repo.MediaRepository
 import com.experiment.facedetector.domain.repo.MediaSourceCursorRepo
+import com.experiment.facedetector.domain.repo.StableIdGenerator
 import com.experiment.facedetector.domain.source.IdentifiablePagedMediaSource
 import com.experiment.facedetector.domain.source.SyncableMediaSource
 import kotlinx.coroutines.Dispatchers
@@ -32,6 +33,7 @@ abstract class BaseMediaScanner(
     private val faceRepo: FaceRepository,
     private val embeddings: FaceEmbeddingPipeline,
     private val thumbnails: ThumbnailGenerator,
+    private val stableIdGenerator: StableIdGenerator,
     private val fingerPrint: MediaFingerPrint,
     val source: IdentifiablePagedMediaSource,
 ) : SyncableMediaSource {
@@ -92,7 +94,6 @@ abstract class BaseMediaScanner(
                     break@pageLoop
                 }
 
-                // Upsert + detect changes for this page
                 val plan = upsertAndDetectChanges(page.items).also {
                     itemsUpserted += it.upsertedCount
                     itemsChanged += it.changedItems.size
@@ -115,7 +116,6 @@ abstract class BaseMediaScanner(
                         val facesInChunk = results.sumOf { it.facesSaved }
                         facesSavedTotal += facesInChunk
                         itemsProcessed += results.size
-
                         LogManager.d(
                             tag,
                             "chunk $index done: items=${results.size}, facesSaved=$facesInChunk (accumFaces=$facesSavedTotal)"
@@ -140,12 +140,10 @@ abstract class BaseMediaScanner(
                     break@pageLoop
                 }
             }
-
             LogManager.d(
                 tag,
                 "sync complete: pages=$pagesScanned fetched=$itemsFetched upserted=$itemsUpserted changed=$itemsChanged processed=$itemsProcessed faces=$facesSavedTotal cursorAdvanced=$cursorAdvanced"
             )
-
             SyncResult.Success(
                 sourceKey = sourceKey,
                 pagesScanned = pagesScanned,
@@ -200,18 +198,23 @@ abstract class BaseMediaScanner(
         }
 
         // Build rows & fingerprints
-        val newRows: List<MediaEntity> = items.map { it.toMediaEntity(sourceType, fingerPrint) }
+        val newRows: List<MediaEntity> = items.map {
+            it.toMediaEntity(
+                stableIdGenerator = stableIdGenerator,
+                fingerPrint = fingerPrint
+            )
+        }
 
         // Pull existing fingerprints BEFORE upsert
-        val stableIds = items.map { it.stableId.toString() }
+        val stableIds = items.map { it.sourceStableId.toString() }
         val oldFpByStable: Map<String, String?> =
             mediaRepo.getFingerprintsBySource(sourceType.key, stableIds)
 
         // Decide changed
         val changed = ArrayList<SourceMediaItem>(items.size)
         for (item in items) {
-            val newFp = newRows.first { it.sourceStableId == item.stableId.toString() }.fingerprint
-            val oldFp = oldFpByStable[item.stableId.toString()]
+            val newFp = newRows.first { it.sourceStableId == item.sourceStableId.toString() }.fingerprint
+            val oldFp = oldFpByStable[item.sourceStableId.toString()]
             val isChanged = (oldFp == null) || (oldFp != newFp)
             if (isChanged) {
                 changed.add(item)
@@ -233,8 +236,8 @@ abstract class BaseMediaScanner(
 
         val idByStable = HashMap<Long, Long>(idsForPage.size)
         for (item in items) {
-            idsForPage[item.stableId.toString()]?.let { mediaId ->
-                idByStable[item.stableId] = mediaId
+            idsForPage[item.sourceStableId.toString()]?.let { mediaId ->
+                idByStable[item.sourceStableId] = mediaId
             }
         }
 
@@ -261,7 +264,7 @@ abstract class BaseMediaScanner(
             .flatMapMerge(concurrency = maxConcurrency) { item ->
                 LogManager.d(
                     tag,
-                    "process item stableId=${item.stableId} modified=${item.lastModifiedAtMs}"
+                    "process item stableId=${item.sourceStableId} modified=${item.lastModifiedAtMs}"
                 )
                 processSingleItemFlow(item, idByStable)
             }
@@ -279,11 +282,11 @@ abstract class BaseMediaScanner(
         item: SourceMediaItem,
         idByStable: Map<Long, Long>,
     ): Int {
-        val mediaId = idByStable[item.stableId]
+        val mediaId = idByStable[item.sourceStableId]
         if (mediaId == null) {
             LogManager.w(
                 tag,
-                "mediaId unresolved for ${item.contentUri} (stableId=${item.stableId})"
+                "mediaId unresolved for ${item.contentUri} (stableId=${item.sourceStableId})"
             )
             return 0
         }
@@ -291,7 +294,7 @@ abstract class BaseMediaScanner(
         // Thumbnail
         try {
             LogManager.d(tag, "thumbnail: start mediaId=$mediaId uri=${item.contentUri}")
-            val thumbPath = thumbnails.generateFromFile(
+            val thumbPath = thumbnails.extractFromFile(
                 filePath = item.contentUri.toString(),
                 mediaId = mediaId
             )
@@ -358,7 +361,6 @@ abstract class BaseMediaScanner(
         }
     }
 
-    // ---- internal models ----
     private data class ChangePlan(
         val idByStable: Map<Long, Long>,
         val changedItems: List<SourceMediaItem>,

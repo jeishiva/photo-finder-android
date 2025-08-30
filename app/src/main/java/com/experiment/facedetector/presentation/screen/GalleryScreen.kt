@@ -136,12 +136,13 @@ private fun GalleryGrid(
         content = {
             items(
                 count = mediaPagedItems.itemCount,
-                key = { index -> mediaPagedItems[index]?.id ?: "item-$index" }) { index ->
-                mediaPagedItems[index]?.let { item ->
-                    GalleryThumbnailItem(
-                        item = item, onThumbnailClicked = onThumbnailClicked
-                    )
-                }
+                key = { index -> mediaPagedItems[index]?.id ?: "placeholder-$index" }
+            ) { index ->
+                val item = mediaPagedItems[index] ?: return@items
+                GalleryThumbnailItem(
+                    item = item,
+                    onThumbnailClicked = onThumbnailClicked
+                )
             }
         })
 }

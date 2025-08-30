@@ -17,13 +17,11 @@ import com.experiment.facedetector.domain.entities.MediaSourcePage
 import com.experiment.facedetector.domain.entities.MediaSourceType
 import com.experiment.facedetector.domain.entities.SourceMediaItem
 import com.experiment.facedetector.domain.source.IdentifiablePagedMediaSource
-import com.experiment.facedetector.domain.source.MediaSource
-import com.experiment.facedetector.domain.source.PagedMediaSource
 
 abstract class MediaStoreSource : IdentifiablePagedMediaSource
 
 class CameraMediaStoreSource(
-    private val context: Context
+    private val context: Context,
 ) : MediaStoreSource() {
 
     override val sourceType: MediaSourceType = MediaSourceType.MediaStoreCamera
@@ -34,10 +32,10 @@ class CameraMediaStoreSource(
      * Lower bound: exclusive on (generation, _id) when cursor provided.
      */
     override suspend fun listAfter(
-        cursor: MediaSourceCursor?,
-        limit: Int
+        mediaSourceCursor: MediaSourceCursor?,
+        limit: Int,
     ): MediaSourcePage<SourceMediaItem> {
-        LogManager.d(TAG, "listAfter: cursor=$cursor limit=$limit")
+        LogManager.d(TAG, "listAfter: cursor=$mediaSourceCursor limit=$limit")
 
         val results = mutableListOf<SourceMediaItem>()
         val projection = getMediaStoreProjection()
@@ -47,11 +45,14 @@ class CameraMediaStoreSource(
             MediaStore.Images.Media._ID
         )
 
-        val (selection, selectionArgs) = buildSelection(cursor)
+        val (selection, selectionArgs) = buildSelection(mediaSourceCursor)
 
         val args = Bundle().apply {
             putStringArray(ContentResolver.QUERY_ARG_SORT_COLUMNS, sortColumns)
-            putInt(ContentResolver.QUERY_ARG_SORT_DIRECTION, ContentResolver.QUERY_SORT_DIRECTION_ASCENDING)
+            putInt(
+                ContentResolver.QUERY_ARG_SORT_DIRECTION,
+                ContentResolver.QUERY_SORT_DIRECTION_ASCENDING
+            )
             putInt(ContentResolver.QUERY_ARG_LIMIT, limit)
             putString(ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
             putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, selectionArgs)
@@ -59,12 +60,12 @@ class CameraMediaStoreSource(
 
         val baseUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         val resolver = context.contentResolver
-        val c = resolver.query(baseUri, projection, args, null)
+        val cursor = resolver.query(baseUri, projection, args, null)
 
         var lastGen: Long? = null
         var lastId: Long? = null
 
-        c?.use { cursorObj ->
+        cursor?.use { cursorObj ->
             while (cursorObj.moveToNext()) {
                 val r = CursorReader(cursorObj)
 
@@ -77,8 +78,10 @@ class CameraMediaStoreSource(
 
                 val dateTakenMs = r.getMillisOrNull(MediaStore.Images.Media.DATE_TAKEN)
                 val dateAddedMs = r.getEpochSecAsMillisOrNull(MediaStore.MediaColumns.DATE_ADDED)
-                val dateModifiedMs = r.getEpochSecAsMillisOrNull(MediaStore.MediaColumns.DATE_MODIFIED)
-                val generationModified = r.getLongOrNull(MediaStore.MediaColumns.GENERATION_MODIFIED)
+                val dateModifiedMs =
+                    r.getEpochSecAsMillisOrNull(MediaStore.MediaColumns.DATE_MODIFIED)
+                val generationModified =
+                    r.getLongOrNull(MediaStore.MediaColumns.GENERATION_MODIFIED)
 
                 val createdAtMs = MediaTimePolicy.resolveCreatedAtMs(
                     MediaTimePolicy.Inputs(
@@ -97,15 +100,17 @@ class CameraMediaStoreSource(
                 val bucketId = r.getLongOrNull(MediaStore.Images.Media.BUCKET_ID)
                 val bucketName = r.getStringOrNull(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
 
-                val mediaStoreOrientationDeg = r.getIntOrNull(MediaStore.Images.ImageColumns.ORIENTATION)
+                val mediaStoreOrientationDeg =
+                    r.getIntOrNull(MediaStore.Images.ImageColumns.ORIENTATION)
                 val orientationDeg = OrientationPolicy.resolve(
                     exifOrientationTag = null,
                     mediaStoreOrientationDeg = mediaStoreOrientationDeg
                 )
-
+                LogManager.d(TAG, "fetched media item: $id")
                 results.add(
                     SourceMediaItem(
-                        stableId = id,
+                        sourceKey = sourceType.key,
+                        sourceStableId = id,
                         contentUri = contentUri,
                         mimeType = mimeType,
                         width = width,
@@ -120,7 +125,6 @@ class CameraMediaStoreSource(
                         kind = MediaKind.IMAGE
                     )
                 )
-
                 lastGen = generationModified
                 lastId = id
             }
@@ -134,7 +138,7 @@ class CameraMediaStoreSource(
                 lastId = lastId
             )
         } else {
-            cursor // unchanged when empty page
+            mediaSourceCursor // unchanged when empty page
         }
 
         LogManager.d(
@@ -178,6 +182,7 @@ class CameraMediaStoreSource(
         val lastId = (cursor.lastId ?: Long.MIN_VALUE).toString()
         return listOf(generation, generation, lastId)
     }
+
     private fun getMediaStoreProjection(): Array<String> = arrayOf(
         MediaStore.Images.Media._ID,
         MediaStore.MediaColumns.MIME_TYPE,

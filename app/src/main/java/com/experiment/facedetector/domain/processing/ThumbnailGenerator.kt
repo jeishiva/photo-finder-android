@@ -5,5 +5,5 @@ package com.experiment.facedetector.domain.processing
  * Returns absolute path to saved thumbnail or null on failure.
  */
 interface ThumbnailGenerator {
-    suspend fun generateFromFile(filePath: String, mediaId: Long): String?
+    suspend fun extractFromFile(filePath: String, mediaId: Long): String?
 }

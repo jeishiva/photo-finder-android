@@ -10,9 +10,10 @@ val scannerModule = module {
             mediaRepo = get(),
             faceRepo = get(),
             embeddings = get(),
-            thumbnails = get(),
+            thumbnailGenerator = get(),
             fingerPrint = get(),
-            cursorRepo = get()
+            cursorRepo = get(),
+            stableIdGenerator = get(),
         )
     }
 }

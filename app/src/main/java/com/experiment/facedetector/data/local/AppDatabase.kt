@@ -20,7 +20,7 @@ import com.experiment.facedetector.data.local.entities.SourceMediaCursor
         FaceEntity::class,
         SourceMediaCursor::class,
     ],
-    version = 2,
+    version = 1,
     exportSchema = false
 )
 @TypeConverters(

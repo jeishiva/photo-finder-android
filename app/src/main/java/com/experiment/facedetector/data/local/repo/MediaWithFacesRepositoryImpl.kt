@@ -16,7 +16,7 @@ class MediaWithFacesRepositoryImpl(
         return Pager(
             config = PagingConfig(
                 pageSize = pageSize,
-                prefetchDistance = pageSize / 2,
+                prefetchDistance = pageSize,
                 enablePlaceholders = false
             ),
             pagingSourceFactory = {
@@ -44,7 +44,7 @@ class MediaWithFacesRepositoryImpl(
         return Pager(
             config = PagingConfig(
                 pageSize = pageSize,
-                prefetchDistance = pageSize / 2,
+                prefetchDistance = 0,
                 enablePlaceholders = true
             ),
             pagingSourceFactory = {

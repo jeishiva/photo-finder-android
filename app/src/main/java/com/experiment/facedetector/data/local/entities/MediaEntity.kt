@@ -21,11 +21,10 @@ import com.experiment.facedetector.domain.entities.MediaKind
         Index(value = ["sourceKey"]),
         Index(value = ["processedState"]),
         Index(value = ["isDeleted"])
-    ]
+    ],
 )
 data class MediaEntity(
-
-    @PrimaryKey(autoGenerate = true)
+    @PrimaryKey
     @ColumnInfo(name = "mediaId")
     val id: Long = 0L,
 

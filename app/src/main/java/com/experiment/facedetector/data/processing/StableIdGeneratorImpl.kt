@@ -8,10 +8,8 @@ import java.security.MessageDigest
 
 class StableIdGeneratorImpl : StableIdGenerator {
     override fun generate(
-        mediaSourceType: MediaSourceType,
-        sourceMediaItem: SourceMediaItem
+        input: String,
     ): Long {
-        val input = "${mediaSourceType.key}|${sourceMediaItem.stableId}"
         val digest = MessageDigest.getInstance("SHA-1").digest(input.toByteArray())
         // given the expected scale (tens of thousands of local photos),
         // using a 64-bit hash provides a practically collision-free identifier.

@@ -3,7 +3,8 @@ package com.experiment.facedetector.domain.entities
 enum class MediaKind { IMAGE, VIDEO }
 
 data class SourceMediaItem(
-    val stableId: Long,
+    val sourceKey: String,
+    val sourceStableId: Long,
     val contentUri: String,
     val mimeType: String,
     val width: Int,

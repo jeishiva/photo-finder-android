@@ -5,8 +5,8 @@ import com.experiment.facedetector.domain.entities.Media
 import com.experiment.facedetector.domain.entities.MediaKind
 import com.experiment.facedetector.domain.entities.MediaWithFacesDomain
 import com.experiment.facedetector.domain.repo.MediaFingerPrint
-import com.experiment.facedetector.domain.entities.MediaSourceType
 import com.experiment.facedetector.domain.entities.SourceMediaItem
+import com.experiment.facedetector.domain.repo.StableIdGenerator
 
 
 // Maps the unified SourceMediaItem (image or video) into MediaEntity.
@@ -14,11 +14,11 @@ import com.experiment.facedetector.domain.entities.SourceMediaItem
 // - Fills image-only and video-only fields when present (nullable in Room)
 
 fun SourceMediaItem.toMediaEntity(
-    sourceType: MediaSourceType,
     fingerPrint: MediaFingerPrint,
+    stableIdGenerator: StableIdGenerator,
 ): MediaEntity {
     val fp = fingerPrint.generate(
-        sourceStableId = this.stableId.toString(),
+        sourceStableId = this.sourceStableId.toString(),
         lastModified = this.lastModifiedAtMs,
         sizeBytes = this.sizeBytes
     )
@@ -31,11 +31,14 @@ fun SourceMediaItem.toMediaEntity(
     }
 
     return MediaEntity(
-        id = 0L, // auto-increment in Room
-
+        id = stableIdGenerator.generate(buildString {
+            append(this@toMediaEntity.sourceKey)
+            append("_")
+            append(this@toMediaEntity.sourceStableId.toString())
+        }),
         // identity
-        sourceKey = sourceType.key,
-        sourceStableId = this.stableId.toString(),
+        sourceKey = sourceKey,
+        sourceStableId = this.sourceStableId.toString(),
         contentUri = this.contentUri.toString(),
         mediaKind = kind, // new: IMAGE or VIDEO
 

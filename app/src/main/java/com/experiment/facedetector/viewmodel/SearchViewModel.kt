@@ -35,7 +35,6 @@ class SearchViewModel(
     savedStateHandle: SavedStateHandle,
     val embeddingUseCase: ExtractEmbeddingsUseCase,
     val searchPhotosPagedUseCase: SearchSimilarPhotoUseCase,
-    val mediaScanner: CameraMediaScanner,
 ) : ViewModel() {
 
     private val _uiState = UiStateHolder<SearchUiState>(SearchUiState())
@@ -93,16 +92,6 @@ class SearchViewModel(
             }
             searchTrigger.value = embeddings
             endLoading()
-        }
-    }
-
-    init {
-        startIndex()
-    }
-
-    fun startIndex() {
-        viewModelScope.launch(Dispatchers.IO) {
-            mediaScanner.sync()
         }
     }
 

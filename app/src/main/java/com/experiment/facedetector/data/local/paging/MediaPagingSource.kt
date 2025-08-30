@@ -4,97 +4,82 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.experiment.facedetector.data.local.entities.MediaWithFaces
 
-
 /**
- * Bidirectional keyset PagingSource supporting both forward and backward pagination.
- * Uses compound cursor (modifiedAtMs, id) for stable ordering.
- */
-/**
- * Bidirectional keyset PagingSource supporting both forward and backward pagination.
- * Uses compound cursor (modifiedAtMs, id) for stable ordering.
+ * PagingSource that supports bidirectional keyset pagination using compound cursor (modifiedAtMs, id).
+ *
+ * Assumptions:
+ * - Both loaders return results ordered DESCENDING by (modifiedAtMs, id).
+ * - forwardLoader → loads items "after" the cursor (newer).
+ * - backwardLoader → loads items "before" the cursor (older).
  */
 class BidirectionalKeysetPagingSource(
     private val initialCursorDate: Long = Long.MAX_VALUE,
     private val initialCursorId: Long = Long.MAX_VALUE,
     private val forwardLoader: suspend (cursorDate: Long, cursorId: Long, limit: Int) -> List<MediaWithFaces>,
-    private val backwardLoader: suspend (cursorDate: Long, cursorId: Long, limit: Int) -> List<MediaWithFaces>
+    private val backwardLoader: suspend (cursorDate: Long, cursorId: Long, limit: Int) -> List<MediaWithFaces>,
 ) : PagingSource<Pair<Long, Long>, MediaWithFaces>() {
 
     override fun getRefreshKey(
-        state: PagingState<Pair<Long, Long>, MediaWithFaces>
+        state: PagingState<Pair<Long, Long>, MediaWithFaces>,
     ): Pair<Long, Long>? {
-        val anchor = state.anchorPosition ?: return null
-        val closest = state.closestItemToPosition(anchor) ?: return null
-        return Pair(
-            closest.media.modifiedAtMs,
-            closest.media.id
-        )
+        val anchorPos = state.anchorPosition ?: return null
+        val closestItem = state.closestItemToPosition(anchorPos) ?: return null
+        val date = closestItem.media.modifiedAtMs
+        val id = closestItem.media.id
+        return Pair(date, id)
     }
 
     override suspend fun load(
-        params: LoadParams<Pair<Long, Long>>
+        params: LoadParams<Pair<Long, Long>>,
     ): LoadResult<Pair<Long, Long>, MediaWithFaces> {
         return try {
             when (params) {
-                is LoadParams.Refresh -> loadRefresh(params)
-                is LoadParams.Append -> loadAppend(params)
-                is LoadParams.Prepend -> loadPrepend(params)
+                is LoadParams.Refresh -> handleRefresh(params)
+                is LoadParams.Append -> handleAppend(params)
+                is LoadParams.Prepend -> handlePrepend(params)
             }
         } catch (e: Exception) {
             LoadResult.Error(e)
         }
     }
 
-    private suspend fun loadRefresh(
-        params: LoadParams.Refresh<Pair<Long, Long>>
-    ): LoadResult<Pair<Long, Long>, MediaWithFaces> {
+    private suspend fun handleRefresh(
+        params: LoadParams.Refresh<Pair<Long, Long>>,
+    ): LoadResult.Page<Pair<Long, Long>, MediaWithFaces> {
         val key = params.key ?: Pair(initialCursorDate, initialCursorId)
         val items = forwardLoader(key.first, key.second, params.loadSize)
 
         return LoadResult.Page(
             data = items,
-            // Use first item as prevKey for backward pagination
-            prevKey = if (items.isNotEmpty()) {
-                val first = items.first()
-                Pair(first.media.modifiedAtMs, first.media.id)
-            } else null,
-            // Use last item as nextKey for forward pagination
-            nextKey = if (items.isNotEmpty()) {
-                val last = items.last()
-                Pair(last.media.modifiedAtMs, last.media.id)
-            } else null
+            prevKey = items.lastOrNull()?.let { Pair(it.media.modifiedAtMs, it.media.id) }, // older
+            nextKey = items.firstOrNull()
+                ?.let { Pair(it.media.modifiedAtMs, it.media.id) }  // newer
         )
     }
 
-    private suspend fun loadAppend(
-        params: LoadParams.Append<Pair<Long, Long>>
-    ): LoadResult<Pair<Long, Long>, MediaWithFaces> {
+    private suspend fun handleAppend(
+        params: LoadParams.Append<Pair<Long, Long>>,
+    ): LoadResult.Page<Pair<Long, Long>, MediaWithFaces> {
         val key = params.key
         val items = forwardLoader(key.first, key.second, params.loadSize)
 
         return LoadResult.Page(
             data = items,
-            prevKey = null, // Don't provide prevKey for append
-            nextKey = if (items.isNotEmpty()) {
-                val last = items.last()
-                Pair(last.media.modifiedAtMs, last.media.id)
-            } else null
+            prevKey = null,
+            nextKey = items.firstOrNull()?.let { Pair(it.media.modifiedAtMs, it.media.id) } // newer
         )
     }
 
-    private suspend fun loadPrepend(
-        params: LoadParams.Prepend<Pair<Long, Long>>
-    ): LoadResult<Pair<Long, Long>, MediaWithFaces> {
+    private suspend fun handlePrepend(
+        params: LoadParams.Prepend<Pair<Long, Long>>,
+    ): LoadResult.Page<Pair<Long, Long>, MediaWithFaces> {
         val key = params.key
         val items = backwardLoader(key.first, key.second, params.loadSize)
 
         return LoadResult.Page(
             data = items,
-            prevKey = if (items.isNotEmpty()) {
-                val first = items.first()
-                Pair(first.media.modifiedAtMs, first.media.id)
-            } else null,
-            nextKey = null // Don't provide nextKey for prepend
+            prevKey = items.lastOrNull()?.let { Pair(it.media.modifiedAtMs, it.media.id) }, // older
+            nextKey = null
         )
     }
 }

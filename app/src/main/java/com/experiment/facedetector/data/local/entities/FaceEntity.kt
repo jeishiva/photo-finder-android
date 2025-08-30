@@ -35,7 +35,6 @@ data class FaceEntity(
     @ColumnInfo(name = "faceRowId")
     val faceRowId: Long = 0L,
 
-    /** Owner media row (FK to IndexedMediaEntity). */
     @ColumnInfo(name = "mediaOwnerId")
     val mediaOwnerId: Long,
 
