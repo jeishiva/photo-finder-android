@@ -2,11 +2,13 @@ package com.experiment.facedetector.di
 
 import com.experiment.facedetector.data.local.repo.FaceDetectionRepoImpl
 import com.experiment.facedetector.data.local.repo.FaceRepositoryImpl
+import com.experiment.facedetector.data.local.repo.MediaPagingRepository
 import com.experiment.facedetector.data.local.repo.MediaRepositoryImpl
 import com.experiment.facedetector.data.local.repo.MediaSourceCursorRepoImpl
 import com.experiment.facedetector.data.local.repo.MediaWithFacesRepositoryImpl
 import com.experiment.facedetector.domain.repo.FaceDetectionRepo
 import com.experiment.facedetector.domain.repo.FaceRepository
+import com.experiment.facedetector.domain.repo.MediaPagingRepositoryImpl
 import com.experiment.facedetector.domain.repo.MediaRepository
 import com.experiment.facedetector.domain.repo.MediaSourceCursorRepo
 import com.experiment.facedetector.domain.repo.MediaWithFacesRepository
@@ -44,4 +46,12 @@ val repositoryModule = module {
             appDatabase = get(),
         )
     }
+
+    single<MediaPagingRepository> {
+        MediaPagingRepositoryImpl(
+            mediaRepository = get(),
+            mediaWithFacesRepository = get(),
+        )
+    }
+
 }

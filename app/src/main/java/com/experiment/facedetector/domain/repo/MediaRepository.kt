@@ -1,5 +1,6 @@
 package com.experiment.facedetector.domain.repo
 
+import androidx.paging.Pager
 import com.experiment.facedetector.data.local.entities.MediaEntity
 import com.experiment.facedetector.data.local.entities.MediaErrorCode
 import com.experiment.facedetector.data.local.entities.MediaWithFaces
@@ -41,4 +42,6 @@ interface MediaRepository {
         limit: Int,
         processed: ProcessedState ,
     ): List<MediaWithFaces>
+
+
 }
