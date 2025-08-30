@@ -31,7 +31,7 @@ fun SourceMediaItem.toMediaEntity(
     }
 
     return MediaEntity(
-        id = stableIdGenerator.generate(buildString {
+        mediaId = stableIdGenerator.generate(buildString {
             append(this@toMediaEntity.sourceKey)
             append("_")
             append(this@toMediaEntity.sourceStableId.toString())
@@ -66,7 +66,6 @@ fun SourceMediaItem.toMediaEntity(
         thumbnailPath = null,
         fingerprint = fp,
         processedState = ProcessedState.PENDING,
-        lastProcessedStage = null,
         lastProcessedAtMs = null,
         attemptCount = 0,
         lastErrorCode = null,
@@ -81,7 +80,7 @@ fun SourceMediaItem.toMediaEntity(
 fun MediaWithFaces.toDomain(): MediaWithFacesDomain {
     return MediaWithFacesDomain(
         media = Media(
-            id = media.id,
+            mediaId = media.mediaId,
             thumbnailUri = media.thumbnailPath,
             dateModified = media.modifiedAtMs,
             sourceStableId = media.sourceStableId
@@ -92,7 +91,7 @@ fun MediaWithFaces.toDomain(): MediaWithFacesDomain {
 
 fun FaceEntity.toDomain(): FaceEmbedding {
     return FaceEmbedding(
-        id = this.faceId,
+        faceId = this.faceId,
         embedding = this.embeddingData,
     )
 }

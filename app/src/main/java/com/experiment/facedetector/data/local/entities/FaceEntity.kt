@@ -67,7 +67,7 @@ data class FaceEntity(
         if (faceRowId != other.faceRowId) return false
         if (mediaOwnerId != other.mediaOwnerId) return false
         if (createdAtMs != other.createdAtMs) return false
-        if (faceId != other.faceId) return false
+        if (this@FaceEntity.faceId != other.faceId) return false
         if (!embeddingData.contentEquals(other.embeddingData)) return false
         if (embeddingHash != other.embeddingHash) return false
         if (boundingBox != other.boundingBox) return false

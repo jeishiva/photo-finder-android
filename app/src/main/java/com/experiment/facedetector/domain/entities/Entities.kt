@@ -22,7 +22,7 @@ data class FaceDetectedItem(
 data class MediaIdFingerprint(val mediaId: Long, val fingerprint: String?)
 
 data class Media(
-    val id: Long,
+    val mediaId: Long,
     val thumbnailUri: String?,
     val dateModified: Long? = null,
     val sourceStableId: String
@@ -33,19 +33,19 @@ data class MediaWithFacesDomain(
 )
 
 data class FaceEmbedding(
-    val id: String,
+    val faceId: String,
     val embedding: FloatArray
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
         other as FaceEmbedding
-        if (id != other.id) return false
+        if (faceId != other.faceId) return false
         if (!embedding.contentEquals(other.embedding)) return false
         return true
     }
     override fun hashCode(): Int {
-        var result = id.hashCode()
+        var result = faceId.hashCode()
         result = 31 * result + embedding.contentHashCode()
         return result
     }

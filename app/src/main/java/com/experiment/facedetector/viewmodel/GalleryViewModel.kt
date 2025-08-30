@@ -48,13 +48,15 @@ class GalleryViewModel(
     private val refreshes: Flow<Unit> =
         invalidationRepository
             .changes("media")
-            .onStart { emit(Unit) }
+            .onStart {
+                emit(Unit)
+            }
 
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val pagedSyncedMediaFlow: StateFlow<PagingData<MediaItemUi>> =
         refreshes
-            .throttleFirst(500)
+            .throttleFirst(1000)
             .flatMapLatest {
                 getSyncedMediaUseCase().map { pagingData ->
                     pagingData.map {

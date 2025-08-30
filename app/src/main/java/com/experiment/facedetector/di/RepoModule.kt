@@ -35,7 +35,7 @@ val repositoryModule = module {
 
     single<MediaWithFacesRepository> {
         MediaWithFacesRepositoryImpl(
-            dao = get(),
+            mediaFacesWithDao = get(),
         )
     }
 

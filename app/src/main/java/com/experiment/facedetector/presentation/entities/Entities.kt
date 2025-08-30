@@ -21,6 +21,16 @@ data class SearchScreenParams(
     val selectPhotoViewModel: GalleryViewModel,
 )
 
+
+data class AppUiModel(
+    val actions: Actions,
+) {
+    @Stable
+    data class Actions(
+        val onPermissionGranted: () -> Unit = {},
+    )
+}
+
 data class GalleryUiModel(
     val actions: Actions,
     val state: GalleryUiState,
@@ -70,7 +80,7 @@ data class SearchUiModel(
 }
 
 data class MediaItemUi(
-    val id: Long,
+    val mediaId: Long,
     val thumbnailUri: String?,
 )
 

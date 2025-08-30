@@ -136,7 +136,7 @@ private fun GalleryGrid(
         content = {
             items(
                 count = mediaPagedItems.itemCount,
-                key = { index -> mediaPagedItems[index]?.id ?: "placeholder-$index" }
+                key = { index -> mediaPagedItems[index]?.mediaId ?: "placeholder-$index" }
             ) { index ->
                 val item = mediaPagedItems[index] ?: return@items
                 GalleryThumbnailItem(
@@ -152,7 +152,7 @@ fun GalleryThumbnailItem(
     item: MediaItemUi,
     onThumbnailClicked: (MediaItemUi) -> Unit,
 ) {
-    val onClick = remember(item.id) {
+    val onClick = remember(item.mediaId) {
         { onThumbnailClicked(item) }
     }
     Box(

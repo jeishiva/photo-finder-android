@@ -1,6 +1,8 @@
 package com.experiment.facedetector.domain.repo
 
 import com.experiment.facedetector.data.local.entities.MediaEntity
+import com.experiment.facedetector.data.local.entities.MediaErrorCode
+import com.experiment.facedetector.data.local.entities.ProcessedState
 import com.experiment.facedetector.domain.entities.MediaIdFingerprint
 
 /**
@@ -25,5 +27,10 @@ interface MediaRepository {
         stableIds: List<String>
     ): Map<String, String?>
 
-
+    suspend fun updateProcessedState(
+        mediaId: Long,
+        processedState: ProcessedState,
+        lastErrorCode: MediaErrorCode?,
+        lastErrorMessage: String?,
+    )
 }

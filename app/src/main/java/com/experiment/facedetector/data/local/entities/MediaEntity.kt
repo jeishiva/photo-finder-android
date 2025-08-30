@@ -26,7 +26,7 @@ import com.experiment.facedetector.domain.entities.MediaKind
 data class MediaEntity(
     @PrimaryKey
     @ColumnInfo(name = "mediaId")
-    val id: Long = 0L,
+    val mediaId: Long = 0L,
 
     // ---- Identity (per source) ----
     @ColumnInfo(name = "sourceKey")
@@ -100,10 +100,6 @@ data class MediaEntity(
     @ColumnInfo(name = "processedState")
     val processedState: ProcessedState = ProcessedState.PENDING,
 
-    /** Last pipeline stage we attempted. */
-    @ColumnInfo(name = "lastProcessedStage")
-    val lastProcessedStage: ProcessStage? = null,
-
     /** When we last completed or failed a stage. */
     @ColumnInfo(name = "lastProcessedAtMs")
     val lastProcessedAtMs: Long? = null,
@@ -114,7 +110,7 @@ data class MediaEntity(
 
     /** Short error code for last failure (e.g., FILE_NOT_FOUND, IO_TIMEOUT). */
     @ColumnInfo(name = "lastErrorCode")
-    val lastErrorCode: String? = null,
+    val lastErrorCode: MediaErrorCode? = null,
 
     /** Truncated error message from last failure (keep small, e.g., <= 512 chars). */
     @ColumnInfo(name = "lastErrorMessage")
@@ -133,16 +129,13 @@ data class MediaEntity(
 /** High-level state of the processing pipeline for this media. */
 enum class ProcessedState {
     PENDING,         // never attempted (new)
-    SKIPPED,         // unchanged this run (no processing needed)
     PROCESSING,      // optional transient state if you want to set it
     PROCESSED,       // all required stages done
-    FAILED_THUMBNAIL,
-    FAILED_EMBEDDING,
-    FAILED_OTHER
+    FAILED
 }
 
-/** Which stage we touched last (helps with targeted retries or debugging). */
-enum class ProcessStage {
-    THUMBNAIL,
-    EMBEDDING
+enum class MediaErrorCode(val code: Int) {
+    THUMBNAIL_FAILED(100),
+    FACE_EXTRACTION_FAILED(200),
+    OTHER(10000),
 }

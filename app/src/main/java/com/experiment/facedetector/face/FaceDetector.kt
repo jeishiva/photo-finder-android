@@ -17,7 +17,7 @@ class FaceDetectionProcessor(
     private val imageHelper: BitmapHelper
 ) {
     suspend fun processImage(mediaItem: SourceMediaItem): FaceDetectedMediaItem =
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             val bitmap = imageHelper.decodeBitmap(
                 mediaItem.contentUri,
                 FullImageConfig.MAX_HEIGHT,

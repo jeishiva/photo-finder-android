@@ -2,6 +2,8 @@ package com.experiment.facedetector.data.local.repo
 
 import com.experiment.facedetector.data.local.dao.MediaDao
 import com.experiment.facedetector.data.local.entities.MediaEntity
+import com.experiment.facedetector.data.local.entities.MediaErrorCode
+import com.experiment.facedetector.data.local.entities.ProcessedState
 import com.experiment.facedetector.domain.entities.MediaIdFingerprint
 import com.experiment.facedetector.domain.repo.MediaRepository
 
@@ -57,6 +59,21 @@ class MediaRepositoryImpl(
         return HashMap<String, String?>(rows.size).apply {
             for (r in rows) this[r.sourceStableId] = r.fingerprint
         }
+    }
+
+    override suspend fun updateProcessedState(
+        mediaId: Long,
+        processedState: ProcessedState,
+        lastErrorCode: MediaErrorCode?,
+        lastErrorMessage: String?,
+    ) {
+        mediaDao.updateProcessedState(
+            mediaId = mediaId,
+            processedState = processedState,
+            lastErrorCode = lastErrorCode,
+            lastErrorMessage = lastErrorMessage,
+            lastProcessedAtMs = System.currentTimeMillis()
+        )
     }
 
 }

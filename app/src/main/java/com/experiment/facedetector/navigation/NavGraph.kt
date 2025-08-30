@@ -9,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import com.experiment.facedetector.common.LogManager
+import com.experiment.facedetector.presentation.entities.AppUiModel
 import com.experiment.facedetector.presentation.entities.GalleryScreenParams
 import com.experiment.facedetector.presentation.entities.SearchScreenParams
 import com.experiment.facedetector.presentation.screen.GalleryScreen
@@ -20,10 +21,10 @@ import com.experiment.facedetector.viewmodel.SearchViewModel
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun AppNavGraph(navController: NavHostController) {
+fun AppNavGraph(navController: NavHostController, appUiModel: AppUiModel) {
     NavHost(navController, startDestination = AppRoute.Splash.route) {
         composable(AppRoute.Splash.route) {
-            SplashScreen(navController)
+            SplashScreen(navController, appUiModel)
         }
 
         navigation(startDestination = AppRoute.Home.route, route = AppRoute.PhotoSearch.route) {
@@ -32,7 +33,8 @@ fun AppNavGraph(navController: NavHostController) {
                 val navBackStackEntry = remember(backStackEntry) {
                     navController.getBackStackEntry(AppRoute.Home.route)
                 }
-                val selectPhotoViewModel : GalleryViewModel = koinViewModel(viewModelStoreOwner = navBackStackEntry)
+                val selectPhotoViewModel: GalleryViewModel =
+                    koinViewModel(viewModelStoreOwner = navBackStackEntry)
                 LogManager.d(TAG, "SelectPhotoViewModel: $selectPhotoViewModel")
                 val homeScreenParams = GalleryScreenParams(
                     navController = navController,
@@ -49,7 +51,8 @@ fun AppNavGraph(navController: NavHostController) {
                 val navBackStackEntry = remember(backStackEntry) {
                     navController.getBackStackEntry(AppRoute.Home.route)
                 }
-                val selectPhotoViewModel : GalleryViewModel = koinViewModel(viewModelStoreOwner = navBackStackEntry)
+                val selectPhotoViewModel: GalleryViewModel =
+                    koinViewModel(viewModelStoreOwner = navBackStackEntry)
                 LogManager.d(TAG, "SelectPhotoViewModel: $selectPhotoViewModel")
                 println("SelectPhotoViewModel: $selectPhotoViewModel")
                 val searchViewModel: SearchViewModel = koinViewModel()
@@ -75,6 +78,7 @@ sealed class AppRoute(val route: String) {
     object Search : AppRoute("searchScreen/{sessionId}") {
         fun createRoute(sessionId: String): String = "searchScreen/$sessionId"
     }
+
     object MediaFullView : AppRoute("fullImage/{mediaId}") {
         fun createRoute(mediaId: Long): String = "fullImage/$mediaId"
     }

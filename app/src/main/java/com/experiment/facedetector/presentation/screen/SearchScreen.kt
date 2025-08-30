@@ -234,7 +234,7 @@ private fun SearchResultsGrid(
         content = {
             items(
                 count = searchResults.itemCount,
-                key = { index -> searchResults[index]?.id ?: "item-$index" }
+                key = { index -> searchResults[index]?.mediaId ?: "item-$index" }
             ) { index ->
                 searchResults[index]?.let { item ->
                     ThumbnailItem(
@@ -261,7 +261,7 @@ fun ThumbnailItem(
     onThumbnailClicked: (MediaItemUi) -> Unit,
 ) {
     val context = LocalContext.current
-    val onClick = remember(item.id) {
+    val onClick = remember(item.mediaId) {
         {
             Toast.makeText(context, "Hello from Compose!", Toast.LENGTH_SHORT).show()
             onThumbnailClicked(item)

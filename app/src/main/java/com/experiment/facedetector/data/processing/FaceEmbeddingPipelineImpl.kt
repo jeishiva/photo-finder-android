@@ -54,7 +54,7 @@ class FaceEmbeddingPipelineImpl(
                             emptyList<Pair<String, FloatArray>>()
                         } else {
                             faceEmbeddings.map { faceEmbedding ->
-                                faceEmbedding.id to faceEmbedding.embedding
+                                faceEmbedding.faceId to faceEmbedding.embedding
                             }
                         }
                     },

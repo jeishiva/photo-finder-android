@@ -18,7 +18,7 @@ class FaceEmbeddingMatcher(
                 embeddingMatcher.isSimilar(searchEmbedding, face.embedding, threshold)
             }
         }
-        logSimilarityResult(mediaWithFaces.media.id, hasMatch)
+        logSimilarityResult(mediaWithFaces.media.mediaId, hasMatch)
         return hasMatch
     }
 

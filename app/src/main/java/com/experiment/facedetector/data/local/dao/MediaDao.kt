@@ -1,65 +1,106 @@
-package com.experiment.facedetector.data.local.dao
+    package com.experiment.facedetector.data.local.dao
 
 
-import androidx.room.Dao
-import androidx.room.Query
-import androidx.room.Upsert
-import com.experiment.facedetector.data.local.entities.MediaEntity
-import com.experiment.facedetector.data.local.entities.MediaIdFingerprintRow
-import com.experiment.facedetector.data.local.entities.StableIdFingerprintRow
-import com.experiment.facedetector.data.local.entities.StableIdToMediaIdRow
+    import androidx.room.Dao
+    import androidx.room.Query
+    import androidx.room.Upsert
+    import com.experiment.facedetector.data.local.entities.MediaEntity
+    import com.experiment.facedetector.data.local.entities.MediaErrorCode
+    import com.experiment.facedetector.data.local.entities.MediaIdFingerprintRow
+    import com.experiment.facedetector.data.local.entities.MediaWithFaces
+    import com.experiment.facedetector.data.local.entities.ProcessedState
+    import com.experiment.facedetector.data.local.entities.StableIdFingerprintRow
+    import com.experiment.facedetector.data.local.entities.StableIdToMediaIdRow
 
-@Dao
-interface MediaDao {
-    @Upsert
-    suspend fun upsert(media: MediaEntity)
+    @Dao
+    interface MediaDao {
+        @Upsert
+        suspend fun upsert(media: MediaEntity)
 
-    @Upsert
-    suspend fun upsertAll(items: List<MediaEntity>)
+        @Upsert
+        suspend fun upsertAll(items: List<MediaEntity>)
 
-    @Query("SELECT * FROM media WHERE mediaId = :mediaId LIMIT 1")
-    suspend fun getById(mediaId: Long): MediaEntity?
+        @Query("SELECT * FROM media WHERE mediaId = :mediaId LIMIT 1")
+        suspend fun getById(mediaId: Long): MediaEntity?
 
-    @Query("""
-        SELECT mediaId 
-        FROM media 
-        WHERE mediaId IN (:ids)
-    """)
-    suspend fun getExistingMediaIds(ids: List<Long>): List<Long>
+        @Query(
+            """
+            SELECT mediaId 
+            FROM media 
+            WHERE mediaId IN (:ids)
+        """
+        )
+        suspend fun getExistingMediaIds(ids: List<Long>): List<Long>
 
-    @Query("""
+        @Query("SELECT mediaId, fingerprint FROM media WHERE mediaId IN (:ids)")
+        suspend fun getFingerprints(ids: List<Long>): List<MediaIdFingerprintRow>
+
+        @Query(
+            """
+            SELECT sourceStableId, mediaId
+            FROM media
+            WHERE sourceKey = :source
+              AND sourceStableId IN (:stableIds)
+        """
+        )
+        suspend fun getIdsForSourceRows(
+            source: String,
+            stableIds: List<String>,
+        ): List<StableIdToMediaIdRow>
+
+        @Query(
+            """
+            SELECT sourceStableId, fingerprint
+            FROM media
+            WHERE sourceKey = :source AND sourceStableId IN (:stableIds)
+        """
+        )
+        suspend fun getFingerprintsBySourceRows(
+            source: String,
+            stableIds: List<String>,
+        ): List<StableIdFingerprintRow>
+
+
+        // update thumbnail
+        @Query(
+            """
+            UPDATE media
+            SET thumbnailPath = :thumbnailUri
+            WHERE mediaId = :mediaId
+        """
+        )
+        suspend fun updateThumbnail(mediaId: Long, thumbnailUri: String?)
+
+        // add update state code
+        @Query(
+            """
         UPDATE media
-        SET thumbnailPath = :thumbnailUri
+        SET processedState = :processedState,
+            lastErrorCode = :lastErrorCode,
+            lastErrorMessage = :lastErrorMessage,
+            lastProcessedAtMs = :lastProcessedAtMs,
+            attemptCount = attemptCount + 1
         WHERE mediaId = :mediaId
-    """)
-    suspend fun updateThumbnail(mediaId: Long, thumbnailUri: String?)
+    """
+        )
+        suspend fun updateProcessedState(
+            mediaId: Long,
+            processedState: ProcessedState,
+            lastErrorCode: MediaErrorCode?,
+            lastErrorMessage: String?,
+            lastProcessedAtMs: Long,
+        )
 
-    @Query("SELECT mediaId, fingerprint FROM media WHERE mediaId IN (:ids)")
-    suspend fun getFingerprints(ids: List<Long>): List<MediaIdFingerprintRow>
+        @Query(
+            """
+            SELECT * FROM media
+            ORDER BY modifiedAtMs DESC, mediaId DESC
+            LIMIT :limit OFFSET :offset
+            """
+        )
+        suspend fun getPagedMediaWithFaces(
+            offset: Int,
+            limit: Int,
+        ): List<MediaWithFaces>
 
-
-    @Query("""
-        SELECT sourceStableId, mediaId
-        FROM media
-        WHERE sourceKey = :source
-          AND sourceStableId IN (:stableIds)
-    """)
-    suspend fun getIdsForSourceRows(
-        source: String,
-        stableIds: List<String>
-    ): List<StableIdToMediaIdRow>
-
-    @Query("""
-        SELECT sourceStableId, fingerprint
-        FROM media
-        WHERE sourceKey = :source AND sourceStableId IN (:stableIds)
-    """)
-    suspend fun getFingerprintsBySourceRows(
-        source: String,
-        stableIds: List<String>
-    ): List<StableIdFingerprintRow>
-
-
-
-
-}
+    }

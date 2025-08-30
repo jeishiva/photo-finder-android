@@ -32,13 +32,14 @@ object BitmapPool {
         val existing =  pool.remove(key)
         if (existing != null) {
             LogManager.d("BitmapPool", "reusing bitmap $key")
+            return existing
         }
-        return existing ?: createBitmap(width, height, config)
+        return createBitmap(width, height, config)
     }
 
     fun put(bitmap: Bitmap) {
         if (bitmap.isRecycled) {
-            LogManager.e("BitmapPool", "Cannot put recycled")
+            LogManager.e("BitmapPool", "Cannot put recycled bitmap")
             return
         }
         val key = "${bitmap.width}-${bitmap.height}-${bitmap.config?.name}"

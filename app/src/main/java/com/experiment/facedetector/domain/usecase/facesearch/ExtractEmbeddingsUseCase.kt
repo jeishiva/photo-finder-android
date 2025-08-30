@@ -66,7 +66,7 @@ class ExtractEmbeddingsUseCase(
                 val embedding = embeddingExtractor.extractEmbedding(croppedFace)
                 val faceId = generateFaceId()
                 FaceEmbedding(
-                    id = faceId,
+                    faceId = faceId,
                     embedding = embedding,
                 )
             }
