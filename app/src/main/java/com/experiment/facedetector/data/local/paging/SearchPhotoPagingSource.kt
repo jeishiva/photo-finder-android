@@ -4,14 +4,11 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.experiment.facedetector.data.local.entities.MediaWithFaces
 import com.experiment.facedetector.data.local.entities.ProcessedState
-import com.experiment.facedetector.domain.repo.MediaRepository
+import com.experiment.facedetector.domain.repo.MediaWithFacesRepository
 
-/**
- * Simple PagingSource for gallery items ordered by modifiedAtMs DESC.
- * Ensures no duplicate media entries (via DAO query).
- */
-class GalleryKeySetPagingSource(
-    private val mediaRepo: MediaRepository,
+
+class SearchPhotoPagingSource(
+    private val mediaWithFacesRepository: MediaWithFacesRepository,
 ) : PagingSource<Pair<Long, Long>, MediaWithFaces>() {
 
     override fun getRefreshKey(state: PagingState<Pair<Long, Long>, MediaWithFaces>): Pair<Long, Long>? {
@@ -26,8 +23,11 @@ class GalleryKeySetPagingSource(
                 is LoadParams.Refresh -> {
                     val newestCursor = Long.MAX_VALUE to Long.MAX_VALUE
                     val key = params.key ?: newestCursor
-                    val items = mediaRepo.loadMediaBefore(
-                        key.first, key.second, params.loadSize, ProcessedState.PROCESSED
+                    val items = mediaWithFacesRepository.loadMediaBefore(
+                        key.first,
+                        key.second,
+                        limit = params.loadSize,
+                        ProcessedState.PROCESSED
                     )
                     LoadResult.Page(
                         data = items,
@@ -36,10 +36,14 @@ class GalleryKeySetPagingSource(
                             ?.let { it.media.modifiedAtMs to it.media.mediaId }
                     )
                 }
+
                 is LoadParams.Append -> {
                     val key = params.key
-                    val items = mediaRepo.loadMediaBefore(
-                        key.first, key.second, params.loadSize, ProcessedState.PROCESSED
+                    val items = mediaWithFacesRepository.loadMediaBefore(
+                        key.first,
+                        key.second,
+                        limit = params.loadSize,
+                        ProcessedState.PROCESSED
                     )
                     LoadResult.Page(
                         data = items,
@@ -48,6 +52,7 @@ class GalleryKeySetPagingSource(
                             ?.let { it.media.modifiedAtMs to it.media.mediaId }
                     )
                 }
+
                 is LoadParams.Prepend -> {
                     LoadResult.Page(
                         data = emptyList(),

@@ -2,19 +2,17 @@ package com.experiment.facedetector.domain.repo
 
 import androidx.paging.Pager
 import com.experiment.facedetector.data.local.entities.MediaWithFaces
+import com.experiment.facedetector.data.local.entities.ProcessedState
 
 /**
  * Read-only access to media lists (with face joins where needed).
  * Uses forward-only keyset pagination (newest → older).
  */
 interface MediaWithFacesRepository {
-    /**
-     * Newest-first pager for all media.
-     */
-    fun pagerAll(pageSize: Int): Pager<Pair<Long, Long>, MediaWithFaces>
-
-    /**
-     * Newest-first pager for media that has at least one face.
-     */
-    fun pagerFacesOnly(pageSize: Int): Pager<Pair<Long, Long>, MediaWithFaces>
+    suspend fun loadMediaBefore(
+        cursorDate: Long,
+        cursorId: Long,
+        limit: Int,
+        processed: ProcessedState,
+    ): List<MediaWithFaces>
 }

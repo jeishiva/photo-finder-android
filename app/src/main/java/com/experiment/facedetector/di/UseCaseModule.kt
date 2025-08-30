@@ -17,7 +17,7 @@ val useCaseModule = module {
 
     factory<GetSyncedMediaUseCase> {
         GetSyncedMediaUseCase(
-            mediaWithFacesRepository = get()
+            mediaRepository = get()
         )
     }
 

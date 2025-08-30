@@ -8,15 +8,28 @@ import com.experiment.facedetector.data.local.entities.toDomain
 import androidx.paging.map
 import kotlinx.coroutines.flow.map
 
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import com.experiment.facedetector.data.local.paging.GalleryKeySetPagingSource
+import com.experiment.facedetector.domain.repo.MediaRepository
+
 class GetSyncedMediaUseCase(
-    private val mediaWithFacesRepository: MediaWithFacesRepository,
+    private val mediaRepository: MediaRepository,
 ) {
     operator fun invoke(): Flow<PagingData<MediaWithFacesDomain>> {
-        return mediaWithFacesRepository.pagerAll(pageSize = 20).flow.map { pagingData ->
-            pagingData.map { mediaWithFaces ->
-                mediaWithFaces.toDomain()
+        return Pager(
+            config = PagingConfig(
+                pageSize = 20,
+                prefetchDistance = 10,
+                enablePlaceholders = true
+            ),
+            pagingSourceFactory = {
+                GalleryKeySetPagingSource(mediaRepository)
+            }
+        ).flow.map { pagingData ->
+            pagingData.map { entity ->
+                entity.toDomain()
             }
         }
     }
 }
-

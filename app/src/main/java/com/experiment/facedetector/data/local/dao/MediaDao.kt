@@ -91,16 +91,25 @@
             lastProcessedAtMs: Long,
         )
 
+
         @Query(
             """
-            SELECT * FROM media
-            ORDER BY modifiedAtMs DESC, mediaId DESC
-            LIMIT :limit OFFSET :offset
-            """
+        SELECT *
+        FROM media
+        WHERE processedState = :processed
+          AND (
+              modifiedAtMs < :cursorDate
+              OR (modifiedAtMs = :cursorDate AND mediaId < :cursorId)
+          )
+        ORDER BY modifiedAtMs DESC, mediaId DESC
+        LIMIT :limit
+        """
         )
-        suspend fun getPagedMediaWithFaces(
-            offset: Int,
+        suspend fun loadMediaBeforeCursor(
+            cursorDate: Long,
+            cursorId: Long,
             limit: Int,
+            processed: ProcessedState = ProcessedState.PROCESSED,
         ): List<MediaWithFaces>
 
     }

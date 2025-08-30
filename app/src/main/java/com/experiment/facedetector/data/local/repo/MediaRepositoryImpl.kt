@@ -3,12 +3,13 @@ package com.experiment.facedetector.data.local.repo
 import com.experiment.facedetector.data.local.dao.MediaDao
 import com.experiment.facedetector.data.local.entities.MediaEntity
 import com.experiment.facedetector.data.local.entities.MediaErrorCode
+import com.experiment.facedetector.data.local.entities.MediaWithFaces
 import com.experiment.facedetector.data.local.entities.ProcessedState
 import com.experiment.facedetector.domain.entities.MediaIdFingerprint
 import com.experiment.facedetector.domain.repo.MediaRepository
 
 class MediaRepositoryImpl(
-    private val mediaDao: MediaDao
+    private val mediaDao: MediaDao,
 ) : MediaRepository {
 
     override suspend fun upsertAll(items: List<MediaEntity>) {
@@ -30,15 +31,14 @@ class MediaRepositoryImpl(
         val rows = mediaDao.getFingerprints(ids)
         return rows.map {
             MediaIdFingerprint(
-                mediaId = it.mediaId,
-                fingerprint = it.fingerprint
+                mediaId = it.mediaId, fingerprint = it.fingerprint
             )
         }
     }
 
     override suspend fun getIdsForSource(
         source: String,
-        stableIds: List<String>
+        stableIds: List<String>,
     ): Map<String, Long> {
         if (stableIds.isEmpty()) {
             return emptyMap()
@@ -53,7 +53,7 @@ class MediaRepositoryImpl(
 
     override suspend fun getFingerprintsBySource(
         source: String,
-        stableIds: List<String>
+        stableIds: List<String>,
     ): Map<String, String?> {
         val rows = mediaDao.getFingerprintsBySourceRows(source, stableIds)
         return HashMap<String, String?>(rows.size).apply {
@@ -74,6 +74,15 @@ class MediaRepositoryImpl(
             lastErrorMessage = lastErrorMessage,
             lastProcessedAtMs = System.currentTimeMillis()
         )
+    }
+
+    override suspend fun loadMediaBefore(
+        cursorDate: Long,
+        cursorId: Long,
+        limit: Int,
+        processed: ProcessedState,
+    ): List<MediaWithFaces> {
+        return mediaDao.loadMediaBeforeCursor(cursorDate, cursorId, limit, processed)
     }
 
 }
