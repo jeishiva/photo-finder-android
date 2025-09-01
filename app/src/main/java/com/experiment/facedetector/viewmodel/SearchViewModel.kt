@@ -1,6 +1,7 @@
 package com.experiment.facedetector.viewmodel
 
 import ExtractEmbeddingsUseCase
+import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,8 +10,6 @@ import androidx.paging.cachedIn
 import androidx.paging.map
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.common.safeCancel
-import com.experiment.facedetector.data.local.scanner.CameraMediaScanner
-import com.experiment.facedetector.domain.entities.Media
 import com.experiment.facedetector.domain.filter.MediaFilter
 import com.experiment.facedetector.domain.usecase.facesearch.SearchSimilarPhotoUseCase
 import com.experiment.facedetector.presentation.entities.SearchUiState
@@ -40,33 +39,32 @@ class SearchViewModel(
     private val _uiState = UiStateHolder<SearchUiState>(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.state
     var searchJob: Job? = null
-    private var searchSessionId: String = savedStateHandle.get<String>("sessionId")!!
     private val _filter = MutableStateFlow(MediaFilter())
     val filter: StateFlow<MediaFilter> = _filter.asStateFlow()
     private val searchTrigger: MutableStateFlow<List<FloatArray>> = MutableStateFlow(emptyList())
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val pagedFaces: StateFlow<PagingData<MediaItemUi>> =
-        // new embeddings OR DB change → consider re-running,
+    // new embeddings OR DB change → consider re-running,
         // but only proceed when embeddings are non-empty.
         searchTrigger
-        .filter { embeddings ->
-            embeddings.isNotEmpty()
-        }
-        .flatMapLatest { embeddings ->
-            searchPhotosPagedUseCase(embeddings)
-        }
-        .map { pagingData ->
-            pagingData.map {
-                it.toUi()
+            .filter { embeddings ->
+                embeddings.isNotEmpty()
             }
-        }
-        .cachedIn(viewModelScope)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = PagingData.empty()
-        )
+            .flatMapLatest { embeddings ->
+                searchPhotosPagedUseCase(embeddings)
+            }
+            .map { pagingData ->
+                pagingData.map {
+                    it.toUi()
+                }
+            }
+            .cachedIn(viewModelScope)
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = PagingData.empty()
+            )
 
     fun searchFaces(searchItems: List<FaceSearchItemUi>) {
         LogManager.d(TAG, "Search faces: ${searchItems.size}")
@@ -100,21 +98,21 @@ class SearchViewModel(
             is SearchIntent.Start -> {
                 searchFaces(intent.searchFaces)
             }
+
             is SearchIntent.ImageSelected -> {
                 handleImageSelectedIntent(intent.mediaItemUi)
+            }
+
+            is SearchIntent.PhotoPreviewHandled -> {
+                markPhotoPreviewHandled()
             }
         }
     }
 
     private fun handleImageSelectedIntent(mediaItemUi: MediaItemUi) {
-        LogManager.d(TAG, "handle image selected $mediaItemUi")
-    }
-
-    fun invalidSessionState() {
         _uiState.setState {
             copy(
-                isLoading = false,
-                errorMessage = "Session not found",
+                previewPhotoPath = mediaItemUi.contentPath?.toUri(),
             )
         }
     }
@@ -140,9 +138,16 @@ class SearchViewModel(
         }
     }
 
+    fun markPhotoPreviewHandled() {
+        _uiState.setState {
+            copy(previewPhotoPath = null)
+        }
+    }
+
     sealed class SearchIntent {
         data class Start(val searchFaces: List<FaceSearchItemUi>) : SearchIntent()
         data class ImageSelected(val mediaItemUi: MediaItemUi) : SearchIntent()
+        data object PhotoPreviewHandled : SearchIntent()
     }
 
     companion object {

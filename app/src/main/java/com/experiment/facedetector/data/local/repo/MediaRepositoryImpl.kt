@@ -1,25 +1,14 @@
 package com.experiment.facedetector.data.local.repo
 
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
-import androidx.paging.PagingData
-import androidx.paging.map
 import com.experiment.facedetector.data.local.dao.MediaDao
 import com.experiment.facedetector.data.local.entities.MediaEntity
 import com.experiment.facedetector.data.local.entities.MediaErrorCode
 import com.experiment.facedetector.data.local.entities.MediaWithFaces
 import com.experiment.facedetector.data.local.entities.ProcessedState
-import com.experiment.facedetector.data.local.entities.toDomain
-import com.experiment.facedetector.data.local.paging.GalleryKeySetPagingSource
 import com.experiment.facedetector.domain.entities.MediaIdFingerprint
-import com.experiment.facedetector.domain.entities.MediaWithFacesDomain
 import com.experiment.facedetector.domain.repo.MediaRepository
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 
-class MediaRepositoryImpl(
-    private val mediaDao: MediaDao,
-) : MediaRepository {
+class MediaRepositoryImpl(private val mediaDao: MediaDao) : MediaRepository {
 
     override suspend fun upsertAll(items: List<MediaEntity>) {
         if (items.isEmpty()) {
@@ -27,6 +16,10 @@ class MediaRepositoryImpl(
         } else {
             mediaDao.upsertAll(items)
         }
+    }
+
+    override suspend fun getMedia(mediaId: Long): MediaEntity? {
+        return mediaDao.getMediaById(mediaId)
     }
 
     override suspend fun updateThumbnail(mediaId: Long, thumbnailUri: String?) {
@@ -93,7 +86,6 @@ class MediaRepositoryImpl(
     ): List<MediaWithFaces> {
         return mediaDao.loadMediaBeforeCursor(cursorDate, cursorId, limit, processed)
     }
-
 
 
 }

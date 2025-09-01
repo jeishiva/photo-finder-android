@@ -21,7 +21,7 @@
         suspend fun upsertAll(items: List<MediaEntity>)
 
         @Query("SELECT * FROM media WHERE mediaId = :mediaId LIMIT 1")
-        suspend fun getById(mediaId: Long): MediaEntity?
+        suspend fun getMediaById(mediaId: Long): MediaEntity?
 
         @Query(
             """

@@ -19,16 +19,21 @@ data class FaceDetectedItem(
     val faceBitmap: Bitmap,
 )
 
-data class MediaIdFingerprint(val mediaId: Long, val fingerprint: String?)
+data class MediaIdFingerprint(
+    val mediaId: Long,
+    val fingerprint: String?
+)
 
-data class Media(
+data class MediaDomain(
     val mediaId: Long,
     val thumbnailUri: String?,
     val dateModified: Long? = null,
-    val sourceStableId: String
+    val sourceStableId: String,
+    val contentUri : String,
 )
+
 data class MediaWithFacesDomain(
-    val media: Media,
+    val media: MediaDomain,
     val faces: List<FaceEmbedding>
 )
 

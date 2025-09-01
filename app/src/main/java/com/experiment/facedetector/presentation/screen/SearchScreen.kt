@@ -1,18 +1,21 @@
 package com.experiment.facedetector.presentation.screen
 
-import android.widget.Toast
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -22,11 +25,18 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -42,11 +52,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
+import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import com.experiment.facedetector.R
@@ -58,18 +70,19 @@ import com.experiment.facedetector.presentation.entities.SearchScreenParams
 import com.experiment.facedetector.presentation.entities.SearchUiModel
 import com.experiment.facedetector.presentation.entities.SearchUiState
 import com.experiment.facedetector.presentation.theme.AndroidFaceDetectorTheme
+import com.experiment.facedetector.presentation.theme.GradientStartMildGrey
 import com.experiment.facedetector.presentation.theme.MildGray
 import com.experiment.facedetector.presentation.widgets.AppBar
 import com.experiment.facedetector.viewmodel.SearchViewModel.SearchIntent
 import kotlinx.coroutines.flow.MutableStateFlow
 
 @Composable
-fun SearchScreen(searchScreenParams: SearchScreenParams) {
-    val navController = searchScreenParams.navController
-    val searchViewModel = searchScreenParams.searchViewModel
-    val selectPhotoViewModel = searchScreenParams.selectPhotoViewModel
+fun SearchScreen(params: SearchScreenParams) {
+    val navigationManager = params.navigationManager
+    val searchViewModel = params.searchViewModel
+    val selectPhotoViewModel = params.galleryViewModel
     val backClick: () -> Unit = remember {
-        { navController.popBackStack() }
+        { navigationManager.navigateBack() }
     }
     val searchResultPagedItems = searchViewModel.pagedFaces.collectAsLazyPagingItems()
     LaunchedEffect(Unit) {
@@ -78,12 +91,15 @@ fun SearchScreen(searchScreenParams: SearchScreenParams) {
         searchViewModel.handleIntent(SearchIntent.Start(selectPhotoViewModel.getSearchItems()))
     }
     val uiState by searchViewModel.uiState.collectAsState()
-    val actions = remember(navController, searchScreenParams.searchViewModel) {
+    val actions = remember(navigationManager, params.searchViewModel) {
         SearchUiModel.Actions(
             onBackClick = backClick,
             onThumbnailClicked = { mediaWithFacesUi ->
                 searchViewModel.handleIntent(SearchIntent.ImageSelected(mediaWithFacesUi))
             },
+            onPhotoPreviewDismissed = {
+                searchViewModel.handleIntent(SearchIntent.PhotoPreviewHandled)
+            }
         )
     }
     val uiModel = SearchUiModel(
@@ -121,6 +137,7 @@ fun ScreenContent(
                     searchResults = searchResultPagedItems,
                     onSearchItemClicked = uiModel.actions.onThumbnailClicked
                 )
+                PhotoPreviewSection(uiModel = uiModel)
             }
         }
     }
@@ -162,14 +179,7 @@ fun SearchHeaderCard(faces: List<FaceSearchItemUi>) {
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            FaceListSection(faces = faces)
-        }
+        FaceListSection(faces = faces)
     }
 }
 
@@ -260,10 +270,8 @@ fun ThumbnailItem(
     item: MediaItemUi,
     onThumbnailClicked: (MediaItemUi) -> Unit,
 ) {
-    val context = LocalContext.current
     val onClick = remember(item.mediaId) {
         {
-            Toast.makeText(context, "Hello from Compose!", Toast.LENGTH_SHORT).show()
             onThumbnailClicked(item)
         }
     }
@@ -275,8 +283,8 @@ fun ThumbnailItem(
         val context = LocalContext.current
         SubcomposeAsyncImage(
             model = ImageRequest.Builder(context)
-                .data(item.thumbnailUri)
-                .crossfade(true)          // optional
+                .data(item.thumbnailPath)
+                .crossfade(true)
                 .build(),
             contentDescription = null,
             contentScale = ContentScale.Crop,
@@ -337,7 +345,7 @@ fun SearchScreenPreview() {
 fun FaceListSection(
     faces: List<FaceSearchItemUi>,
 ) {
-    LogManager.d("SearchViewModel", "Faces: ${faces.size}")
+    LogManager.d(SEARCH_SCREEN_TAG, "Faces: ${faces.size}")
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -371,4 +379,97 @@ fun FaceListItem(face: FaceSearchItemUi) {
         )
     }
 }
+
+@Composable
+fun PhotoPreviewSection(
+    uiModel: SearchUiModel,
+) {
+    if (uiModel.state.previewPhotoPath != null) {
+        PhotoPreviewSectionDialog(
+            uiModel,
+            uiModel.actions.onPhotoPreviewDismissed
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PhotoPreviewSectionDialog(
+    uiModel: SearchUiModel,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.7f)
+                .padding(bottom = 8.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            ImagePreview(imageUri = uiModel.state.previewPhotoPath)
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = {
+                    onDismiss()
+                    uiModel.actions.onShareClicked(uiModel.state.previewPhotoPath)
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = GradientStartMildGrey
+                ),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp)
+                    .padding(horizontal = 8.dp)
+            ) {
+                Text(
+                    style = MaterialTheme.typography.titleMedium,
+                    text = stringResource(R.string.share)
+                )
+            }
+            Spacer(modifier = Modifier.height(32.dp))
+        }
+    }
+}
+
+@Composable
+fun ImagePreview(
+    imageUri: Uri?,
+    modifier: Modifier = Modifier,
+    cornerRadius: Dp = 24.dp,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .clip(
+                RoundedCornerShape(
+                    topStart = cornerRadius,
+                    topEnd = cornerRadius,
+                    bottomStart = 0.dp,
+                    bottomEnd = 0.dp
+                )
+            )
+            .background(Color.Gray), contentAlignment = Alignment.Center
+    ) {
+        if (imageUri != null) {
+            AsyncImage(
+                model = imageUri,
+                contentDescription = "Full Image Preview",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(cornerRadius))
+            )
+        }
+    }
+}
+
+const val SEARCH_SCREEN_TAG = "SearchScreen"
+
 

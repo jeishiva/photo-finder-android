@@ -4,27 +4,25 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
-import androidx.navigation.NavHostController
 import com.experiment.facedetector.domain.entities.FaceBoundingBox
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
+import com.experiment.facedetector.navigation.NavigationManager
 import com.experiment.facedetector.viewmodel.SearchViewModel
 import com.experiment.facedetector.viewmodel.GalleryViewModel
 
 data class GalleryScreenParams(
-    val navController: NavHostController,
+    val navigationManager: NavigationManager,
     val viewModel: GalleryViewModel,
 )
 
 data class SearchScreenParams(
-    val navController: NavHostController,
+    val navigationManager: NavigationManager,
     val searchViewModel: SearchViewModel,
-    val selectPhotoViewModel: GalleryViewModel,
+    val galleryViewModel: GalleryViewModel,
+    val sessionId : String
 )
 
-
-data class AppUiModel(
-    val actions: Actions,
-) {
+data class AppUiModel(val actions: Actions) {
     @Stable
     data class Actions(
         val onPermissionGranted: () -> Unit = {},
@@ -61,11 +59,12 @@ data class GalleryUiState(
 
 @Immutable
 data class SearchUiState(
-    val isLoading: Boolean = false,
     val isEmptySearchResult: Boolean = false,
+    val faceList: List<FaceSearchItemUi> = emptyList(),
+    val previewPhotoPath: Uri? = null,
+    val isLoading: Boolean = false,
     val message: String? = null,
     val errorMessage: String? = "",
-    val faceList: List<FaceSearchItemUi> = emptyList(),
 )
 
 data class SearchUiModel(
@@ -76,12 +75,15 @@ data class SearchUiModel(
     data class Actions(
         val onBackClick: () -> Unit = {},
         val onThumbnailClicked: (MediaItemUi) -> Unit = {},
+        val onPhotoPreviewDismissed: () -> Unit = {},
+        val onShareClicked: (contentUri: Uri?) -> Unit = {},
     )
 }
 
 data class MediaItemUi(
     val mediaId: Long,
-    val thumbnailUri: String?,
+    val thumbnailPath: String?,
+    val contentPath: String?,
 )
 
 data class FaceSearchItemUi(

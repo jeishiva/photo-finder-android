@@ -6,7 +6,8 @@ import com.experiment.facedetector.domain.entities.MediaWithFacesDomain
 fun MediaWithFacesDomain.toUi(): MediaItemUi {
     return MediaItemUi(
         mediaId = media.mediaId,
-        thumbnailUri = media.thumbnailUri,
+        thumbnailPath = media.thumbnailUri,
+        contentPath = media.contentUri
     )
 }
 

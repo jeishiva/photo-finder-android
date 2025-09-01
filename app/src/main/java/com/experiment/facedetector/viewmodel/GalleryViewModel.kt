@@ -1,6 +1,7 @@
 package com.experiment.facedetector.viewmodel
 
 import android.net.Uri
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
@@ -12,6 +13,7 @@ import com.experiment.facedetector.domain.entities.FaceDetectedItem
 import com.experiment.facedetector.domain.entities.LocalImageItem
 import com.experiment.facedetector.domain.repo.DbInvalidationRepository
 import com.experiment.facedetector.domain.usecase.FaceDetectionUseCase
+import com.experiment.facedetector.domain.usecase.GetMediaDetailsUseCase
 import com.experiment.facedetector.domain.usecase.GetSyncedMediaUseCase
 import com.experiment.facedetector.presentation.entities.GalleryUiState
 import com.experiment.facedetector.presentation.common.UiStateHolder
@@ -37,6 +39,7 @@ class GalleryViewModel(
     val faceDetectionUseCase: FaceDetectionUseCase,
     val getSyncedMediaUseCase: GetSyncedMediaUseCase,
     val invalidationRepository: DbInvalidationRepository,
+    val getMediaDetailsUseCase: GetMediaDetailsUseCase
 ) : ViewModel() {
 
     private val _uiState = UiStateHolder<GalleryUiState>(GalleryUiState())
@@ -51,7 +54,6 @@ class GalleryViewModel(
             .onStart {
                 emit(Unit)
             }
-
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val pagedSyncedMediaFlow: StateFlow<PagingData<MediaItemUi>> =
@@ -74,7 +76,7 @@ class GalleryViewModel(
     fun handleIntent(intent: HomeIntent) {
         when (intent) {
             is HomeIntent.Search -> {
-                handleSearchIntent(intent)
+                handleSelectedImage(intent.selectedImageUri)
             }
 
             is HomeIntent.ShowDetectedFaces -> {
@@ -89,6 +91,7 @@ class GalleryViewModel(
 
     private fun handleImageSelectedIntent(mediaItemUi: MediaItemUi) {
         LogManager.d(TAG, "handle image selected $mediaItemUi")
+        handleSelectedImage(mediaItemUi.contentPath?.toUri())
     }
 
     private fun handleDetectedFacesIntent() {
@@ -98,10 +101,10 @@ class GalleryViewModel(
         }
     }
 
-    fun handleSearchIntent(intent: HomeIntent.Search) {
-        intent.selectedImageUri ?: return
-        setSelectedImage(intent.selectedImageUri)
-        detectFaces(intent.selectedImageUri)
+    fun handleSelectedImage(selectedImageUri:  Uri?) {
+        selectedImageUri ?: return
+        setSelectedImage(selectedImageUri)
+        detectFaces(selectedImageUri)
     }
 
     fun setSelectedImage(selectedImageUri: Uri?) {

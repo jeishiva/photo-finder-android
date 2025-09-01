@@ -2,6 +2,7 @@ package com.experiment.facedetector.di
 
 import ExtractEmbeddingsUseCase
 import com.experiment.facedetector.domain.usecase.FaceDetectionUseCase
+import com.experiment.facedetector.domain.usecase.GetMediaDetailsUseCase
 import com.experiment.facedetector.domain.usecase.GetSyncedMediaUseCase
 import com.experiment.facedetector.domain.usecase.ScanMediaUseCase
 import com.experiment.facedetector.domain.usecase.facesearch.SearchSimilarPhotoUseCase
@@ -38,6 +39,12 @@ val useCaseModule = module {
         SearchSimilarPhotoUseCase(
             mediaPagingRepository = get(),
             faceEmbeddingMatcher = get()
+        )
+    }
+
+    factory<GetMediaDetailsUseCase> {
+        GetMediaDetailsUseCase(
+            mediaRepository = get()
         )
     }
 }

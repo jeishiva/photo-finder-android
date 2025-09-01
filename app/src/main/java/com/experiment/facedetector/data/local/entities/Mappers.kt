@@ -1,13 +1,12 @@
 package com.experiment.facedetector.data.local.entities
 
 import com.experiment.facedetector.domain.entities.FaceEmbedding
-import com.experiment.facedetector.domain.entities.Media
+import com.experiment.facedetector.domain.entities.MediaDomain
 import com.experiment.facedetector.domain.entities.MediaKind
 import com.experiment.facedetector.domain.entities.MediaWithFacesDomain
 import com.experiment.facedetector.domain.repo.MediaFingerPrint
 import com.experiment.facedetector.domain.entities.SourceMediaItem
 import com.experiment.facedetector.domain.repo.StableIdGenerator
-
 
 // Maps the unified SourceMediaItem (image or video) into MediaEntity.
 // - Uses common fields for both types
@@ -79,13 +78,10 @@ fun SourceMediaItem.toMediaEntity(
 
 fun MediaWithFaces.toDomain(): MediaWithFacesDomain {
     return MediaWithFacesDomain(
-        media = Media(
-            mediaId = media.mediaId,
-            thumbnailUri = media.thumbnailPath,
-            dateModified = media.modifiedAtMs,
-            sourceStableId = media.sourceStableId
-        ),
-        faces = faces.map { it.toDomain() }
+        media = this.media.toDomain(),
+        faces = faces.map {
+            it.toDomain()
+        }
     )
 }
 
@@ -95,3 +91,15 @@ fun FaceEntity.toDomain(): FaceEmbedding {
         embedding = this.embeddingData,
     )
 }
+
+
+fun MediaEntity.toDomain(): MediaDomain {
+    return MediaDomain(
+        mediaId = this.mediaId,
+        thumbnailUri = this.thumbnailPath,
+        dateModified = this.modifiedAtMs,
+        sourceStableId = this.sourceStableId,
+        contentUri = this.contentUri
+    )
+}
+

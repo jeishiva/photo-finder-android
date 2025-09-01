@@ -15,6 +15,8 @@ interface MediaRepository {
 
     suspend fun upsertAll(items: List<MediaEntity>)
 
+    suspend fun getMedia(mediaId: Long): MediaEntity?
+
     suspend fun updateThumbnail(mediaId: Long, thumbnailUri: String?)
 
     suspend fun getFingerprints(ids: List<Long>): List<MediaIdFingerprint>

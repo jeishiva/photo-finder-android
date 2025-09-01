@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -63,7 +64,6 @@ import com.experiment.facedetector.R
 import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.config.AppConfig
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
-import com.experiment.facedetector.navigation.AppRoute
 import com.experiment.facedetector.presentation.entities.GalleryScreenParams
 import com.experiment.facedetector.presentation.entities.GalleryUiModel
 import com.experiment.facedetector.presentation.entities.GalleryUiState
@@ -82,11 +82,13 @@ fun GalleryScreen(
     params: GalleryScreenParams,
     viewModel: GalleryViewModel,
 ) {
-    val navController = params.navController
-    val uiState by viewModel.uiState.collectAsState()
+    val navigationManager = params.navigationManager
+
     val selectedFaceIds by viewModel.selectedFaceIds.collectAsState()
     val mediaPagedItems = viewModel.pagedSyncedMediaFlow.collectAsLazyPagingItems()
-    val actions = remember(navController, viewModel) {
+
+    val uiState by viewModel.uiState.collectAsState()
+    val actions = remember(navigationManager, viewModel) {
         GalleryUiModel.Actions(onImageSelected = { uri ->
             viewModel.handleIntent(HomeIntent.Search(uri))
         }, onSearchClick = {
@@ -102,23 +104,23 @@ fun GalleryScreen(
         })
     }
     val uiModel = GalleryUiModel(
-        actions = actions, state = uiState
+        actions = actions,
+        state = uiState
     )
+    LaunchedEffect(uiState.navigateToSearch) {
+        if (uiState.navigateToSearch) {
+            LogManager.d(GALLERY_SCREEN_TAG, "activeSessionId: ${uiState.sessionId}")
+            uiState.sessionId?.let {
+                navigationManager.navigateToSearch(it)
+            }
+            viewModel.markNavigationHandled()
+        }
+    }
     GalleryContent(
         uiModel = uiModel,
         selectedFaceIds = selectedFaceIds,
         mediaPagedItems = mediaPagedItems,
     )
-    // navigation to search screen
-    LaunchedEffect(uiState.navigateToSearch) {
-        if (uiState.navigateToSearch) {
-            LogManager.d(TAG, "activeSessionId: ${uiState.sessionId}")
-            navController.navigate(
-                AppRoute.Search.createRoute(uiState.sessionId!!)
-            )
-            viewModel.markNavigationHandled()
-        }
-    }
 }
 
 @Composable
@@ -162,7 +164,7 @@ fun GalleryThumbnailItem(
     ) {
         val context = LocalContext.current
         SubcomposeAsyncImage(
-            model = ImageRequest.Builder(context).data(item.thumbnailUri).crossfade(true).build(),
+            model = ImageRequest.Builder(context).data(item.thumbnailPath).crossfade(true).build(),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
@@ -245,7 +247,9 @@ fun GalleryContent(
 
 @Composable
 fun FaceListSection(
-    faces: List<FaceDetectedItem>, selectedFaceIds: Set<String>, onFaceClick: (String) -> Unit,
+    faces: List<FaceDetectedItem>,
+    selectedFaceIds: Set<String>,
+    onFaceClick: (String) -> Unit,
 ) {
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(16.dp)
@@ -264,7 +268,9 @@ fun FaceListSection(
 
 @Composable
 fun FaceListItem(
-    face: FaceDetectedItem, isSelected: Boolean, onClick: () -> Unit,
+    face: FaceDetectedItem,
+    isSelected: Boolean,
+    onClick: () -> Unit,
 ) {
     Box(
         modifier = Modifier
@@ -313,7 +319,7 @@ fun ImageOrPlaceholderRoundedFullWidth(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(height = 270.dp)
+            .fillMaxHeight(0.5f)
             .clip(
                 RoundedCornerShape(
                     topStart = cornerRadius,
@@ -327,7 +333,7 @@ fun ImageOrPlaceholderRoundedFullWidth(
         if (imageUri != null) {
             AsyncImage(
                 model = imageUri,
-                contentDescription = "Selected Image",
+                contentDescription = "Full Image Preview",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .fillMaxSize()
@@ -411,7 +417,7 @@ fun FaceDetectedBottomSheetDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp)
-                    .padding(horizontal = 16.dp) // This creates margin around button
+                    .padding(horizontal = 16.dp)
             ) {
                 Text(
                     style = MaterialTheme.typography.titleMedium,
@@ -423,4 +429,4 @@ fun FaceDetectedBottomSheetDialog(
     }
 }
 
-const val TAG = "HomeScreen"
+const val GALLERY_SCREEN_TAG = "GalleryScreen"
