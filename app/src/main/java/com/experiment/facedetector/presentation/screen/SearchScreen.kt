@@ -1,5 +1,7 @@
 package com.experiment.facedetector.presentation.screen
 
+import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -15,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -91,6 +92,7 @@ fun SearchScreen(params: SearchScreenParams) {
         searchViewModel.handleIntent(SearchIntent.Start(selectPhotoViewModel.getSearchItems()))
     }
     val uiState by searchViewModel.uiState.collectAsState()
+    val context = LocalContext.current
     val actions = remember(navigationManager, params.searchViewModel) {
         SearchUiModel.Actions(
             onBackClick = backClick,
@@ -99,6 +101,9 @@ fun SearchScreen(params: SearchScreenParams) {
             },
             onPhotoPreviewDismissed = {
                 searchViewModel.handleIntent(SearchIntent.PhotoPreviewHandled)
+            },
+            onShareClicked = { contentUri ->
+                sharePhoto(context, contentUri)
             }
         )
     }
@@ -406,15 +411,20 @@ fun PhotoPreviewSectionDialog(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(0.7f)
-                .padding(bottom = 8.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+                .padding(8.dp)
         ) {
-            ImagePreview(imageUri = uiModel.state.previewPhotoPath)
-            Spacer(modifier = Modifier.height(8.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 80.dp),
+                verticalArrangement = Arrangement.Top
+            ) {
+                ImagePreview(imageUri = uiModel.state.previewPhotoPath)
+            }
             Button(
                 onClick = {
                     onDismiss()
@@ -425,6 +435,7 @@ fun PhotoPreviewSectionDialog(
                 ),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
+                    .align(Alignment.BottomCenter)
                     .fillMaxWidth()
                     .height(64.dp)
                     .padding(horizontal = 8.dp)
@@ -434,7 +445,6 @@ fun PhotoPreviewSectionDialog(
                     text = stringResource(R.string.share)
                 )
             }
-            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
@@ -470,6 +480,18 @@ fun ImagePreview(
         }
     }
 }
+
+fun sharePhoto(context: Context, photoUri: Uri?) {
+    photoUri ?: return
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = "image/*"
+        putExtra(Intent.EXTRA_STREAM, photoUri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    val chooser = Intent.createChooser(intent, "Share Photo")
+    context.startActivity(chooser)
+}
+
 
 const val SEARCH_SCREEN_TAG = "SearchScreen"
 
