@@ -348,6 +348,7 @@ fun FaceListSection(
     LogManager.d(SEARCH_SCREEN_TAG, "Faces: ${faces.size}")
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(12.dp)
     ) {
         items(faces.size, key = { faces[it].faceId }) { faceIndex ->
             val item = faces[faceIndex]
