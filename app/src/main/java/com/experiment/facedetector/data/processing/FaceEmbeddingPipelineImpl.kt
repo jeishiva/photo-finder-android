@@ -31,7 +31,7 @@ class FaceEmbeddingPipelineImpl(
             var decoded: android.graphics.Bitmap? = null
             try {
                 decoded = bitmapHelper.decodeBitmap(
-                    mediaItem.contentUri,
+                    mediaItem.contentPath,
                     targetHeight,
                     targetWidth
                 )
@@ -39,7 +39,7 @@ class FaceEmbeddingPipelineImpl(
                 if (detected.faces.isEmpty()) {
                     LogManager.d(
                         TAG,
-                        "No faces detected for file: ${mediaItem.contentUri}"
+                        "No faces detected for file: ${mediaItem.contentPath}"
                     )
                     return@withContext emptyList<Pair<String, FloatArray>>()
                 }
@@ -66,7 +66,7 @@ class FaceEmbeddingPipelineImpl(
             } catch (e: Exception) {
                 LogManager.e(
                     TAG,
-                    "Failed to extract embeddings for: ${mediaItem.contentUri}",
+                    "Failed to extract embeddings for: ${mediaItem.contentPath}",
                     e
                 )
                 return@withContext emptyList<Pair<String, FloatArray>>()

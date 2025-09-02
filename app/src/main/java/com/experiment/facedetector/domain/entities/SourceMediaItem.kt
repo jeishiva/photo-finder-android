@@ -5,7 +5,7 @@ enum class MediaKind { IMAGE, VIDEO }
 data class SourceMediaItem(
     val sourceKey: String,
     val sourceStableId: Long,
-    val contentUri: String,
+    val contentPath: String,
     val mimeType: String,
     val width: Int,
     val height: Int,

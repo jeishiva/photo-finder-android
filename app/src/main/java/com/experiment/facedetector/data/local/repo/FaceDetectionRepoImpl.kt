@@ -25,7 +25,6 @@ class FaceDetectionRepoImpl(
 ) : FaceDetectionRepo {
 
     companion object {
-        // prevents 00M for large number of faces in the input
         private const val FACES_BATCH_SIZE = 4
     }
 

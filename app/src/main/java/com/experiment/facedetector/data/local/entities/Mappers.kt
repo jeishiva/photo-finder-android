@@ -38,7 +38,7 @@ fun SourceMediaItem.toMediaEntity(
         // identity
         sourceKey = sourceKey,
         sourceStableId = this.sourceStableId.toString(),
-        contentUri = this.contentUri.toString(),
+        contentPath = this.contentPath,
         mediaKind = kind, // new: IMAGE or VIDEO
 
         // descriptive
@@ -99,7 +99,7 @@ fun MediaEntity.toDomain(): MediaDomain {
         thumbnailUri = this.thumbnailPath,
         dateModified = this.modifiedAtMs,
         sourceStableId = this.sourceStableId,
-        contentUri = this.contentUri
+        contentPath = this.contentPath
     )
 }
 

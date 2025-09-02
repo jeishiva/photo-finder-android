@@ -111,7 +111,7 @@ class CameraMediaStoreSource(
                     SourceMediaItem(
                         sourceKey = sourceType.key,
                         sourceStableId = id,
-                        contentUri = contentUri,
+                        contentPath = contentUri,
                         mimeType = mimeType,
                         width = width,
                         height = height,

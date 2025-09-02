@@ -7,7 +7,7 @@ fun MediaWithFacesDomain.toUi(): MediaItemUi {
     return MediaItemUi(
         mediaId = media.mediaId,
         thumbnailPath = media.thumbnailUri,
-        contentPath = media.contentUri
+        contentPath = media.contentPath
     )
 }
 

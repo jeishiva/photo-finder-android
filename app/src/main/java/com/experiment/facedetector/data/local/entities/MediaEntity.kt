@@ -36,8 +36,8 @@ data class MediaEntity(
     val sourceStableId: String,
 
     // Optional: keep for direct file access / debug
-    @ColumnInfo(name = "contentUri")
-    val contentUri: String,
+    @ColumnInfo(name = "contentPath")
+    val contentPath: String,
 
     // ---- Descriptive ----
     @ColumnInfo(name = "mimeType")

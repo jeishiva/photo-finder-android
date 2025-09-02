@@ -247,7 +247,7 @@ abstract class BaseMediaScanner(
         val mediaId = idByStable[item.sourceStableId] ?: run {
             LogManager.w(
                 tag,
-                "mediaId unresolved for ${item.contentUri} (stableId=${item.sourceStableId})"
+                "mediaId unresolved for ${item.contentPath} (stableId=${item.sourceStableId})"
             )
             return 0
         }
@@ -257,14 +257,14 @@ abstract class BaseMediaScanner(
 
         // --- Thumbnails ---
         try {
-            LogManager.d(tag, "thumbnail: start mediaId=$mediaId uri=${item.contentUri}")
-            val thumbPath = thumbnails.extractFromFile(item.contentUri.toString(), mediaId)
+            LogManager.d(tag, "thumbnail: start mediaId=$mediaId uri=${item.contentPath}")
+            val thumbPath = thumbnails.extractFromFile(item.contentPath.toString(), mediaId)
             LogManager.d(tag, "thumbnail: done mediaId=$mediaId path=$thumbPath")
             if (thumbPath != null) {
                 mediaRepo.updateThumbnail(mediaId, thumbPath)
             }
         } catch (e: Exception) {
-            LogManager.e(tag, "thumbnail: failed mediaId=$mediaId uri=${item.contentUri}", e)
+            LogManager.e(tag, "thumbnail: failed mediaId=$mediaId uri=${item.contentPath}", e)
             mediaRepo.updateProcessedState(
                 mediaId, ProcessedState.FAILED, MediaErrorCode.THUMBNAIL_FAILED, e.message
             )
@@ -296,7 +296,7 @@ abstract class BaseMediaScanner(
             }
             mediaRepo.updateProcessedState(mediaId, ProcessedState.PROCESSED, null, null)
         } catch (e: Exception) {
-            LogManager.e(tag, "embedding: failed mediaId=$mediaId uri=${item.contentUri}", e)
+            LogManager.e(tag, "embedding: failed mediaId=$mediaId uri=${item.contentPath}", e)
             mediaRepo.updateProcessedState(
                 mediaId, ProcessedState.FAILED, MediaErrorCode.FACE_EXTRACTION_FAILED, e.message
             )
