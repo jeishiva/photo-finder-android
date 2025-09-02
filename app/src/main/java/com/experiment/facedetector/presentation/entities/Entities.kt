@@ -35,7 +35,7 @@ data class GalleryUiModel(
 ) {
     @Stable
     data class Actions(
-        val onImageSelected: (Uri?) -> Unit = {},
+        val onImageSelected: (String?) -> Unit = {},
         val onSearchClick: () -> Unit = {},
         val toggleFaceSelection: (String) -> Unit = {},
         val launchGalleryClicked: () -> Unit = {},
@@ -50,7 +50,7 @@ data class GalleryUiState(
     val isLoading: Boolean = false,
     val message: String? = null,
     val errorMessage: String? = null,
-    val selectedImageUri: Uri? = null,
+    val selectedImagePath: String? = null,
     val showSelectedFaces: Boolean = false,
     var navigateToSearch: Boolean = false,
     var sessionId: String? = null,

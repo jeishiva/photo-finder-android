@@ -54,6 +54,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
@@ -73,7 +74,7 @@ import com.experiment.facedetector.presentation.theme.AndroidFaceDetectorTheme
 import com.experiment.facedetector.presentation.theme.GradientStartMildGrey
 import com.experiment.facedetector.presentation.theme.MildGray
 import com.experiment.facedetector.presentation.widgets.AppBar
-import com.experiment.facedetector.viewmodel.HomeIntent
+import com.experiment.facedetector.viewmodel.GalleryIntent
 import com.experiment.facedetector.viewmodel.GalleryViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -89,8 +90,9 @@ fun GalleryScreen(
 
     val uiState by viewModel.uiState.collectAsState()
     val actions = remember(navigationManager, viewModel) {
-        GalleryUiModel.Actions(onImageSelected = { uri ->
-            viewModel.handleIntent(HomeIntent.Search(uri))
+        GalleryUiModel.Actions(onImageSelected = imageSelected@ { imagePath ->
+            imagePath ?: return@imageSelected
+            viewModel.handleIntent(GalleryIntent.Search(imagePath))
         }, onSearchClick = {
             viewModel.triggerSearch()
         }, toggleFaceSelection = { faceId ->
@@ -99,7 +101,7 @@ fun GalleryScreen(
             viewModel.markShowSelectedFacesHandled()
         }, onThumbnailClicked = { mediaItemUi ->
             viewModel.handleIntent(
-                HomeIntent.ImageSelected(mediaItemUi)
+                GalleryIntent.ImageSelected(mediaItemUi)
             )
         })
     }
@@ -213,7 +215,8 @@ fun GalleryContent(
                         .padding(8.dp)
                 ) {
                     GalleryGrid(
-                        mediaPagedItems = mediaPagedItems, uiModel.actions.onThumbnailClicked
+                        mediaPagedItems = mediaPagedItems,
+                        uiModel.actions.onThumbnailClicked
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     StatusMessage(
@@ -344,10 +347,10 @@ fun ImageOrPlaceholderRoundedFullWidth(
 }
 
 @Composable
-fun SelectPhotoIcon(onImageSelected: (Uri?) -> Unit) {
+fun SelectPhotoIcon(onImageSelected: (String?) -> Unit) {
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(), onResult = { uri ->
-            onImageSelected(uri)
+            onImageSelected(uri.toString())
         })
     Icon(
         imageVector = Icons.Default.Add,
@@ -395,7 +398,7 @@ fun FaceDetectedBottomSheetDialog(
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             ImageOrPlaceholderRoundedFullWidth(
-                imageUri = uiModel.state.selectedImageUri,
+                imageUri = uiModel.state.selectedImagePath?.toUri(),
             )
             Spacer(modifier = Modifier.height(16.dp))
             FaceListSection(

@@ -1,7 +1,5 @@
 package com.experiment.facedetector.viewmodel
 
-import android.net.Uri
-import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
@@ -39,7 +37,7 @@ class GalleryViewModel(
     val faceDetectionUseCase: FaceDetectionUseCase,
     val getSyncedMediaUseCase: GetSyncedMediaUseCase,
     val invalidationRepository: DbInvalidationRepository,
-    val getMediaDetailsUseCase: GetMediaDetailsUseCase
+    val getMediaDetailsUseCase: GetMediaDetailsUseCase,
 ) : ViewModel() {
 
     private val _uiState = UiStateHolder<GalleryUiState>(GalleryUiState())
@@ -73,17 +71,17 @@ class GalleryViewModel(
                 initialValue = PagingData.empty()
             )
 
-    fun handleIntent(intent: HomeIntent) {
+    fun handleIntent(intent: GalleryIntent) {
         when (intent) {
-            is HomeIntent.Search -> {
-                handleSelectedImage(intent.selectedImageUri)
+            is GalleryIntent.Search -> {
+                handleSelectedImage(intent.selectedImagePath)
             }
 
-            is HomeIntent.ShowDetectedFaces -> {
+            is GalleryIntent.ShowDetectedFaces -> {
                 handleDetectedFacesIntent()
             }
 
-            is HomeIntent.ImageSelected -> {
+            is GalleryIntent.ImageSelected -> {
                 handleImageSelectedIntent(intent.mediaItemUi)
             }
         }
@@ -91,7 +89,7 @@ class GalleryViewModel(
 
     private fun handleImageSelectedIntent(mediaItemUi: MediaItemUi) {
         LogManager.d(TAG, "handle image selected $mediaItemUi")
-        handleSelectedImage(mediaItemUi.contentPath?.toUri())
+        handleSelectedImage(mediaItemUi.contentPath)
     }
 
     private fun handleDetectedFacesIntent() {
@@ -101,26 +99,26 @@ class GalleryViewModel(
         }
     }
 
-    fun handleSelectedImage(selectedImageUri:  Uri?) {
-        selectedImageUri ?: return
-        setSelectedImage(selectedImageUri)
-        detectFaces(selectedImageUri)
+    fun handleSelectedImage(selectedImagePath: String?) {
+        selectedImagePath ?: return
+        setSelectedImage(selectedImagePath)
+        detectFaces(selectedImagePath)
     }
 
-    fun setSelectedImage(selectedImageUri: Uri?) {
-        detectFaces(selectedImageUri!!)
+    fun setSelectedImage(selectedImagePath: String) {
+        detectFaces(selectedImagePath)
         _uiState.setState {
-            copy(selectedImageUri = selectedImageUri)
+            copy(selectedImagePath = selectedImagePath)
         }
     }
 
-    fun detectFaces(selectedImage: Uri) {
-        LogManager.d("HomeViewModel", "selected image: $selectedImage  $this")
+    fun detectFaces(selectedImagePath: String) {
+        LogManager.d("HomeViewModel", "selected image: $selectedImagePath  $this")
         viewModelScope.launch(Dispatchers.IO) {
             clearSelection()
             startFaceDetection()
             val result =
-                faceDetectionUseCase(localImageItem = LocalImageItem(selectedImage.toString()))
+                faceDetectionUseCase(localImageItem = LocalImageItem(selectedImagePath))
             if (result.faces.isEmpty()) {
                 facesNotFound()
                 return@launch
@@ -132,10 +130,10 @@ class GalleryViewModel(
 
     fun startFaceDetection() {
         _uiState.setState {
-            val selectedImageUri = uiState.value.selectedImageUri
+            val selectedImageUri = uiState.value.selectedImagePath
             GalleryUiState(
                 isLoading = true,
-                selectedImageUri = selectedImageUri
+                selectedImagePath = selectedImageUri
             )
         }
     }
@@ -236,12 +234,12 @@ class GalleryViewModel(
 
     companion object {
         private const val MAX_SELECTED_FACES = 4
-        private const val TAG = "HomeViewModel"
+        private const val TAG = "GalleyViewModel"
     }
 }
 
-sealed class HomeIntent {
-    data class Search(val selectedImageUri: Uri?) : HomeIntent()
-    data object ShowDetectedFaces : HomeIntent()
-    data class ImageSelected(val mediaItemUi: MediaItemUi) : HomeIntent()
+sealed class GalleryIntent {
+    data class Search(val selectedImagePath: String) : GalleryIntent()
+    data object ShowDetectedFaces : GalleryIntent()
+    data class ImageSelected(val mediaItemUi: MediaItemUi) : GalleryIntent()
 }
