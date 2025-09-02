@@ -9,7 +9,12 @@ import org.koin.dsl.module
 import java.io.File
 
 val imageLoaderModule = module {
-    single { provideImageLoader(context = get(), okHttpClient = get()) }
+    single {
+        provideImageLoader(
+            context = get(),
+            okHttpClient = get()
+        )
+    }
 }
 
 private fun provideImageLoader(context: Context, okHttpClient: OkHttpClient): ImageLoader {
@@ -20,11 +25,9 @@ private fun provideImageLoader(context: Context, okHttpClient: OkHttpClient): Im
                 .build()
         }
         .diskCache {
-            // may not be required for local camera
-            // definitely for remote source
             DiskCache.Builder()
                 .directory(File(context.cacheDir, "image_cache"))
-                .maxSizeBytes(125L * 1024 * 1024) // 125MB
+                .maxSizeBytes(100L * 1024 * 1024) // 125MB
                 .build()
         }
         .okHttpClient(okHttpClient)

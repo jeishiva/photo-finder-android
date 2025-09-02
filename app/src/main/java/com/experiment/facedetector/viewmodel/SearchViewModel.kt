@@ -1,7 +1,6 @@
 package com.experiment.facedetector.viewmodel
 
 import ExtractEmbeddingsUseCase
-import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -45,8 +44,6 @@ class SearchViewModel(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val pagedFaces: StateFlow<PagingData<MediaItemUi>> =
-    // new embeddings OR DB change → consider re-running,
-        // but only proceed when embeddings are non-empty.
         searchTrigger
             .filter { embeddings ->
                 embeddings.isNotEmpty()
