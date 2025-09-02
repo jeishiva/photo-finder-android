@@ -15,9 +15,7 @@ class GalleryKeySetPagingSource(
 ) : PagingSource<Pair<Long, Long>, MediaWithFaces>() {
 
     override fun getRefreshKey(state: PagingState<Pair<Long, Long>, MediaWithFaces>): Pair<Long, Long>? {
-        val anchorPos = state.anchorPosition ?: return null
-        val anchorItem = state.closestItemToPosition(anchorPos) ?: return null
-        return anchorItem.media.modifiedAtMs to anchorItem.media.mediaId
+        return null
     }
 
     override suspend fun load(params: LoadParams<Pair<Long, Long>>): LoadResult<Pair<Long, Long>, MediaWithFaces> {
