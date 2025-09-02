@@ -25,11 +25,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 
 class GalleryViewModel(
@@ -44,9 +44,11 @@ class GalleryViewModel(
     private val _selectedFaceIds = MutableStateFlow<Set<String>>(emptySet())
     val selectedFaceIds: StateFlow<Set<String>> = _selectedFaceIds
 
-    private val refreshes: Flow<Unit> = invalidationRepository.changes("media").onStart {
-        emit(Unit)
-    }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val refreshSignals: Flow<Unit> =
+        invalidationRepository
+            .changes("media")
+            .throttleFirst(3000)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val pagedSyncedMediaFlow: StateFlow<PagingData<MediaItemUi>> =
@@ -62,6 +64,18 @@ class GalleryViewModel(
             initialValue = PagingData.empty()
         )
 
+    init {
+        observeMediaChanges()
+    }
+
+    fun observeMediaChanges() {
+        viewModelScope.launch {
+            refreshSignals.collect {
+                _uiState.setState { copy(showRefreshButton = true) }
+            }
+        }
+    }
+
     fun handleIntent(intent: GalleryIntent) {
         when (intent) {
             is GalleryIntent.Search -> {
@@ -75,6 +89,16 @@ class GalleryViewModel(
             is GalleryIntent.ImageSelected -> {
                 handleImageSelectedIntent(intent.mediaItemUi)
             }
+
+            is GalleryIntent.GalleryRefreshed -> {
+                handleRefreshed()
+            }
+        }
+    }
+
+    fun handleRefreshed() {
+        _uiState.setState {
+            copy(showRefreshButton = false)
         }
     }
 
@@ -229,4 +253,5 @@ sealed class GalleryIntent {
     data class Search(val selectedImagePath: String) : GalleryIntent()
     data object ShowDetectedFaces : GalleryIntent()
     data class ImageSelected(val mediaItemUi: MediaItemUi) : GalleryIntent()
+    object GalleryRefreshed : GalleryIntent()
 }

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
@@ -28,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -87,26 +89,31 @@ fun GalleryScreen(
     viewModel: GalleryViewModel,
 ) {
     val navigationManager = params.navigationManager
-
     val selectedFaceIds by viewModel.selectedFaceIds.collectAsState()
     val mediaPagedItems = viewModel.pagedSyncedMediaFlow.collectAsLazyPagingItems()
 
     val uiState by viewModel.uiState.collectAsState()
     val actions = remember(navigationManager, viewModel) {
-        GalleryUiModel.Actions(onImageSelected = imageSelected@ { imagePath ->
-            imagePath ?: return@imageSelected
-            viewModel.handleIntent(GalleryIntent.Search(imagePath))
-        }, onSearchClick = {
-            viewModel.triggerSearch()
-        }, toggleFaceSelection = { faceId ->
-            viewModel.toggleFaceSelection(faceId)
-        }, onFaceSelectionSheetShown = {
-            viewModel.markShowSelectedFacesHandled()
-        }, onThumbnailClicked = { mediaItemUi ->
-            viewModel.handleIntent(
-                GalleryIntent.ImageSelected(mediaItemUi)
-            )
-        })
+        GalleryUiModel.Actions(
+            onImageSelected = imageSelected@{ imagePath ->
+                imagePath ?: return@imageSelected
+                viewModel.handleIntent(GalleryIntent.Search(imagePath))
+            }, onSearchClick = {
+                viewModel.triggerSearch()
+            }, toggleFaceSelection = { faceId ->
+                viewModel.toggleFaceSelection(faceId)
+            }, onFaceSelectionSheetShown = {
+                viewModel.markShowSelectedFacesHandled()
+            }, onThumbnailClicked = { mediaItemUi ->
+                viewModel.handleIntent(
+                    GalleryIntent.ImageSelected(mediaItemUi)
+                )
+            },
+            onRefreshClicked = {
+                viewModel.handleIntent(GalleryIntent.GalleryRefreshed)
+                mediaPagedItems.refresh()
+            }
+        )
     }
     val uiModel = GalleryUiModel(
         actions = actions,
@@ -133,16 +140,16 @@ fun GalleryScreen(
 private fun GalleryGrid(
     mediaPagedItems: LazyPagingItems<MediaItemUi>,
     onThumbnailClicked: (MediaItemUi) -> Unit,
+    onRefreshClicked: () -> Unit
 ) {
     val gridState = rememberLazyGridState()
     val pullToRefreshState = rememberPullToRefreshState()
-
     val isRefreshing = mediaPagedItems.loadState.refresh is LoadState.Loading
     PullToRefreshBox(
         state = pullToRefreshState,
         isRefreshing = isRefreshing,
         onRefresh = {
-            mediaPagedItems.refresh()
+            onRefreshClicked()
         }
     ) {
         LazyVerticalGrid(
@@ -166,6 +173,30 @@ private fun GalleryGrid(
     }
 }
 
+
+@Composable
+fun RefreshButton(
+    onRefresh: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier.fillMaxSize()
+    ) {
+        Button(
+            onClick = onRefresh,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 24.dp) // lift above nav bar
+        ) {
+            Icon(
+                imageVector = Icons.Default.Refresh,
+                contentDescription = "Refresh"
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Refresh")
+        }
+    }
+}
 
 @Composable
 fun GalleryThumbnailItem(
@@ -232,7 +263,8 @@ fun GalleryContent(
                 ) {
                     GalleryGrid(
                         mediaPagedItems = mediaPagedItems,
-                        uiModel.actions.onThumbnailClicked
+                        uiModel.actions.onThumbnailClicked,
+                        uiModel.actions.onRefreshClicked
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     StatusMessage(
@@ -258,8 +290,10 @@ fun GalleryContent(
                 ) {
                     SelectPhotoIcon(uiModel.actions.onImageSelected)
                 }
+                if (uiModel.state.showRefreshButton) {
+                    RefreshButton(onRefresh = uiModel.actions.onRefreshClicked)
+                }
             }
-
         }
     }
 }

@@ -40,6 +40,7 @@ data class GalleryUiModel(
         val launchGalleryClicked: () -> Unit = {},
         val onFaceSelectionSheetShown: () -> Unit = {},
         val onThumbnailClicked: (MediaItemUi) -> Unit = {},
+        val onRefreshClicked : () -> Unit = {},
     )
     val showSelectedFaces = state.showSelectedFaces
 }
