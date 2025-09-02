@@ -112,7 +112,7 @@ class SearchViewModel(
     private fun handleImageSelectedIntent(mediaItemUi: MediaItemUi) {
         _uiState.setState {
             copy(
-                previewPhotoPath = mediaItemUi.contentPath?.toUri(),
+                previewPhotoPath = mediaItemUi.contentPath,
             )
         }
     }

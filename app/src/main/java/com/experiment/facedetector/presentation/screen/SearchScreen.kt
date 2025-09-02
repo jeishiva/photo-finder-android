@@ -54,6 +54,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
@@ -101,8 +102,8 @@ fun SearchScreen(params: SearchScreenParams) {
             onPhotoPreviewDismissed = {
                 searchViewModel.handleIntent(SearchIntent.PhotoPreviewHandled)
             },
-            onShareClicked = { contentUri ->
-                sharePhoto(context, contentUri)
+            onShareClicked = { contentPath ->
+                sharePhoto(context, contentPath)
             }
         )
     }
@@ -421,12 +422,14 @@ fun PhotoPreviewSectionDialog(
                     .padding(bottom = 80.dp),
                 verticalArrangement = Arrangement.Top
             ) {
-                ImagePreview(imageUri = uiModel.state.previewPhotoPath)
+                ImagePreview(imagePath = uiModel.state.previewPhotoPath)
             }
             Button(
                 onClick = {
                     onDismiss()
-                    uiModel.actions.onShareClicked(uiModel.state.previewPhotoPath)
+                    uiModel.state.previewPhotoPath?.let {
+                        uiModel.actions.onShareClicked(it)
+                    }
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = GradientStartMildGrey
@@ -449,7 +452,7 @@ fun PhotoPreviewSectionDialog(
 
 @Composable
 fun ImagePreview(
-    imageUri: Uri?,
+    imagePath: String?,
     modifier: Modifier = Modifier,
     cornerRadius: Dp = 24.dp,
 ) {
@@ -466,9 +469,9 @@ fun ImagePreview(
             )
             .background(Color.Gray), contentAlignment = Alignment.Center
     ) {
-        if (imageUri != null) {
+        if (imagePath != null) {
             AsyncImage(
-                model = imageUri,
+                model = imagePath,
                 contentDescription = "Full Image Preview",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
@@ -479,11 +482,11 @@ fun ImagePreview(
     }
 }
 
-fun sharePhoto(context: Context, photoUri: Uri?) {
-    photoUri ?: return
+fun sharePhoto(context: Context, contentPath: String?) {
+    contentPath ?: return
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = "image/*"
-        putExtra(Intent.EXTRA_STREAM, photoUri)
+        putExtra(Intent.EXTRA_STREAM, contentPath.toUri())
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     val chooser = Intent.createChooser(intent, "Share Photo")

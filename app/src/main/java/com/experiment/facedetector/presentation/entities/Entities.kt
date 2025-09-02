@@ -1,7 +1,6 @@
 package com.experiment.facedetector.presentation.entities
 
 import android.graphics.Bitmap
-import android.net.Uri
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import com.experiment.facedetector.domain.entities.FaceBoundingBox
@@ -61,7 +60,7 @@ data class GalleryUiState(
 data class SearchUiState(
     val isEmptySearchResult: Boolean = false,
     val faceList: List<FaceSearchItemUi> = emptyList(),
-    val previewPhotoPath: Uri? = null,
+    val previewPhotoPath: String? = null,
     val isLoading: Boolean = false,
     val message: String? = null,
     val errorMessage: String? = "",
@@ -76,7 +75,7 @@ data class SearchUiModel(
         val onBackClick: () -> Unit = {},
         val onThumbnailClicked: (MediaItemUi) -> Unit = {},
         val onPhotoPreviewDismissed: () -> Unit = {},
-        val onShareClicked: (contentUri: Uri?) -> Unit = {},
+        val onShareClicked: (contentPath: String) -> Unit = {},
     )
 }
 
