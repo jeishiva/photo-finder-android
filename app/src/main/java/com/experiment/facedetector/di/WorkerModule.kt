@@ -8,7 +8,9 @@ import org.koin.dsl.module
 val workManagerModule = module {
     worker {
         MediaScanWorker(
-            appContext = get(), params = get(), scanner = get()
+            appContext = get(),
+            params = get(),
+            scanner = get()
         )
     }
 

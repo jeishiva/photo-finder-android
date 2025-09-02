@@ -5,20 +5,20 @@ import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
+import com.experiment.facedetector.data.local.scanner.CameraMediaScanner
 import com.experiment.facedetector.domain.entities.SyncResult
-import com.experiment.facedetector.domain.index.MediaScanner
+import com.experiment.facedetector.domain.usecase.ScanMediaUseCase
 
 class MediaScanWorker(
     appContext: Context,
     params: WorkerParameters,
-    private val scanner: MediaScanner
+    private val cameraMediaScanner: CameraMediaScanner
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result {
         Log.d(TAG, "Starting media scan work")
-
         return try {
-            val syncResult = scanner.sync()
+            val syncResult = ScanMediaUseCase(cameraMediaScanner)()
             handleSyncResult(syncResult)
         } catch (exception: Exception) {
             Log.e(TAG, "Unexpected error during media scan", exception)
@@ -31,6 +31,7 @@ class MediaScanWorker(
     }
 
     private fun handleSyncResult(syncResult: SyncResult): Result {
+        Log.d("MediaScanWorker", "Sync finished with result=$syncResult")
         return when (syncResult) {
             is SyncResult.Success -> {
                 Log.d(TAG, "Media scan completed successfully: ${syncResult.itemsProcessed} items processed")

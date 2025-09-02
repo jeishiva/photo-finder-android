@@ -2,6 +2,7 @@ package com.experiment.facedetector.scheduler
 
 import android.content.Context
 import androidx.work.*
+import com.experiment.facedetector.common.LogManager
 import com.experiment.facedetector.data.worker.MediaScanWorker
 import java.util.concurrent.TimeUnit
 
@@ -25,6 +26,7 @@ class WorkScheduler {
             ExistingPeriodicWorkPolicy.KEEP,
             request
         )
+        LogManager.d("TAG", "media scanner scheduled")
     }
 
 
@@ -37,5 +39,7 @@ class WorkScheduler {
 
     companion object {
         private const val MEDIA_SCAN_WORK = "MediaScanWork"
+        private const val TAG = "WorkScheduler"
+
     }
 }

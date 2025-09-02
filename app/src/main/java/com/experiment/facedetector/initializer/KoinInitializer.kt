@@ -10,7 +10,7 @@ object KoinInitializer {
     fun init(app: Application) {
         startKoin {
             androidContext(app)
-            workManagerFactory() // Keep if you want workers to use Koin DI
+            workManagerFactory()
             modules(
                 listOf(
                     appModule,
