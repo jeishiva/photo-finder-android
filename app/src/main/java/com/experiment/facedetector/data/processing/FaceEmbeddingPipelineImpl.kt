@@ -1,11 +1,11 @@
 package com.experiment.facedetector.data.processing
 
 import ExtractEmbeddingsUseCase
-import com.experiment.facedetector.image.BitmapHelper
-import com.experiment.facedetector.image.BitmapPool
-import com.experiment.facedetector.common.LogManager
+import com.experiment.facedetector.core.image.BitmapHelper
+import com.experiment.facedetector.core.image.BitmapPool
+import com.experiment.facedetector.common.logging.LogManager
 import com.experiment.facedetector.domain.processing.FaceEmbeddingPipeline
-import com.experiment.facedetector.face.FaceDetectionProcessor
+import com.experiment.facedetector.core.face.FaceDetectionProcessor
 import com.experiment.facedetector.domain.entities.FaceEmbeddingRequest
 import com.experiment.facedetector.domain.entities.SourceMediaItem
 import kotlinx.coroutines.Dispatchers

@@ -1,6 +1,6 @@
 package com.experiment.facedetector.domain.usecase
 
-import com.experiment.facedetector.common.LogManager
+import com.experiment.facedetector.common.logging.LogManager
 import com.experiment.facedetector.data.local.scanner.CameraMediaScanner
 import com.experiment.facedetector.domain.entities.SyncConfig
 import com.experiment.facedetector.domain.entities.SyncResult

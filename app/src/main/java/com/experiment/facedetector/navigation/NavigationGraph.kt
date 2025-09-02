@@ -8,7 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import androidx.navigation.toRoute
-import com.experiment.facedetector.common.LogManager
+import com.experiment.facedetector.common.logging.LogManager
 import com.experiment.facedetector.presentation.entities.AppUiModel
 import com.experiment.facedetector.presentation.entities.GalleryScreenParams
 import com.experiment.facedetector.presentation.entities.SearchScreenParams

@@ -1,4 +1,4 @@
-package com.experiment.facedetector.common
+package com.experiment.facedetector.common.logging
 
 import android.util.Log
 

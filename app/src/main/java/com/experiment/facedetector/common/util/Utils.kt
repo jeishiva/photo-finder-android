@@ -1,13 +1,9 @@
-package com.experiment.facedetector.common
+package com.experiment.facedetector.common.util
 
-import android.content.Context
 import kotlinx.coroutines.suspendCancellableCoroutine
 import com.google.android.gms.tasks.Task
-import java.io.FileInputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.nio.MappedByteBuffer
-import java.nio.channels.FileChannel
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 

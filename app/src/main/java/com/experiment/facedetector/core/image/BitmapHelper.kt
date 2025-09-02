@@ -1,8 +1,7 @@
-package com.experiment.facedetector.image
+package com.experiment.facedetector.core.image
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.Bitmap.createScaledBitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
@@ -17,7 +16,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import androidx.core.graphics.scale
-import com.experiment.facedetector.common.LogManager
+import com.experiment.facedetector.common.logging.LogManager
 import com.experiment.facedetector.config.ThumbnailConfig.THUMBNAIL_SIZE
 import androidx.core.net.toUri
 import com.experiment.facedetector.domain.entities.FaceBoundingBox

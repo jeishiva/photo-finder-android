@@ -2,8 +2,8 @@ package com.experiment.facedetector.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.experiment.facedetector.common.LogManager
-import com.experiment.facedetector.common.safeCancel
+import com.experiment.facedetector.common.logging.LogManager
+import com.experiment.facedetector.common.extension.safeCancel
 import com.experiment.facedetector.domain.usecase.ScanMediaUseCase
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch

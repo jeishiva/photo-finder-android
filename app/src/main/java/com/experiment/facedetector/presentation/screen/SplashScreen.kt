@@ -28,7 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.experiment.facedetector.R
-import com.experiment.facedetector.common.RequestPermission
+import com.experiment.facedetector.common.permission.RequestPermission
 import com.experiment.facedetector.presentation.theme.AndroidFaceDetectorTheme
 import android.provider.Settings
 import com.experiment.facedetector.navigation.NavigationManager

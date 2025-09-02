@@ -63,7 +63,7 @@ import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import com.experiment.facedetector.R
-import com.experiment.facedetector.common.LogManager
+import com.experiment.facedetector.common.logging.LogManager
 import com.experiment.facedetector.config.AppConfig
 import com.experiment.facedetector.presentation.entities.FaceSearchItemUi
 import com.experiment.facedetector.presentation.entities.MediaItemUi

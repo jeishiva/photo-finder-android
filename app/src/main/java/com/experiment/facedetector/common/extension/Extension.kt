@@ -1,4 +1,4 @@
-package com.experiment.facedetector.common
+package com.experiment.facedetector.common.extension
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory

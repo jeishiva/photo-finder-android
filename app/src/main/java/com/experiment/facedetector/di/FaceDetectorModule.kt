@@ -1,6 +1,6 @@
 package com.experiment.facedetector.di
 
-import com.experiment.facedetector.face.FaceDetectionProcessor
+import com.experiment.facedetector.core.face.FaceDetectionProcessor
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetector
 import com.google.mlkit.vision.face.FaceDetectorOptions

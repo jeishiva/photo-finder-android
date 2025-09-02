@@ -1,4 +1,4 @@
-package com.experiment.facedetector.image
+package com.experiment.facedetector.core.image
 
 
 data class SizeF(val width: Float, val height: Float)

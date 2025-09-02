@@ -1,9 +1,9 @@
-package com.experiment.facedetector.image
+package com.experiment.facedetector.core.image
 
 import android.graphics.Bitmap
 import androidx.collection.LruCache
 import androidx.core.graphics.createBitmap
-import com.experiment.facedetector.common.LogManager
+import com.experiment.facedetector.common.logging.LogManager
 
 object BitmapPool {
     private val maxSize = (Runtime.getRuntime().maxMemory() / 10).toInt()

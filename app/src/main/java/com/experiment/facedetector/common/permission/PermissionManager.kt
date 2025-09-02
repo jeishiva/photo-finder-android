@@ -1,4 +1,4 @@
-package com.experiment.facedetector.common
+package com.experiment.facedetector.common.permission
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts

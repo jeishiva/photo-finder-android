@@ -1,9 +1,9 @@
 package com.experiment.facedetector.data.processing
 import com.experiment.facedetector.domain.processing.ThumbnailGenerator
 import androidx.core.net.toUri
-import com.experiment.facedetector.image.BitmapHelper
-import com.experiment.facedetector.image.BitmapPool
-import com.experiment.facedetector.common.LogManager
+import com.experiment.facedetector.core.image.BitmapHelper
+import com.experiment.facedetector.core.image.BitmapPool
+import com.experiment.facedetector.common.logging.LogManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

@@ -2,7 +2,7 @@ package com.experiment.facedetector.scheduler
 
 import android.content.Context
 import androidx.work.*
-import com.experiment.facedetector.common.LogManager
+import com.experiment.facedetector.common.logging.LogManager
 import com.experiment.facedetector.data.worker.MediaScanWorker
 import java.util.concurrent.TimeUnit
 

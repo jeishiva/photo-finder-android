@@ -1,7 +1,7 @@
 package com.experiment.facedetector.initializer
 
 import android.app.Application
-import com.experiment.facedetector.common.LogManager
+import com.experiment.facedetector.common.logging.LogManager
 import com.experiment.facedetector.scheduler.WorkScheduler
 
 class AppInitializer(private val application: Application) {

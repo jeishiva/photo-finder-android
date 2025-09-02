@@ -5,13 +5,12 @@ import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.map
-import com.experiment.facedetector.common.LogManager
-import com.experiment.facedetector.common.throttleFirst
+import com.experiment.facedetector.common.logging.LogManager
+import com.experiment.facedetector.common.extension.throttleFirst
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
 import com.experiment.facedetector.domain.entities.LocalImageItem
 import com.experiment.facedetector.domain.repo.DbInvalidationRepository
 import com.experiment.facedetector.domain.usecase.FaceDetectionUseCase
-import com.experiment.facedetector.domain.usecase.GetMediaDetailsUseCase
 import com.experiment.facedetector.domain.usecase.GetSyncedMediaUseCase
 import com.experiment.facedetector.presentation.entities.GalleryUiState
 import com.experiment.facedetector.presentation.common.UiStateHolder
@@ -25,7 +24,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID

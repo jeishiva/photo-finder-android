@@ -6,7 +6,7 @@ import android.content.ContentUris
 import android.content.Context
 import android.os.Bundle
 import android.provider.MediaStore
-import com.experiment.facedetector.common.LogManager
+import com.experiment.facedetector.common.logging.LogManager
 import com.experiment.facedetector.core.policy.MediaTimePolicy
 import com.experiment.facedetector.core.policy.OrientationPolicy
 import com.experiment.facedetector.data.common.CursorReader
