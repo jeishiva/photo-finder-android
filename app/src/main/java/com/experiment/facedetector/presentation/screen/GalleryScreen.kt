@@ -36,6 +36,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -55,6 +57,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
@@ -125,19 +128,30 @@ fun GalleryScreen(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun GalleryGrid(
     mediaPagedItems: LazyPagingItems<MediaItemUi>,
     onThumbnailClicked: (MediaItemUi) -> Unit,
 ) {
     val gridState = rememberLazyGridState()
-    LazyVerticalGrid(
-        state = gridState,
-        columns = GridCells.Fixed(AppConfig.GRID_SIZE),
-        modifier = Modifier.fillMaxSize(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        content = {
+    val pullToRefreshState = rememberPullToRefreshState()
+
+    val isRefreshing = mediaPagedItems.loadState.refresh is LoadState.Loading
+    PullToRefreshBox(
+        state = pullToRefreshState,
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            mediaPagedItems.refresh()
+        }
+    ) {
+        LazyVerticalGrid(
+            state = gridState,
+            columns = GridCells.Fixed(AppConfig.GRID_SIZE),
+            modifier = Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             items(
                 count = mediaPagedItems.itemCount,
                 key = { index -> mediaPagedItems[index]?.mediaId ?: "placeholder-$index" }
@@ -148,8 +162,10 @@ private fun GalleryGrid(
                     onThumbnailClicked = onThumbnailClicked
                 )
             }
-        })
+        }
+    }
 }
+
 
 @Composable
 fun GalleryThumbnailItem(

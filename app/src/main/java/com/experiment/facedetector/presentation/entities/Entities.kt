@@ -54,6 +54,7 @@ data class GalleryUiState(
     var navigateToSearch: Boolean = false,
     var sessionId: String? = null,
     val faceList: List<FaceDetectedItem> = emptyList(),
+    val showRefreshButton: Boolean = false,
 )
 
 @Immutable

@@ -12,13 +12,13 @@ import com.experiment.facedetector.domain.usecase.ScanMediaUseCase
 class MediaScanWorker(
     appContext: Context,
     params: WorkerParameters,
-    private val cameraMediaScanner: CameraMediaScanner
+    private val mediaScanner: CameraMediaScanner
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result {
         Log.d(TAG, "Starting media scan work")
         return try {
-            val syncResult = ScanMediaUseCase(cameraMediaScanner)()
+            val syncResult = ScanMediaUseCase(mediaScanner)()
             handleSyncResult(syncResult)
         } catch (exception: Exception) {
             Log.e(TAG, "Unexpected error during media scan", exception)

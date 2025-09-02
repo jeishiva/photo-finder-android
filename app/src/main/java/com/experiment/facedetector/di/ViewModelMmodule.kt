@@ -18,7 +18,6 @@ val viewModelModule = module {
             faceDetectionUseCase = get(),
             getSyncedMediaUseCase = get(),
             invalidationRepository = get(),
-            getMediaDetailsUseCase = get()
         )
     }
     viewModel { (handle: SavedStateHandle) ->

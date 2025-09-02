@@ -25,7 +25,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -37,7 +36,6 @@ class GalleryViewModel(
     val faceDetectionUseCase: FaceDetectionUseCase,
     val getSyncedMediaUseCase: GetSyncedMediaUseCase,
     val invalidationRepository: DbInvalidationRepository,
-    val getMediaDetailsUseCase: GetMediaDetailsUseCase,
 ) : ViewModel() {
 
     private val _uiState = UiStateHolder<GalleryUiState>(GalleryUiState())
@@ -46,30 +44,23 @@ class GalleryViewModel(
     private val _selectedFaceIds = MutableStateFlow<Set<String>>(emptySet())
     val selectedFaceIds: StateFlow<Set<String>> = _selectedFaceIds
 
-    private val refreshes: Flow<Unit> =
-        invalidationRepository
-            .changes("media")
-            .onStart {
-                emit(Unit)
-            }
+    private val refreshes: Flow<Unit> = invalidationRepository.changes("media").onStart {
+        emit(Unit)
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val pagedSyncedMediaFlow: StateFlow<PagingData<MediaItemUi>> =
-        refreshes
-            .throttleFirst(1000)
-            .flatMapLatest {
-                getSyncedMediaUseCase().map { pagingData ->
-                    pagingData.map {
-                        it.toUi()
-                    }
-                }
+        getSyncedMediaUseCase().map { pagingData ->
+            pagingData.map {
+                it.toUi()
             }
-            .cachedIn(viewModelScope)
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000),
-                initialValue = PagingData.empty()
-            )
+        }
+        .cachedIn(viewModelScope)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = PagingData.empty()
+        )
 
     fun handleIntent(intent: GalleryIntent) {
         when (intent) {
@@ -117,8 +108,7 @@ class GalleryViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             clearSelection()
             startFaceDetection()
-            val result =
-                faceDetectionUseCase(localImageItem = LocalImageItem(selectedImagePath))
+            val result = faceDetectionUseCase(localImageItem = LocalImageItem(selectedImagePath))
             if (result.faces.isEmpty()) {
                 facesNotFound()
                 return@launch
@@ -132,8 +122,7 @@ class GalleryViewModel(
         _uiState.setState {
             val selectedImageUri = uiState.value.selectedImagePath
             GalleryUiState(
-                isLoading = true,
-                selectedImagePath = selectedImageUri
+                isLoading = true, selectedImagePath = selectedImageUri
             )
         }
     }
@@ -165,8 +154,7 @@ class GalleryViewModel(
     fun markNavigationHandled() {
         _uiState.setState {
             copy(
-                navigateToSearch = false,
-                sessionId = null
+                navigateToSearch = false, sessionId = null
             )
         }
     }
@@ -174,8 +162,7 @@ class GalleryViewModel(
     fun facesNotFound() {
         _uiState.setState {
             copy(
-                errorMessage = "No faces found",
-                isLoading = false
+                errorMessage = "No faces found", isLoading = false
             )
         }
     }

@@ -10,7 +10,7 @@ val workManagerModule = module {
         MediaScanWorker(
             appContext = get(),
             params = get(),
-            scanner = get()
+            mediaScanner = get()
         )
     }
 

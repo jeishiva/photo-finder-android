@@ -6,7 +6,6 @@ import com.experiment.facedetector.data.local.entities.MediaWithFaces
 import com.experiment.facedetector.data.local.entities.ProcessedState
 import com.experiment.facedetector.domain.repo.MediaWithFacesRepository
 
-
 class SearchPhotoPagingSource(
     private val mediaWithFacesRepository: MediaWithFacesRepository,
 ) : PagingSource<Pair<Long, Long>, MediaWithFaces>() {
