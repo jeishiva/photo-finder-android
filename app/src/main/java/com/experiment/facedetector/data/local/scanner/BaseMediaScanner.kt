@@ -242,7 +242,10 @@ abstract class BaseMediaScanner(
     }.catch { exception ->
         handleProcessingException(exception, item)
     }.map { itemProcessResult ->
-        LogManager.d(tag, "processing item stableId=${item.sourceStableId} modified=${item.lastModifiedAtMs}")
+        LogManager.d(
+            tag,
+            "processing item stableId=${item.sourceStableId} modified=${item.lastModifiedAtMs}"
+        )
         updateProcessedState(itemProcessResult)
         itemProcessResult
     }
@@ -325,6 +328,7 @@ abstract class BaseMediaScanner(
                 exception.errorCode,
                 exception.message ?: "Unknown error"
             )
+
             else -> ItemProcessResult.Failed(
                 item,
                 MediaErrorCode.OTHER,
@@ -335,13 +339,15 @@ abstract class BaseMediaScanner(
     }
 
     private suspend fun updateProcessedState(result: ItemProcessResult) {
-        when (result) {
-            is ItemProcessResult.Success -> markSuccess(result.sourceMediaItem)
-            is ItemProcessResult.Failed -> markFailed(
-                item = result.sourceMediaItem,
-                error = result.errorCode,
-                message = result.message
-            )
+        withContext(Dispatchers.IO) {
+            when (result) {
+                is ItemProcessResult.Success -> markSuccess(result.sourceMediaItem)
+                is ItemProcessResult.Failed -> markFailed(
+                    item = result.sourceMediaItem,
+                    error = result.errorCode,
+                    message = result.message
+                )
+            }
         }
     }
 
@@ -390,11 +396,11 @@ abstract class BaseMediaScanner(
 
     sealed class ItemProcessResult(open val sourceMediaItem: SourceMediaItem) {
         data class Success(
-            override val sourceMediaItem : SourceMediaItem,
+            override val sourceMediaItem: SourceMediaItem,
         ) : ItemProcessResult(sourceMediaItem)
 
         data class Failed(
-            override val sourceMediaItem : SourceMediaItem,
+            override val sourceMediaItem: SourceMediaItem,
             val errorCode: MediaErrorCode,
             val message: String,
         ) : ItemProcessResult(sourceMediaItem)
