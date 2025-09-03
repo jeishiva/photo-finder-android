@@ -101,7 +101,7 @@ class GalleryViewModel(
 
     private fun handleRefreshedIntent() {
         LogManager.d(TAG, "Handle gallery refreshed")
-        _uiState.setState { copy(showRefreshButton = false) }
+        _uiState.setState { copy(showRefreshHint = false) }
     }
 
     fun detectFacesForImage(imagePath: String?) {
@@ -277,7 +277,7 @@ class GalleryViewModel(
         viewModelScope.launch {
             refreshSignals.collect {
                 LogManager.d(TAG, "Media changes detected - showing refresh button")
-                _uiState.setState { copy(showRefreshButton = true) }
+                _uiState.setState { copy(showRefreshHint = true) }
             }
         }
     }

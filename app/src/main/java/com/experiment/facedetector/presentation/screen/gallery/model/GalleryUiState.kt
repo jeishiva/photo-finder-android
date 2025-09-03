@@ -9,7 +9,7 @@ data class GalleryUiState(
     val message: String? = null,
     val errorMessage: String? = null,
     val faceExtractionState: FaceExtractionState = FaceExtractionState(),
-    val showRefreshButton: Boolean = false,
+    val showRefreshHint: Boolean = false,
 )
 
 data class FaceExtractionState(

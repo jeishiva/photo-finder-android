@@ -13,5 +13,6 @@
     <string name="share">Share</string>
     <string name="finding_faces">Finding faces…</string>
     <string name="no_faces_found">This image does not have any faces, please try another image</string>
+    <string name="swipe_down_to_refresh">Swipe down to refresh</string>
 
 </resources>

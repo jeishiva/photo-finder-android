@@ -39,6 +39,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -179,30 +180,38 @@ private fun GalleryGrid(
     }
 }
 
-
 @Composable
-fun RefreshButton(
-    onRefresh: () -> Unit,
+fun RefreshHint(
     modifier: Modifier = Modifier,
 ) {
     Box(
         modifier = modifier.fillMaxSize()
     ) {
-        Button(
-            onClick = onRefresh,
+        TextButton(
+            onClick = { /* no-op */ },
+            enabled = false,
             modifier = Modifier
-                .align(Alignment.BottomCenter)
+                .align(Alignment.TopCenter) // center horizontally at bottom
                 .padding(bottom = 24.dp) // lift above nav bar
+                .background(
+                    color = Color(0xFF4CAF50), // green background
+                    shape = RoundedCornerShape(50) // pill shape
+                )
         ) {
             Icon(
                 imageVector = Icons.Default.Refresh,
-                contentDescription = "Refresh"
+                contentDescription = "Refresh",
+                tint = Color.White
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Refresh")
+            Text(
+                text = stringResource(R.string.swipe_down_to_refresh),
+                color = Color.White
+            )
         }
     }
 }
+
 
 @Composable
 fun GalleryThumbnailItem(
@@ -296,8 +305,8 @@ fun GalleryContent(
                 ) {
                     SelectPhotoIcon(uiModel.actions.onExternalImageSelected)
                 }
-                if (uiModel.state.showRefreshButton) {
-                    RefreshButton(onRefresh = uiModel.actions.onRefreshClicked)
+                if (uiModel.state.showRefreshHint) {
+                    RefreshHint()
                 }
             }
         }
