@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface MediaPagingRepository {
 
-    fun getGallerySourceFlow(): Flow<PagingData<MediaWithFacesDomain>>
+    fun getGallerySourceFlow(pageSize: Int): Flow<PagingData<MediaWithFacesDomain>>
 
-    fun getSearchFaceFlow(): Flow<PagingData<MediaWithFacesDomain>>
+    fun getSearchFaceFlow(pageSize: Int): Flow<PagingData<MediaWithFacesDomain>>
 }

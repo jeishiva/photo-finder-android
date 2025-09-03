@@ -9,6 +9,6 @@ class GetSyncedMediaUseCase(
     private val mediaPagingRepository: MediaPagingRepository
 ) {
     operator fun invoke(): Flow<PagingData<MediaWithFacesDomain>> {
-        return mediaPagingRepository.getGallerySourceFlow()
+        return mediaPagingRepository.getGallerySourceFlow(pageSize = 50)
     }
 }

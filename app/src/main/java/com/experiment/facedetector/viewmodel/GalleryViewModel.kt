@@ -274,7 +274,7 @@ class GalleryViewModel(
     }
 
     private fun observeMediaChanges() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             refreshSignals.collect {
                 LogManager.d(TAG, "Media changes detected - showing refresh button")
                 _uiState.setState { copy(showRefreshHint = true) }

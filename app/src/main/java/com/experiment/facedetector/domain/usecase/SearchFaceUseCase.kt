@@ -17,7 +17,7 @@ class SearchSimilarPhotoUseCase(
     operator fun invoke(
         searchEmbeddings: List<FloatArray>,
     ): Flow<PagingData<MediaWithFacesDomain>> {
-        val searchPagingFlow = mediaPagingRepository.getSearchFaceFlow()
+        val searchPagingFlow = mediaPagingRepository.getSearchFaceFlow(25)
         return searchPagingFlow.map { pagingData ->
             pagingData
                 .map { it }
