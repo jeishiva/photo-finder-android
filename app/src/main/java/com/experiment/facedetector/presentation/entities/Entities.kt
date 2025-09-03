@@ -4,17 +4,13 @@ import android.graphics.Bitmap
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import com.experiment.facedetector.domain.entities.FaceBoundingBox
-import com.experiment.facedetector.domain.entities.FaceDetectedItem
 import com.experiment.facedetector.navigation.NavigationManager
 import com.experiment.facedetector.viewmodel.SearchViewModel
 import com.experiment.facedetector.viewmodel.GalleryViewModel
 
-data class GalleryScreenParams(
-    val navigationManager: NavigationManager,
-    val viewModel: GalleryViewModel,
-)
 
-data class SearchScreenParams(
+
+data class SearchScreenArgs(
     val navigationManager: NavigationManager,
     val searchViewModel: SearchViewModel,
     val galleryViewModel: GalleryViewModel,
@@ -28,45 +24,6 @@ data class AppUiModel(val actions: Actions) {
     )
 }
 
-data class GalleryUiModel(
-    val actions: Actions,
-    val state: GalleryUiState,
-) {
-    @Stable
-    data class Actions(
-        val onImageSelected: (String?) -> Unit = {},
-        val onSearchClick: () -> Unit = {},
-        val toggleFaceSelection: (String) -> Unit = {},
-        val launchGalleryClicked: () -> Unit = {},
-        val onFaceSelectionSheetShown: () -> Unit = {},
-        val onThumbnailClicked: (MediaItemUi) -> Unit = {},
-        val onRefreshClicked : () -> Unit = {},
-    )
-}
-
-@Immutable
-data class GalleryUiState(
-    val isLoading: Boolean = false,
-    val message: String? = null,
-    val errorMessage: String? = null,
-    val navigateToSearch: Boolean = false,
-    val sessionId: String? = null,
-    val faceExtractionState: FaceExtractionState = FaceExtractionState(),
-    val showRefreshButton: Boolean = false,
-)
-
-data class FaceExtractionState(
-    val showSelectedFaces: Boolean = false,
-    val selectedImagePath: String? = null,
-    val faceList: List<FaceDetectedItem> = emptyList(),
-    val isInProgress: Boolean = false,
-    val showFaceSelectionSheet: Boolean = false,
-) {
-    val hasFaces: Boolean get() = faceList.isNotEmpty()
-    val isCompleted: Boolean get() = !isInProgress
-    val canShowFaces = isCompleted && hasFaces
-    val isFaceNotFound = isCompleted && !hasFaces
-}
 
 @Immutable
 data class SearchUiState(

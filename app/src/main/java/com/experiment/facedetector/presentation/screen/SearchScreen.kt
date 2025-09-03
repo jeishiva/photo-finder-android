@@ -2,7 +2,6 @@ package com.experiment.facedetector.presentation.screen
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -67,7 +66,7 @@ import com.experiment.facedetector.common.logging.LogManager
 import com.experiment.facedetector.config.AppConfig
 import com.experiment.facedetector.presentation.entities.FaceSearchItemUi
 import com.experiment.facedetector.presentation.entities.MediaItemUi
-import com.experiment.facedetector.presentation.entities.SearchScreenParams
+import com.experiment.facedetector.presentation.entities.SearchScreenArgs
 import com.experiment.facedetector.presentation.entities.SearchUiModel
 import com.experiment.facedetector.presentation.entities.SearchUiState
 import com.experiment.facedetector.presentation.theme.AndroidFaceDetectorTheme
@@ -78,7 +77,7 @@ import com.experiment.facedetector.viewmodel.SearchViewModel.SearchIntent
 import kotlinx.coroutines.flow.MutableStateFlow
 
 @Composable
-fun SearchScreen(params: SearchScreenParams) {
+fun SearchScreen(params: SearchScreenArgs) {
     val navigationManager = params.navigationManager
     val searchViewModel = params.searchViewModel
     val selectPhotoViewModel = params.galleryViewModel

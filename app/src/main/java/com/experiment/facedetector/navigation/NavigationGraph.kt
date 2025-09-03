@@ -10,13 +10,13 @@ import androidx.navigation.navigation
 import androidx.navigation.toRoute
 import com.experiment.facedetector.common.logging.LogManager
 import com.experiment.facedetector.presentation.entities.AppUiModel
-import com.experiment.facedetector.presentation.entities.GalleryScreenParams
-import com.experiment.facedetector.presentation.entities.SearchScreenParams
-import com.experiment.facedetector.presentation.screen.GALLERY_SCREEN_TAG
-import com.experiment.facedetector.presentation.screen.GalleryScreen
+import com.experiment.facedetector.presentation.entities.SearchScreenArgs
+import com.experiment.facedetector.presentation.screen.gallery.GALLERY_SCREEN_TAG
+import com.experiment.facedetector.presentation.screen.gallery.GalleryScreen
 import com.experiment.facedetector.presentation.screen.SEARCH_SCREEN_TAG
 import com.experiment.facedetector.presentation.screen.SearchScreen
 import com.experiment.facedetector.presentation.screen.SplashScreen
+import com.experiment.facedetector.presentation.screen.gallery.model.GalleryScreenArgs
 import com.experiment.facedetector.viewmodel.GalleryViewModel
 import com.experiment.facedetector.viewmodel.SearchViewModel
 import org.koin.androidx.compose.koinViewModel
@@ -71,7 +71,7 @@ private fun NavGraphBuilder.galleryComposable(
         )
         LogManager.d(GALLERY_SCREEN_TAG, "GalleryViewModel: $galleryViewModel")
         GalleryScreen(
-            params = GalleryScreenParams(
+            params = GalleryScreenArgs(
                 navigationManager = navigationManager,
                 viewModel = galleryViewModel
             ),
@@ -95,7 +95,7 @@ private fun NavGraphBuilder.searchComposable(
         LogManager.d(SEARCH_SCREEN_TAG, "Search with sessionId: ${args.sessionId}")
         val searchViewModel = koinViewModel<SearchViewModel>()
         SearchScreen(
-            params = SearchScreenParams(
+            params = SearchScreenArgs(
                 navigationManager = navigationManager,
                 searchViewModel = searchViewModel,
                 galleryViewModel = galleryViewModel,

@@ -12,24 +12,27 @@ import com.experiment.facedetector.domain.entities.LocalImageItem
 import com.experiment.facedetector.domain.repo.DbInvalidationRepository
 import com.experiment.facedetector.domain.usecase.FaceDetectionUseCase
 import com.experiment.facedetector.domain.usecase.GetSyncedMediaUseCase
-import com.experiment.facedetector.presentation.entities.GalleryUiState
 import com.experiment.facedetector.presentation.common.UiStateHolder
-import com.experiment.facedetector.presentation.entities.FaceExtractionState
 import com.experiment.facedetector.presentation.entities.FaceSearchItemUi
 import com.experiment.facedetector.presentation.entities.MediaItemUi
 import com.experiment.facedetector.presentation.entities.toFaceSearchItem
 import com.experiment.facedetector.presentation.entities.toUi
+import com.experiment.facedetector.presentation.screen.gallery.model.FaceExtractionState
+import com.experiment.facedetector.presentation.screen.gallery.model.GalleryNavigationEvent
+import com.experiment.facedetector.presentation.screen.gallery.model.GalleryUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.UUID
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import java.util.UUID
 
 class GalleryViewModel(
     private val faceDetectionUseCase: FaceDetectionUseCase,
@@ -42,6 +45,9 @@ class GalleryViewModel(
 
     private val _selectedFaceIds = MutableStateFlow<Set<String>>(emptySet())
     val selectedFaceIds: StateFlow<Set<String>> = _selectedFaceIds
+
+    private val _navigationEvents = MutableSharedFlow<GalleryNavigationEvent>()
+    val navigationEvents = _navigationEvents.asSharedFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val refreshSignals: Flow<Unit> =
@@ -67,17 +73,19 @@ class GalleryViewModel(
 
     fun handleIntent(intent: GalleryIntent) {
         when (intent) {
-            is GalleryIntent.Search -> handleSearchIntent(intent.selectedImagePath)
             is GalleryIntent.ShowDetectedFaces -> handleShowDetectedFacesIntent()
-            is GalleryIntent.ImageSelected -> handleImageSelectedIntent(intent.mediaItemUi)
+            is GalleryIntent.ImageSelected -> handleImageSelectedIntent(intent.contentPath)
             is GalleryIntent.GalleryRefreshed -> handleRefreshedIntent()
             is GalleryIntent.ResetImageSelection -> handleResetFlow()
+            is GalleryIntent.LaunchSearch -> handleLaunchSearchIntent()
         }
     }
 
-    private fun handleSearchIntent(selectedImagePath: String) {
-        LogManager.d(TAG, "Handle search intent with image: $selectedImagePath")
-        detectFacesForImage(selectedImagePath)
+    private fun handleLaunchSearchIntent() {
+        viewModelScope.launch {
+            val sessionId = UUID.randomUUID().toString()
+            _navigationEvents.emit(GalleryNavigationEvent.ToSearch(sessionId))
+        }
     }
 
     private fun handleShowDetectedFacesIntent() {
@@ -85,9 +93,9 @@ class GalleryViewModel(
         updateFaceExtractionState { it.copy(showSelectedFaces = true) }
     }
 
-    private fun handleImageSelectedIntent(mediaItemUi: MediaItemUi) {
-        LogManager.d(TAG, "Handle image selected: ${mediaItemUi.contentPath}")
-        detectFacesForImage(mediaItemUi.contentPath)
+    private fun handleImageSelectedIntent(contentPath: String) {
+        LogManager.d(TAG, "Handle image selected: $contentPath")
+        detectFacesForImage(contentPath)
     }
 
     private fun handleRefreshedIntent() {
@@ -228,26 +236,6 @@ class GalleryViewModel(
             }
     }
 
-    fun navigateToSearch() {
-        val sessionId = UUID.randomUUID().toString()
-        LogManager.d(TAG, "triggering search with session: $sessionId")
-        _uiState.setState {
-            copy(
-                isLoading = false,
-                message = null,
-                navigateToSearch = true,
-                sessionId = sessionId
-            )
-        }
-    }
-
-    fun markNavigationHandled() {
-        LogManager.d(TAG, "navigation to search handled")
-        _uiState.setState {
-            copy(navigateToSearch = false, sessionId = null)
-        }
-    }
-
     fun handleResetFlow() {
         LogManager.d(TAG, "show selected faces handled")
         updateFaceExtractionState { currentState ->
@@ -300,10 +288,10 @@ class GalleryViewModel(
 }
 
 sealed class GalleryIntent {
-    data class Search(val selectedImagePath: String) : GalleryIntent()
     data object ShowDetectedFaces : GalleryIntent()
-    data class ImageSelected(val mediaItemUi: MediaItemUi) : GalleryIntent()
+    data class ImageSelected(val contentPath : String) : GalleryIntent()
     data object GalleryRefreshed : GalleryIntent()
     data object ResetImageSelection: GalleryIntent()
-
+    data object LaunchSearch : GalleryIntent()
 }
+

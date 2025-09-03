@@ -1,4 +1,4 @@
-package com.experiment.facedetector.presentation.screen
+package com.experiment.facedetector.presentation.screen.gallery
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -72,11 +72,13 @@ import com.experiment.facedetector.R
 import com.experiment.facedetector.common.logging.LogManager
 import com.experiment.facedetector.config.AppConfig
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
-import com.experiment.facedetector.presentation.entities.GalleryScreenParams
-import com.experiment.facedetector.presentation.entities.GalleryUiModel
-import com.experiment.facedetector.presentation.entities.GalleryUiState
 import com.experiment.facedetector.presentation.components.StatusMessage
 import com.experiment.facedetector.presentation.entities.MediaItemUi
+import com.experiment.facedetector.presentation.screen.gallery.model.GalleryActions
+import com.experiment.facedetector.presentation.screen.gallery.model.GalleryNavigationEvent
+import com.experiment.facedetector.presentation.screen.gallery.model.GalleryScreenArgs
+import com.experiment.facedetector.presentation.screen.gallery.model.GalleryUiModel
+import com.experiment.facedetector.presentation.screen.gallery.model.GalleryUiState
 import com.experiment.facedetector.presentation.theme.AndroidFaceDetectorTheme
 import com.experiment.facedetector.presentation.theme.GradientStartMildGrey
 import com.experiment.facedetector.presentation.theme.MildGray
@@ -87,7 +89,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 @Composable
 fun GalleryScreen(
-    params: GalleryScreenParams,
+    params: GalleryScreenArgs,
     viewModel: GalleryViewModel,
 ) {
     val navigationManager = params.navigationManager
@@ -96,19 +98,20 @@ fun GalleryScreen(
 
     val uiState by viewModel.uiState.collectAsState()
     val actions = remember(navigationManager, viewModel) {
-        GalleryUiModel.Actions(
-            onImageSelected = imageSelected@{ imagePath ->
+        GalleryActions(
+            onExternalImageSelected = imageSelected@{ imagePath ->
                 imagePath ?: return@imageSelected
-                viewModel.handleIntent(GalleryIntent.Search(imagePath))
+                viewModel.handleIntent(GalleryIntent.ImageSelected(imagePath))
             }, onSearchClick = {
-                viewModel.navigateToSearch()
+                viewModel.handleIntent(GalleryIntent.LaunchSearch)
             }, toggleFaceSelection = { faceId ->
                 viewModel.toggleFaceSelection(faceId)
             }, onFaceSelectionSheetShown = {
                 viewModel.handleIntent(GalleryIntent.ResetImageSelection)
-            }, onThumbnailClicked = { mediaItemUi ->
+            }, onThumbnailClicked = thumbnailClicked@{ mediaItemUi ->
+                mediaItemUi.contentPath ?: return@thumbnailClicked
                 viewModel.handleIntent(
-                    GalleryIntent.ImageSelected(mediaItemUi)
+                    GalleryIntent.ImageSelected(mediaItemUi.contentPath)
                 )
             },
             onRefreshClicked = {
@@ -121,13 +124,14 @@ fun GalleryScreen(
         actions = actions,
         state = uiState
     )
-    LaunchedEffect(uiState.navigateToSearch) {
-        if (uiState.navigateToSearch) {
-            LogManager.d(GALLERY_SCREEN_TAG, "activeSessionId: ${uiState.sessionId}")
-            uiState.sessionId?.let {
-                navigationManager.navigateToSearch(it)
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvents.collect { event ->
+            when (event) {
+                is GalleryNavigationEvent.ToSearch -> {
+                    LogManager.d(GALLERY_SCREEN_TAG, "activeSessionId: ${event.sessionId}")
+                    navigationManager.navigateToSearch(event.sessionId)
+                }
             }
-            viewModel.markNavigationHandled()
         }
     }
     GalleryContent(
@@ -290,7 +294,7 @@ fun GalleryContent(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    SelectPhotoIcon(uiModel.actions.onImageSelected)
+                    SelectPhotoIcon(uiModel.actions.onExternalImageSelected)
                 }
                 if (uiModel.state.showRefreshButton) {
                     RefreshButton(onRefresh = uiModel.actions.onRefreshClicked)
@@ -359,7 +363,7 @@ fun HomeContentPreview() {
     }.collectAsLazyPagingItems()
     GalleryContent(
         uiModel = GalleryUiModel(
-            actions = GalleryUiModel.Actions(),
+            actions = GalleryActions(),
             state = GalleryUiState(),
         ), selectedFaceIds = emptySet(),
         mediaPagedItems = dummyPagingItems
@@ -541,7 +545,6 @@ fun FaceExtractionInProgressContent() {
         )
     }
 }
-
 
 
 const val GALLERY_SCREEN_TAG = "GalleryScreen"
