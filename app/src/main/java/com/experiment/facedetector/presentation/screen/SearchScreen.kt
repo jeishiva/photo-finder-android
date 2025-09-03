@@ -87,9 +87,9 @@ fun SearchScreen(params: SearchScreenParams) {
     }
     val searchResultPagedItems = searchViewModel.pagedFaces.collectAsLazyPagingItems()
     LaunchedEffect(Unit) {
-        val result = selectPhotoViewModel.getSearchItems()
+        val result = selectPhotoViewModel.getSelectedFaceSearchItems()
         LogManager.d("SearchViewModel", "Selected faces in search: ${result.size}")
-        searchViewModel.handleIntent(SearchIntent.Start(selectPhotoViewModel.getSearchItems()))
+        searchViewModel.handleIntent(SearchIntent.Start(selectPhotoViewModel.getSelectedFaceSearchItems()))
     }
     val uiState by searchViewModel.uiState.collectAsState()
     val context = LocalContext.current

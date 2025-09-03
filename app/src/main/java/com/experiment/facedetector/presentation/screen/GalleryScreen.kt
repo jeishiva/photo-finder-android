@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -55,6 +56,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -99,11 +101,11 @@ fun GalleryScreen(
                 imagePath ?: return@imageSelected
                 viewModel.handleIntent(GalleryIntent.Search(imagePath))
             }, onSearchClick = {
-                viewModel.triggerSearch()
+                viewModel.navigateToSearch()
             }, toggleFaceSelection = { faceId ->
                 viewModel.toggleFaceSelection(faceId)
             }, onFaceSelectionSheetShown = {
-                viewModel.markShowSelectedFacesHandled()
+                viewModel.handleIntent(GalleryIntent.ResetImageSelection)
             }, onThumbnailClicked = { mediaItemUi ->
                 viewModel.handleIntent(
                     GalleryIntent.ImageSelected(mediaItemUi)
@@ -140,7 +142,7 @@ fun GalleryScreen(
 private fun GalleryGrid(
     mediaPagedItems: LazyPagingItems<MediaItemUi>,
     onThumbnailClicked: (MediaItemUi) -> Unit,
-    onRefreshClicked: () -> Unit
+    onRefreshClicked: () -> Unit,
 ) {
     val gridState = rememberLazyGridState()
     val pullToRefreshState = rememberPullToRefreshState()
@@ -359,12 +361,13 @@ fun HomeContentPreview() {
         uiModel = GalleryUiModel(
             actions = GalleryUiModel.Actions(),
             state = GalleryUiState(),
-        ), selectedFaceIds = emptySet(), mediaPagedItems = dummyPagingItems
+        ), selectedFaceIds = emptySet(),
+        mediaPagedItems = dummyPagingItems
     )
 }
 
 @Composable
-fun ImageOrPlaceholderRoundedFullWidth(
+fun PreviewImage(
     imageUri: Uri?,
     modifier: Modifier = Modifier,
     cornerRadius: Dp = 24.dp,
@@ -420,7 +423,7 @@ fun FaceDetectedSheetSection(
     onFaceClick: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    if (uiModel.showSelectedFaces) {
+    if (uiModel.state.faceExtractionState.showFaceSelectionSheet) {
         FaceDetectedBottomSheetDialog(uiModel, selectedFaceIds, onFaceClick = {
             onFaceClick(it)
         }, onDismiss = {
@@ -437,49 +440,108 @@ fun FaceDetectedBottomSheetDialog(
     onFaceClick: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true
-    )
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val state = uiModel.state.faceExtractionState
+    val pathUri = state.selectedImagePath?.toUri()
+
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        Column(
-            modifier = Modifier
-                .wrapContentHeight()
-                .padding(bottom = 16.dp),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            ImageOrPlaceholderRoundedFullWidth(
-                imageUri = uiModel.state.selectedImagePath?.toUri(),
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            FaceListSection(
-                faces = uiModel.state.faceList,
+        when {
+            state.isInProgress -> FaceExtractionInProgressContent()
+            state.isFaceNotFound -> FaceExtractionEmptyContent(pathUri)
+            state.canShowFaces -> FaceExtractionFacesContent(
+                uiModel = uiModel,
                 selectedFaceIds = selectedFaceIds,
-                onFaceClick = onFaceClick
+                onFaceClick = onFaceClick,
+                onDismiss = onDismiss
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = {
-                    onDismiss()
-                    uiModel.actions.onSearchClick()
-                },
-                enabled = selectedFaceIds.isNotEmpty(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = GradientStartMildGrey
-                ),
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-                    .padding(horizontal = 16.dp)
-            ) {
-                Text(
-                    style = MaterialTheme.typography.titleMedium,
-                    text = stringResource(R.string.search)
-                )
-            }
-            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
+
+@Composable
+fun FaceExtractionEmptyContent(imagePath: Uri?) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        PreviewImage(imageUri = imagePath)
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.no_faces_found),
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+@Composable
+fun FaceExtractionFacesContent(
+    uiModel: GalleryUiModel,
+    selectedFaceIds: Set<String>,
+    onFaceClick: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .wrapContentHeight()
+            .padding(bottom = 16.dp),
+        verticalArrangement = Arrangement.SpaceBetween
+    ) {
+        PreviewImage(
+            imageUri = uiModel.state.faceExtractionState.selectedImagePath?.toUri(),
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        FaceListSection(
+            faces = uiModel.state.faceExtractionState.faceList,
+            selectedFaceIds = selectedFaceIds,
+            onFaceClick = onFaceClick
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(
+            onClick = {
+                onDismiss()
+                uiModel.actions.onSearchClick()
+            },
+            enabled = selectedFaceIds.isNotEmpty(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = GradientStartMildGrey
+            ),
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp)
+                .padding(horizontal = 16.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.search),
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+        Spacer(modifier = Modifier.height(32.dp))
+    }
+}
+
+@Composable
+fun FaceExtractionInProgressContent() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        CircularProgressIndicator()
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.finding_faces),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+
 
 const val GALLERY_SCREEN_TAG = "GalleryScreen"

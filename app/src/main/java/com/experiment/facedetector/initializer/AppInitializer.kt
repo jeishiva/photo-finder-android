@@ -12,13 +12,11 @@ class AppInitializer(private val application: Application) {
         initWorkScheduler()
     }
 
-    private fun initKoin() {
-        KoinInitializer.init(application)
-    }
+    private fun initKoin() = KoinInitializer.init(application)
 
     private fun initWorkScheduler() {
         val workScheduler: WorkScheduler = org.koin.java.KoinJavaComponent.getKoin().get()
-        workScheduler.schedulePeriodicMediaScan(application)
+        workScheduler.schedulePeriodicMediaScan()
     }
 
     companion object {

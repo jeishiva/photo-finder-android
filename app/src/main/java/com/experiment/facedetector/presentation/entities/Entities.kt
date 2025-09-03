@@ -42,7 +42,6 @@ data class GalleryUiModel(
         val onThumbnailClicked: (MediaItemUi) -> Unit = {},
         val onRefreshClicked : () -> Unit = {},
     )
-    val showSelectedFaces = state.showSelectedFaces
 }
 
 @Immutable
@@ -50,13 +49,24 @@ data class GalleryUiState(
     val isLoading: Boolean = false,
     val message: String? = null,
     val errorMessage: String? = null,
-    val selectedImagePath: String? = null,
-    val showSelectedFaces: Boolean = false,
-    var navigateToSearch: Boolean = false,
-    var sessionId: String? = null,
-    val faceList: List<FaceDetectedItem> = emptyList(),
+    val navigateToSearch: Boolean = false,
+    val sessionId: String? = null,
+    val faceExtractionState: FaceExtractionState = FaceExtractionState(),
     val showRefreshButton: Boolean = false,
 )
+
+data class FaceExtractionState(
+    val showSelectedFaces: Boolean = false,
+    val selectedImagePath: String? = null,
+    val faceList: List<FaceDetectedItem> = emptyList(),
+    val isInProgress: Boolean = false,
+    val showFaceSelectionSheet: Boolean = false,
+) {
+    val hasFaces: Boolean get() = faceList.isNotEmpty()
+    val isCompleted: Boolean get() = !isInProgress
+    val canShowFaces = isCompleted && hasFaces
+    val isFaceNotFound = isCompleted && !hasFaces
+}
 
 @Immutable
 data class SearchUiState(

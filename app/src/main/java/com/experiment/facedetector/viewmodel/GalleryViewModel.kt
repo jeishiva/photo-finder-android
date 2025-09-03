@@ -14,6 +14,7 @@ import com.experiment.facedetector.domain.usecase.FaceDetectionUseCase
 import com.experiment.facedetector.domain.usecase.GetSyncedMediaUseCase
 import com.experiment.facedetector.presentation.entities.GalleryUiState
 import com.experiment.facedetector.presentation.common.UiStateHolder
+import com.experiment.facedetector.presentation.entities.FaceExtractionState
 import com.experiment.facedetector.presentation.entities.FaceSearchItemUi
 import com.experiment.facedetector.presentation.entities.MediaItemUi
 import com.experiment.facedetector.presentation.entities.toFaceSearchItem
@@ -31,9 +32,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 class GalleryViewModel(
-    val faceDetectionUseCase: FaceDetectionUseCase,
-    val getSyncedMediaUseCase: GetSyncedMediaUseCase,
-    val invalidationRepository: DbInvalidationRepository,
+    private val faceDetectionUseCase: FaceDetectionUseCase,
+    private val getSyncedMediaUseCase: GetSyncedMediaUseCase,
+    private val invalidationRepository: DbInvalidationRepository,
 ) : ViewModel() {
 
     private val _uiState = UiStateHolder<GalleryUiState>(GalleryUiState())
@@ -51,199 +52,250 @@ class GalleryViewModel(
     @OptIn(ExperimentalCoroutinesApi::class)
     val pagedSyncedMediaFlow: StateFlow<PagingData<MediaItemUi>> =
         getSyncedMediaUseCase().map { pagingData ->
-            pagingData.map {
-                it.toUi()
-            }
+            pagingData.map { it.toUi() }
         }
-        .cachedIn(viewModelScope)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = PagingData.empty()
-        )
+            .cachedIn(viewModelScope)
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = PagingData.empty()
+            )
 
     init {
         observeMediaChanges()
     }
 
-    fun observeMediaChanges() {
-        viewModelScope.launch {
-            refreshSignals.collect {
-                _uiState.setState { copy(showRefreshButton = true) }
-            }
-        }
-    }
-
     fun handleIntent(intent: GalleryIntent) {
         when (intent) {
-            is GalleryIntent.Search -> {
-                handleSelectedImage(intent.selectedImagePath)
-            }
-
-            is GalleryIntent.ShowDetectedFaces -> {
-                handleDetectedFacesIntent()
-            }
-
-            is GalleryIntent.ImageSelected -> {
-                handleImageSelectedIntent(intent.mediaItemUi)
-            }
-
-            is GalleryIntent.GalleryRefreshed -> {
-                handleRefreshed()
-            }
+            is GalleryIntent.Search -> handleSearchIntent(intent.selectedImagePath)
+            is GalleryIntent.ShowDetectedFaces -> handleShowDetectedFacesIntent()
+            is GalleryIntent.ImageSelected -> handleImageSelectedIntent(intent.mediaItemUi)
+            is GalleryIntent.GalleryRefreshed -> handleRefreshedIntent()
+            is GalleryIntent.ResetImageSelection -> handleResetFlow()
         }
     }
 
-    fun handleRefreshed() {
-        _uiState.setState {
-            copy(showRefreshButton = false)
-        }
+    private fun handleSearchIntent(selectedImagePath: String) {
+        LogManager.d(TAG, "Handle search intent with image: $selectedImagePath")
+        detectFacesForImage(selectedImagePath)
+    }
+
+    private fun handleShowDetectedFacesIntent() {
+        LogManager.d(TAG, "Handle show detected faces intent")
+        updateFaceExtractionState { it.copy(showSelectedFaces = true) }
     }
 
     private fun handleImageSelectedIntent(mediaItemUi: MediaItemUi) {
-        LogManager.d(TAG, "handle image selected $mediaItemUi")
-        handleSelectedImage(mediaItemUi.contentPath)
+        LogManager.d(TAG, "Handle image selected: ${mediaItemUi.contentPath}")
+        detectFacesForImage(mediaItemUi.contentPath)
     }
 
-    private fun handleDetectedFacesIntent() {
-        LogManager.d(TAG, "handleDetectedFacesIntent ${uiState.value.faceList.size}")
-        _uiState.setState {
-            copy(showSelectedFaces = true)
+    private fun handleRefreshedIntent() {
+        LogManager.d(TAG, "Handle gallery refreshed")
+        _uiState.setState { copy(showRefreshButton = false) }
+    }
+
+    fun detectFacesForImage(imagePath: String?) {
+        if (imagePath.isNullOrBlank()) {
+            LogManager.w(TAG, "Attempted to detect faces with null/empty image path")
+            return
         }
-    }
+        LogManager.d(TAG, "Starting face detection for: $imagePath")
+        viewModelScope.launch(Dispatchers.Default) {
+            try {
+                // reset state and start detection
+                resetFaceSelectionState()
+                setFaceDetectionInProgress(imagePath)
 
-    fun handleSelectedImage(selectedImagePath: String?) {
-        selectedImagePath ?: return
-        setSelectedImage(selectedImagePath)
-        detectFaces(selectedImagePath)
-    }
+                // perform face detection
+                val detectionResult = faceDetectionUseCase(
+                    localImageItem = LocalImageItem(imagePath)
+                )
+                // handle results
+                when {
+                    detectionResult.faces.isEmpty() -> {
+                        LogManager.d(TAG, "No faces found in image: $imagePath")
+                        handleNoFacesDetected()
+                    }
 
-    fun setSelectedImage(selectedImagePath: String) {
-        detectFaces(selectedImagePath)
-        _uiState.setState {
-            copy(selectedImagePath = selectedImagePath)
-        }
-    }
+                    else -> {
+                        LogManager.d(
+                            TAG,
+                            "Found ${detectionResult.faces.size} faces in: $imagePath"
+                        )
+                        handleFacesDetected(detectionResult.faces)
+                    }
+                }
 
-    fun detectFaces(selectedImagePath: String) {
-        LogManager.d("HomeViewModel", "selected image: $selectedImagePath  $this")
-        viewModelScope.launch(Dispatchers.IO) {
-            clearSelection()
-            startFaceDetection()
-            val result = faceDetectionUseCase(localImageItem = LocalImageItem(selectedImagePath))
-            if (result.faces.isEmpty()) {
-                facesNotFound()
-                return@launch
+            } catch (exception: Exception) {
+                LogManager.e(TAG, "Face detection failed for: $imagePath", exception)
+                handleFaceDetectionError(exception)
             }
-            sendDetectedFaces(result.faces)
-            LogManager.d("HomeViewModel", "total faces: ${result.faces.size}")
         }
     }
 
-    fun startFaceDetection() {
-        _uiState.setState {
-            val selectedImageUri = uiState.value.selectedImagePath
-            GalleryUiState(
-                isLoading = true, selectedImagePath = selectedImageUri
+    private fun setFaceDetectionInProgress(imagePath: String) {
+        updateFaceExtractionState { currentState ->
+            currentState.copy(
+                isInProgress = true,
+                selectedImagePath = imagePath,
+                showSelectedFaces = false,
+                faceList = emptyList(),
+                showFaceSelectionSheet = true
+            )
+        }
+        clearErrorMessages()
+    }
+
+    private fun handleNoFacesDetected() {
+        updateFaceExtractionState { currentState ->
+            currentState.copy(
+                isInProgress = false,
+                showSelectedFaces = false,
+                faceList = emptyList()
+            )
+        }
+        setErrorMessage("No faces found in the selected image")
+    }
+
+    private suspend fun handleFacesDetected(faces: List<FaceDetectedItem>) {
+        updateFaceExtractionState { currentState ->
+            currentState.copy(
+                isInProgress = false,
+                showSelectedFaces = true,
+                faceList = faces
             )
         }
     }
 
-    fun getSearchItems(): List<FaceSearchItemUi> {
-        val selectedIds = _selectedFaceIds.value
-        val faceList = uiState.value.faceList
-        LogManager.d(TAG, "Total faces: ${faceList.size}, Selected: ${selectedIds.size}")
-        val result = faceList.filter { face ->
-            selectedIds.contains(face.faceId)
-        }.map {
-            it.toFaceSearchItem()
+    private suspend fun handleFaceDetectionError(exception: Exception) {
+        updateFaceExtractionState { currentState ->
+            currentState.copy(
+                isInProgress = false,
+                showSelectedFaces = false,
+                faceList = emptyList(),
+                showFaceSelectionSheet = false
+            )
         }
-        LogManager.d(TAG, "Selected faces: ${result.size}")
-        return result
+        setErrorMessage("Failed to detect faces: ${exception.localizedMessage ?: "Unknown error"}")
     }
 
-    fun triggerSearch() {
+    fun toggleFaceSelection(faceId: String) {
+        val currentSelection = _selectedFaceIds.value
+        when {
+            currentSelection.contains(faceId) -> {
+                // deselect face
+                _selectedFaceIds.update { it - faceId }
+                clearMessageIfNoSelection()
+            }
+            currentSelection.size >= MAX_SELECTED_FACES -> {
+                // replace oldest selection
+                val oldestFaceId = currentSelection.first()
+                _selectedFaceIds.update { (it - oldestFaceId) + faceId }
+                setMessage("Maximum $MAX_SELECTED_FACES faces selected — oldest removed.")
+            }
+            else -> {
+                // add new selection
+                _selectedFaceIds.update { it + faceId }
+                clearMessage()
+            }
+        }
+        LogManager.d(TAG, "face selection updated. selected: ${_selectedFaceIds.value.size}")
+    }
+
+    private fun clearMessageIfNoSelection() {
+        if (_selectedFaceIds.value.isEmpty()) {
+            clearMessage()
+        }
+    }
+
+    private fun resetFaceSelectionState() {
+        _selectedFaceIds.update { emptySet() }
+    }
+
+    fun getSelectedFaceSearchItems(): List<FaceSearchItemUi> {
+        val selectedIds = _selectedFaceIds.value
+        val faceList = uiState.value.faceExtractionState.faceList
+        LogManager.d(
+            TAG,
+            "getting search items - total faces: ${faceList.size}, selected: ${selectedIds.size}"
+        )
+        return faceList
+            .filter { face -> selectedIds.contains(face.faceId) }
+            .map { it.toFaceSearchItem() }
+            .also { result ->
+                LogManager.d(TAG, "generated ${result.size} search items")
+            }
+    }
+
+    fun navigateToSearch() {
+        val sessionId = UUID.randomUUID().toString()
+        LogManager.d(TAG, "triggering search with session: $sessionId")
         _uiState.setState {
             copy(
                 isLoading = false,
-                message = "",
+                message = null,
                 navigateToSearch = true,
-                sessionId = UUID.randomUUID().toString()
+                sessionId = sessionId
             )
         }
     }
 
     fun markNavigationHandled() {
+        LogManager.d(TAG, "navigation to search handled")
         _uiState.setState {
-            copy(
-                navigateToSearch = false, sessionId = null
+            copy(navigateToSearch = false, sessionId = null)
+        }
+    }
+
+    fun handleResetFlow() {
+        LogManager.d(TAG, "show selected faces handled")
+        updateFaceExtractionState { currentState ->
+            currentState.copy(
+                isInProgress = false,
+                selectedImagePath = null,
+                showSelectedFaces = false,
+                showFaceSelectionSheet = false
             )
         }
     }
 
-    fun facesNotFound() {
+    private fun updateFaceExtractionState(
+        update: (FaceExtractionState) -> FaceExtractionState,
+    ) {
         _uiState.setState {
-            copy(
-                errorMessage = "No faces found", isLoading = false
-            )
+            copy(faceExtractionState = update(faceExtractionState))
         }
     }
 
-    fun sendDetectedFaces(faces: List<FaceDetectedItem>) {
-        _uiState.setState {
-            copy(
-                faceList = faces,
-                isLoading = false,
-                message = "${faces.size} faces found",
-                showSelectedFaces = true
-            )
-        }
+    private fun setMessage(message: String) {
+        _uiState.setState { copy(message = message) }
     }
 
-    fun markShowSelectedFacesHandled() {
-        _uiState.setState {
-            copy(showSelectedFaces = false)
-        }
+    private fun clearMessage() {
+        _uiState.setState { copy(message = null) }
     }
 
-    private fun clearSelection() {
-        _selectedFaceIds.update {
-            emptySet()
-        }
+    private fun setErrorMessage(errorMessage: String) {
+        _uiState.setState { copy(errorMessage = errorMessage, isLoading = false) }
     }
 
-    fun toggleFaceSelection(faceId: String) {
-        if (_selectedFaceIds.value.contains(faceId)
-                .not() && _selectedFaceIds.value.size >= MAX_SELECTED_FACES
-        ) {
-            _uiState.setState {
-                copy(
-                    message = "Maximum $MAX_SELECTED_FACES faces selected — oldest removed."
-                )
-            }
-        }
-        _selectedFaceIds.update { currentSet ->
-            if (currentSet.contains(faceId)) {
-                currentSet - faceId
-            } else {
-                if (currentSet.size >= MAX_SELECTED_FACES) {
-                    val firstSelected = currentSet.first()
-                    (currentSet - firstSelected) + faceId
-                } else {
-                    currentSet + faceId
-                }
-            }
-        }
-        if (_selectedFaceIds.value.isEmpty()) {
-            _uiState.setState {
-                copy(message = "")
+    private fun clearErrorMessages() {
+        _uiState.setState { copy(errorMessage = null, message = null) }
+    }
+
+    private fun observeMediaChanges() {
+        viewModelScope.launch {
+            refreshSignals.collect {
+                LogManager.d(TAG, "Media changes detected - showing refresh button")
+                _uiState.setState { copy(showRefreshButton = true) }
             }
         }
     }
 
     companion object {
         private const val MAX_SELECTED_FACES = 4
-        private const val TAG = "GalleyViewModel"
+        private const val TAG = "GalleryViewModel"
     }
 }
 
@@ -251,5 +303,7 @@ sealed class GalleryIntent {
     data class Search(val selectedImagePath: String) : GalleryIntent()
     data object ShowDetectedFaces : GalleryIntent()
     data class ImageSelected(val mediaItemUi: MediaItemUi) : GalleryIntent()
-    object GalleryRefreshed : GalleryIntent()
+    data object GalleryRefreshed : GalleryIntent()
+    data object ResetImageSelection: GalleryIntent()
+
 }

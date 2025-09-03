@@ -29,7 +29,10 @@ val viewModelModule = module {
     }
 
     viewModel {
-        AppViewModel(scanMediaUseCase = get())
+        AppViewModel(
+            scanMediaUseCase = get(),
+            workScheduler = get()
+        )
     }
 
 }

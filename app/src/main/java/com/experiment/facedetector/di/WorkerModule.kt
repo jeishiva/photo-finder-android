@@ -1,5 +1,6 @@
 package com.experiment.facedetector.di
 
+import androidx.work.WorkManager
 import com.experiment.facedetector.data.worker.MediaScanWorker
 import com.experiment.facedetector.scheduler.WorkScheduler
 import org.koin.androidx.workmanager.dsl.worker
@@ -15,6 +16,13 @@ val workManagerModule = module {
     }
 
     single<WorkScheduler> {
-        WorkScheduler()
+        WorkScheduler(
+            context = get(),
+            workManager = get()
+        )
+    }
+
+    single<WorkManager> {
+        WorkManager.getInstance(context = get())
     }
 }
