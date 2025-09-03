@@ -11,11 +11,11 @@ import com.experiment.facedetector.common.logging.LogManager
 import com.experiment.facedetector.common.extension.safeCancel
 import com.experiment.facedetector.domain.filter.MediaFilter
 import com.experiment.facedetector.domain.usecase.facesearch.SearchSimilarPhotoUseCase
-import com.experiment.facedetector.presentation.entities.SearchUiState
-import com.experiment.facedetector.presentation.common.UiStateHolder
-import com.experiment.facedetector.presentation.entities.FaceSearchItemUi
-import com.experiment.facedetector.presentation.entities.MediaItemUi
-import com.experiment.facedetector.presentation.entities.toUi
+import com.experiment.facedetector.presentation.app.model.UiStateHolder
+import com.experiment.facedetector.presentation.model.FaceSearchItemUi
+import com.experiment.facedetector.presentation.model.MediaItemUi
+import com.experiment.facedetector.presentation.model.toUi
+import com.experiment.facedetector.presentation.screen.search.model.SearchUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job

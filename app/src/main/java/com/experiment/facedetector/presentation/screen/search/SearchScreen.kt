@@ -1,4 +1,4 @@
-package com.experiment.facedetector.presentation.screen
+package com.experiment.facedetector.presentation.screen.search
 
 import android.content.Context
 import android.content.Intent
@@ -64,15 +64,16 @@ import coil.request.ImageRequest
 import com.experiment.facedetector.R
 import com.experiment.facedetector.common.logging.LogManager
 import com.experiment.facedetector.config.AppConfig
-import com.experiment.facedetector.presentation.entities.FaceSearchItemUi
-import com.experiment.facedetector.presentation.entities.MediaItemUi
-import com.experiment.facedetector.presentation.entities.SearchScreenArgs
-import com.experiment.facedetector.presentation.entities.SearchUiModel
-import com.experiment.facedetector.presentation.entities.SearchUiState
+import com.experiment.facedetector.presentation.model.FaceSearchItemUi
+import com.experiment.facedetector.presentation.model.MediaItemUi
+import com.experiment.facedetector.presentation.screen.search.model.SearchActions
+import com.experiment.facedetector.presentation.screen.search.model.SearchUiModel
+import com.experiment.facedetector.presentation.screen.search.model.SearchUiState
 import com.experiment.facedetector.presentation.theme.AndroidFaceDetectorTheme
 import com.experiment.facedetector.presentation.theme.GradientStartMildGrey
 import com.experiment.facedetector.presentation.theme.MildGray
-import com.experiment.facedetector.presentation.widgets.AppBar
+import com.experiment.facedetector.presentation.components.AppTopBar
+import com.experiment.facedetector.presentation.screen.search.model.SearchScreenArgs
 import com.experiment.facedetector.viewmodel.SearchViewModel.SearchIntent
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -93,7 +94,7 @@ fun SearchScreen(params: SearchScreenArgs) {
     val uiState by searchViewModel.uiState.collectAsState()
     val context = LocalContext.current
     val actions = remember(navigationManager, params.searchViewModel) {
-        SearchUiModel.Actions(
+        SearchActions(
             onBackClick = backClick,
             onThumbnailClicked = { mediaWithFacesUi ->
                 searchViewModel.handleIntent(SearchIntent.ImageSelected(mediaWithFacesUi))
@@ -121,7 +122,7 @@ fun ScreenContent(
     AndroidFaceDetectorTheme {
         Scaffold(
             topBar = {
-                AppBar(
+                AppTopBar(
                     title = stringResource(R.string.search_screen),
                     onBackClicked = uiModel.actions.onBackClick
                 )
@@ -337,7 +338,7 @@ fun SearchScreenPreview() {
     }.collectAsLazyPagingItems()
     ScreenContent(
         uiModel = SearchUiModel(
-            actions = SearchUiModel.Actions(),
+            actions = SearchActions(),
             state = SearchUiState()
         ),
         searchResultPagedItems = dummyPagingItems

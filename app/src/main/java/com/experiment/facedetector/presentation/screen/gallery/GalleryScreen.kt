@@ -73,7 +73,7 @@ import com.experiment.facedetector.common.logging.LogManager
 import com.experiment.facedetector.config.AppConfig
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
 import com.experiment.facedetector.presentation.components.StatusMessage
-import com.experiment.facedetector.presentation.entities.MediaItemUi
+import com.experiment.facedetector.presentation.model.MediaItemUi
 import com.experiment.facedetector.presentation.screen.gallery.model.GalleryActions
 import com.experiment.facedetector.presentation.screen.gallery.model.GalleryNavigationEvent
 import com.experiment.facedetector.presentation.screen.gallery.model.GalleryScreenArgs
@@ -82,7 +82,7 @@ import com.experiment.facedetector.presentation.screen.gallery.model.GalleryUiSt
 import com.experiment.facedetector.presentation.theme.AndroidFaceDetectorTheme
 import com.experiment.facedetector.presentation.theme.GradientStartMildGrey
 import com.experiment.facedetector.presentation.theme.MildGray
-import com.experiment.facedetector.presentation.widgets.AppBar
+import com.experiment.facedetector.presentation.components.AppTopBar
 import com.experiment.facedetector.viewmodel.GalleryIntent
 import com.experiment.facedetector.viewmodel.GalleryViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -252,7 +252,7 @@ fun GalleryContent(
     AndroidFaceDetectorTheme {
         Scaffold(
             topBar = {
-                AppBar(
+                AppTopBar(
                     stringResource(R.string.app_name),
                 )
             }, containerColor = Color.Transparent, modifier = Modifier.fillMaxSize()

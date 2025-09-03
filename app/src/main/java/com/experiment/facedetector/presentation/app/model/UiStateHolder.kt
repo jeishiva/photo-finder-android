@@ -1,10 +1,9 @@
-package com.experiment.facedetector.presentation.common
+package com.experiment.facedetector.presentation.app.model
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-
 
 class UiStateHolder<T>(initialState: T) {
     private val _state = MutableStateFlow(initialState)

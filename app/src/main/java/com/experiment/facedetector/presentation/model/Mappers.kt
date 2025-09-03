@@ -1,4 +1,4 @@
-package com.experiment.facedetector.presentation.entities
+package com.experiment.facedetector.presentation.model
 
 import com.experiment.facedetector.domain.entities.FaceDetectedItem
 import com.experiment.facedetector.domain.entities.MediaWithFacesDomain

@@ -1,7 +1,7 @@
 package com.experiment.facedetector.presentation.screen.gallery.model
 
 import androidx.compose.runtime.Stable
-import com.experiment.facedetector.presentation.entities.MediaItemUi
+import com.experiment.facedetector.presentation.model.MediaItemUi
 
 @Stable
 data class GalleryActions(

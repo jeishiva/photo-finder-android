@@ -12,11 +12,11 @@ import com.experiment.facedetector.domain.entities.LocalImageItem
 import com.experiment.facedetector.domain.repo.DbInvalidationRepository
 import com.experiment.facedetector.domain.usecase.FaceDetectionUseCase
 import com.experiment.facedetector.domain.usecase.GetSyncedMediaUseCase
-import com.experiment.facedetector.presentation.common.UiStateHolder
-import com.experiment.facedetector.presentation.entities.FaceSearchItemUi
-import com.experiment.facedetector.presentation.entities.MediaItemUi
-import com.experiment.facedetector.presentation.entities.toFaceSearchItem
-import com.experiment.facedetector.presentation.entities.toUi
+import com.experiment.facedetector.presentation.app.model.UiStateHolder
+import com.experiment.facedetector.presentation.model.FaceSearchItemUi
+import com.experiment.facedetector.presentation.model.MediaItemUi
+import com.experiment.facedetector.presentation.model.toFaceSearchItem
+import com.experiment.facedetector.presentation.model.toUi
 import com.experiment.facedetector.presentation.screen.gallery.model.FaceExtractionState
 import com.experiment.facedetector.presentation.screen.gallery.model.GalleryNavigationEvent
 import com.experiment.facedetector.presentation.screen.gallery.model.GalleryUiState

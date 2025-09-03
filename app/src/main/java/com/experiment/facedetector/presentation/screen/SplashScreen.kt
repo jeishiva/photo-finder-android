@@ -32,7 +32,7 @@ import com.experiment.facedetector.common.permission.RequestPermission
 import com.experiment.facedetector.presentation.theme.AndroidFaceDetectorTheme
 import android.provider.Settings
 import com.experiment.facedetector.navigation.NavigationManager
-import com.experiment.facedetector.presentation.entities.AppUiModel
+import com.experiment.facedetector.presentation.app.model.AppUiModel
 import com.experiment.facedetector.viewmodel.SplashViewModel
 import org.koin.androidx.compose.koinViewModel
 
