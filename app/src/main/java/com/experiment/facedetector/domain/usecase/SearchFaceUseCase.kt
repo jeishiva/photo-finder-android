@@ -1,4 +1,4 @@
-package com.experiment.facedetector.domain.usecase.facesearch
+package com.experiment.facedetector.domain.usecase
 
 import androidx.paging.PagingData
 import com.experiment.facedetector.data.local.repo.MediaPagingRepository

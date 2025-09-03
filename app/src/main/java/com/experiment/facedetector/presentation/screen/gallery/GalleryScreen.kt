@@ -83,7 +83,7 @@ import com.experiment.facedetector.presentation.theme.AndroidFaceDetectorTheme
 import com.experiment.facedetector.presentation.theme.GradientStartMildGrey
 import com.experiment.facedetector.presentation.theme.MildGray
 import com.experiment.facedetector.presentation.components.AppTopBar
-import com.experiment.facedetector.viewmodel.GalleryIntent
+import com.experiment.facedetector.presentation.screen.gallery.model.GalleryIntent
 import com.experiment.facedetector.viewmodel.GalleryViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 

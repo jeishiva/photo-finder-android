@@ -1,10 +1,12 @@
+package com.experiment.facedetector.domain.usecase
+
 import android.graphics.Bitmap
-import com.experiment.facedetector.common.logging.LogManager
 import com.experiment.facedetector.common.extension.toFaceBoundingBox
+import com.experiment.facedetector.common.logging.LogManager
+import com.experiment.facedetector.core.image.BitmapHelper
 import com.experiment.facedetector.domain.entities.FaceEmbedding
 import com.experiment.facedetector.domain.entities.FaceEmbeddingRequest
 import com.experiment.facedetector.domain.processing.FaceEmbeddingExtractor
-import com.experiment.facedetector.core.image.BitmapHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.UUID

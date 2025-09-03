@@ -1,6 +1,6 @@
 package com.experiment.facedetector.data.processing
 
-import ExtractEmbeddingsUseCase
+import com.experiment.facedetector.domain.usecase.ExtractEmbeddingsUseCase
 import com.experiment.facedetector.core.image.BitmapHelper
 import com.experiment.facedetector.core.image.BitmapPool
 import com.experiment.facedetector.common.logging.LogManager
@@ -15,7 +15,7 @@ import kotlinx.coroutines.withContext
  * File-based embedding pipeline that reuses your BitmapHelper decode path.
  * - Decodes upright with bounds (targetH/W) using BitmapHelper.decodeBitmap(uri, ...)
  * - Detects faces via FaceDetectionProcessor
- * - Extracts embeddings via ExtractEmbeddingsUseCase
+ * - Extracts embeddings via com.experiment.facedetector.domain.usecase.ExtractEmbeddingsUseCase
  * - Returns List<Pair<String, FloatArray>> (UUID to embedding pairs)
  */
 class FaceEmbeddingPipelineImpl(

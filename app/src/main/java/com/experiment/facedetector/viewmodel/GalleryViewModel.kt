@@ -18,6 +18,7 @@ import com.experiment.facedetector.presentation.model.MediaItemUi
 import com.experiment.facedetector.presentation.model.toFaceSearchItem
 import com.experiment.facedetector.presentation.model.toUi
 import com.experiment.facedetector.presentation.screen.gallery.model.FaceExtractionState
+import com.experiment.facedetector.presentation.screen.gallery.model.GalleryIntent
 import com.experiment.facedetector.presentation.screen.gallery.model.GalleryNavigationEvent
 import com.experiment.facedetector.presentation.screen.gallery.model.GalleryUiState
 import kotlinx.coroutines.Dispatchers
@@ -286,12 +287,3 @@ class GalleryViewModel(
         private const val TAG = "GalleryViewModel"
     }
 }
-
-sealed class GalleryIntent {
-    data object ShowDetectedFaces : GalleryIntent()
-    data class ImageSelected(val contentPath : String) : GalleryIntent()
-    data object GalleryRefreshed : GalleryIntent()
-    data object ResetImageSelection: GalleryIntent()
-    data object LaunchSearch : GalleryIntent()
-}
-

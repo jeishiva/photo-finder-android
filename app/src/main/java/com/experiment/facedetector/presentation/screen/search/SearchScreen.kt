@@ -73,8 +73,8 @@ import com.experiment.facedetector.presentation.theme.AndroidFaceDetectorTheme
 import com.experiment.facedetector.presentation.theme.GradientStartMildGrey
 import com.experiment.facedetector.presentation.theme.MildGray
 import com.experiment.facedetector.presentation.components.AppTopBar
+import com.experiment.facedetector.presentation.screen.search.model.SearchIntent
 import com.experiment.facedetector.presentation.screen.search.model.SearchScreenArgs
-import com.experiment.facedetector.viewmodel.SearchViewModel.SearchIntent
 import kotlinx.coroutines.flow.MutableStateFlow
 
 @Composable
