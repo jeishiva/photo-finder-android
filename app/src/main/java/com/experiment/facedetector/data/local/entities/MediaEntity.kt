@@ -35,7 +35,6 @@ data class MediaEntity(
     @ColumnInfo(name = "sourceStableId")
     val sourceStableId: String,
 
-    // Optional: keep for direct file access / debug
     @ColumnInfo(name = "contentPath")
     val contentPath: String,
 
@@ -128,13 +127,13 @@ data class MediaEntity(
 
 /** High-level state of the processing pipeline for this media. */
 enum class ProcessedState {
-    PENDING,         // never attempted (new)
-    PROCESSING,      // optional transient state if you want to set it
-    PROCESSED,       // all required stages done
+    PENDING,
+    PROCESSED,
     FAILED
 }
 
 enum class MediaErrorCode(val code: Int) {
+    STABLE_ID_UNRESOLVED(1),
     THUMBNAIL_FAILED(100),
     FACE_EXTRACTION_FAILED(200),
     OTHER(10000),

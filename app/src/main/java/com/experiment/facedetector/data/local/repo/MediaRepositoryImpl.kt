@@ -3,7 +3,7 @@ package com.experiment.facedetector.data.local.repo
 import com.experiment.facedetector.data.local.dao.MediaDao
 import com.experiment.facedetector.data.local.entities.MediaEntity
 import com.experiment.facedetector.data.local.entities.MediaErrorCode
-import com.experiment.facedetector.data.local.entities.MediaWithFaces
+import com.experiment.facedetector.data.local.entities.MediaWithFacesEntity
 import com.experiment.facedetector.data.local.entities.ProcessedState
 import com.experiment.facedetector.domain.entities.MediaIdFingerprint
 import com.experiment.facedetector.domain.repo.MediaRepository
@@ -64,13 +64,15 @@ class MediaRepositoryImpl(private val mediaDao: MediaDao) : MediaRepository {
     }
 
     override suspend fun updateProcessedState(
-        mediaId: Long,
+        sourceStableId: Long,
+        sourceKey: String,
         processedState: ProcessedState,
         lastErrorCode: MediaErrorCode?,
         lastErrorMessage: String?,
     ) {
         mediaDao.updateProcessedState(
-            mediaId = mediaId,
+            sourceStableId,
+            sourceKey,
             processedState = processedState,
             lastErrorCode = lastErrorCode,
             lastErrorMessage = lastErrorMessage,
@@ -83,7 +85,7 @@ class MediaRepositoryImpl(private val mediaDao: MediaDao) : MediaRepository {
         cursorId: Long,
         limit: Int,
         processed: ProcessedState,
-    ): List<MediaWithFaces> {
+    ): List<MediaWithFacesEntity> {
         return mediaDao.loadMediaBeforeCursor(cursorDate, cursorId, limit, processed)
     }
 

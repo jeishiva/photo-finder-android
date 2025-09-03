@@ -23,9 +23,12 @@ import com.experiment.facedetector.domain.source.SyncableMediaSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withContext
 
@@ -40,7 +43,7 @@ abstract class BaseMediaScanner(
     val source: IdentifiablePagedMediaSource,
 ) : SyncableMediaSource {
 
-    private val tag = "MediaIndexer"
+    private val tag = "MediaScanner"
     private val sourceType = source.sourceType
 
     override suspend fun sync(config: SyncConfig): SyncResult = withContext(Dispatchers.IO) {
@@ -57,7 +60,7 @@ abstract class BaseMediaScanner(
         var itemsProcessed = 0
         var facesSavedTotal = 0
         var cursorAdvanced = false
-            var budgetRemaining = config.maxItemsPerRun
+        var budgetRemaining = config.maxItemsPerRun
         var currentCursor = startCursor
 
         try {
@@ -104,12 +107,10 @@ abstract class BaseMediaScanner(
                             maxConcurrency = config.maxConcurrency
                         ).toList()
 
-                        val facesInChunk = results.sumOf { it.facesSaved }
-                        facesSavedTotal += facesInChunk
                         itemsProcessed += results.size
                         LogManager.d(
                             tag,
-                            "chunk $index done: items=${results.size}, facesSaved=$facesInChunk (accumFaces=$facesSavedTotal)"
+                            "chunk $index done: items=${results.size}"
                         )
                     }
                 } else {
@@ -127,10 +128,6 @@ abstract class BaseMediaScanner(
                     break@pageLoop
                 }
             }
-            LogManager.d(
-                tag,
-                "sync complete: pages=$pagesScanned fetched=$itemsFetched upserted=$itemsUpserted changed=$itemsChanged processed=$itemsProcessed faces=$facesSavedTotal cursorAdvanced=$cursorAdvanced"
-            )
             SyncResult.Success(
                 sourceKey = sourceKey,
                 pagesScanned = pagesScanned,
@@ -194,7 +191,6 @@ abstract class BaseMediaScanner(
                 changed.add(item)
             }
         }
-
         val upsertedCount = try {
             mediaRepo.upsertAll(newRows)
             newRows.size
@@ -204,19 +200,16 @@ abstract class BaseMediaScanner(
         }
 
         val idsForPage: Map<String, Long> = mediaRepo.getIdsForSource(sourceType.key, stableIds)
-
         val idByStable = HashMap<Long, Long>(idsForPage.size)
         for (item in items) {
             idsForPage[item.sourceStableId.toString()]?.let { mediaId ->
                 idByStable[item.sourceStableId] = mediaId
             }
         }
-
         LogManager.d(
             tag,
             "upsertAndDetectChanges: items=${items.size} upserted=$upsertedCount changed=${changed.size}"
         )
-
         return MediaDelta(idByStable, changed, upsertedCount)
     }
 
@@ -239,69 +232,143 @@ abstract class BaseMediaScanner(
         item: SourceMediaItem,
         idByStable: Map<Long, Long>,
     ): Flow<ItemProcessResult> = flow {
-        val facesSaved = processOneItem(item, idByStable)
-        emit(ItemProcessResult(facesSaved))
+        emit(item)
+    }.map { sourceItem ->
+        validateMediaId(sourceItem, idByStable)
+    }.map { (sourceItem, mediaId) ->
+        generateThumbnail(sourceItem, mediaId)
+    }.map { (sourceItem, mediaId) ->
+        extractEmbeddings(sourceItem, mediaId)
+    }.catch { exception ->
+        handleProcessingException(exception, item)
+    }.map { itemProcessResult ->
+        LogManager.d(tag, "processing item stableId=${item.sourceStableId} modified=${item.lastModifiedAtMs}")
+        updateProcessedState(itemProcessResult)
+        itemProcessResult
     }
 
-    private suspend fun processOneItem(item: SourceMediaItem, idByStable: Map<Long, Long>): Int {
-        val mediaId = idByStable[item.sourceStableId] ?: run {
+    private fun validateMediaId(
+        sourceItem: SourceMediaItem,
+        idByStable: Map<Long, Long>,
+    ): Pair<SourceMediaItem, Long> {
+        val mediaId = idByStable[sourceItem.sourceStableId] ?: run {
             LogManager.w(
                 tag,
-                "mediaId unresolved for ${item.contentPath} (stableId=${item.sourceStableId})"
+                "mediaId unresolved for ${sourceItem.contentPath} (stableId=${sourceItem.sourceStableId})"
             )
-            return 0
+            throw MediaProcessingException(
+                MediaErrorCode.STABLE_ID_UNRESOLVED,
+                "Media ID unresolved for ${sourceItem.contentPath} (stableId=${sourceItem.sourceStableId})"
+            )
         }
+        return sourceItem to mediaId
+    }
 
-        // Mark PROCESSING
-        mediaRepo.updateProcessedState(mediaId, ProcessedState.PROCESSING, null, null)
-
-        // --- Thumbnails ---
-        try {
-            LogManager.d(tag, "thumbnail: start mediaId=$mediaId uri=${item.contentPath}")
-            val thumbPath = thumbnails.extractFromFile(item.contentPath.toString(), mediaId)
-            LogManager.d(tag, "thumbnail: done mediaId=$mediaId path=$thumbPath")
-            if (thumbPath != null) {
+    private suspend fun generateThumbnail(
+        sourceItem: SourceMediaItem,
+        mediaId: Long,
+    ): Pair<SourceMediaItem, Long> {
+        LogManager.d(tag, "thumbnail: start mediaId=$mediaId uri=${sourceItem.contentPath}")
+        val thumbnailResult = thumbnails.extractFromFile(sourceItem.contentPath.toString(), mediaId)
+        thumbnailResult.fold(
+            onSuccess = { thumbPath ->
+                LogManager.d(tag, "thumbnail: done mediaId=$mediaId path=$thumbPath")
                 mediaRepo.updateThumbnail(mediaId, thumbPath)
-            }
-        } catch (e: Exception) {
-            LogManager.e(tag, "thumbnail: failed mediaId=$mediaId uri=${item.contentPath}", e)
-            mediaRepo.updateProcessedState(
-                mediaId, ProcessedState.FAILED, MediaErrorCode.THUMBNAIL_FAILED, e.message
-            )
-            return 0
-        }
-
-        // --- Embeddings ---
-        var facesSaved = 0
-        try {
-            LogManager.d(tag, "embedding: start mediaId=$mediaId")
-            val vectors = embeddings.extractEmbeddings(item)
-            if (vectors.isEmpty()) {
-                LogManager.d(tag, "embedding: no faces mediaId=$mediaId")
-                mediaRepo.updateProcessedState(mediaId, ProcessedState.PROCESSED, null, null)
-                return 0
-            }
-            val faces = vectors.map { (faceId, vector) ->
-                FaceEntity(
-                    faceId = faceId,
-                    mediaOwnerId = mediaId,
-                    embeddingData = vector,
-                    createdAtMs = System.currentTimeMillis()
+            },
+            onFailure = { throwable ->
+                LogManager.e(tag, "thumbnail: failed mediaId=$mediaId", throwable)
+                throw MediaProcessingException(
+                    MediaErrorCode.THUMBNAIL_FAILED,
+                    "Thumbnail extraction failed: ${throwable.message}"
                 )
             }
-            if (faces.isNotEmpty()) {
+        )
+        return sourceItem to mediaId
+    }
+
+    private suspend fun extractEmbeddings(
+        sourceItem: SourceMediaItem,
+        mediaId: Long,
+    ): ItemProcessResult {
+        LogManager.d(tag, "embedding: start mediaId=$mediaId")
+        val extractEmbeddingResult = embeddings.extractEmbeddings(sourceItem)
+        extractEmbeddingResult.fold(
+            onSuccess = { embeddings ->
+                val faces = embeddings.map { embedding ->
+                    FaceEntity(
+                        faceId = embedding.faceId,
+                        mediaOwnerId = mediaId,
+                        embeddingData = embedding.embedding,
+                        createdAtMs = System.currentTimeMillis()
+                    )
+                }
                 faceRepo.upsertAll(faces)
-                facesSaved = faces.size
-                LogManager.d(tag, "embedding: faces saved=$facesSaved mediaId=$mediaId")
+            },
+            onFailure = { throwable ->
+                LogManager.e(tag, "embedding: failed mediaId=$mediaId", throwable)
+                throw MediaProcessingException(
+                    MediaErrorCode.FACE_EXTRACTION_FAILED,
+                    "Face extraction failed: ${throwable.message}"
+                )
             }
-            mediaRepo.updateProcessedState(mediaId, ProcessedState.PROCESSED, null, null)
-        } catch (e: Exception) {
-            LogManager.e(tag, "embedding: failed mediaId=$mediaId uri=${item.contentPath}", e)
-            mediaRepo.updateProcessedState(
-                mediaId, ProcessedState.FAILED, MediaErrorCode.FACE_EXTRACTION_FAILED, e.message
+        )
+        return ItemProcessResult.Success(sourceItem)
+    }
+
+    private suspend fun FlowCollector<ItemProcessResult>.handleProcessingException(
+        exception: Throwable,
+        item: SourceMediaItem,
+    ) {
+        val result = when (exception) {
+            is MediaProcessingException -> ItemProcessResult.Failed(
+                item,
+                exception.errorCode,
+                exception.message ?: "Unknown error"
+            )
+            else -> ItemProcessResult.Failed(
+                item,
+                MediaErrorCode.OTHER,
+                exception.message ?: "Unexpected error occurred"
             )
         }
-        return facesSaved
+        emit(result)
+    }
+
+    private suspend fun updateProcessedState(result: ItemProcessResult) {
+        when (result) {
+            is ItemProcessResult.Success -> markSuccess(result.sourceMediaItem)
+            is ItemProcessResult.Failed -> markFailed(
+                item = result.sourceMediaItem,
+                error = result.errorCode,
+                message = result.message
+            )
+        }
+    }
+
+    suspend fun markFailed(
+        item: SourceMediaItem,
+        error: MediaErrorCode,
+        message: String?,
+    ) {
+        LogManager.d(tag, "mark as processed for $item")
+        mediaRepo.updateProcessedState(
+            sourceKey = item.sourceKey,
+            sourceStableId = item.sourceStableId,
+            processedState = ProcessedState.FAILED,
+            lastErrorCode = error,
+            lastErrorMessage = message
+        )
+    }
+
+    suspend fun markSuccess(item: SourceMediaItem) {
+        LogManager.d(tag, "mark as processed for $item")
+        mediaRepo.updateProcessedState(
+            sourceKey = item.sourceKey,
+            sourceStableId = item.sourceStableId,
+            processedState = ProcessedState.PROCESSED,
+            lastErrorCode = null,
+            lastErrorMessage = null
+        )
     }
 
     private suspend fun advanceCursor(next: MediaSourceCursor): Boolean {
@@ -321,5 +388,20 @@ abstract class BaseMediaScanner(
         val upsertedCount: Int,
     )
 
-    private data class ItemProcessResult(val facesSaved: Int)
+    sealed class ItemProcessResult(open val sourceMediaItem: SourceMediaItem) {
+        data class Success(
+            override val sourceMediaItem : SourceMediaItem,
+        ) : ItemProcessResult(sourceMediaItem)
+
+        data class Failed(
+            override val sourceMediaItem : SourceMediaItem,
+            val errorCode: MediaErrorCode,
+            val message: String,
+        ) : ItemProcessResult(sourceMediaItem)
+    }
+
+    private class MediaProcessingException(
+        val errorCode: MediaErrorCode,
+        message: String,
+    ) : Exception(message)
 }

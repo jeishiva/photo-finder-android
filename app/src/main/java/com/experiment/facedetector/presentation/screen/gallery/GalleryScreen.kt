@@ -188,11 +188,11 @@ fun RefreshHint(
         modifier = modifier.fillMaxSize()
     ) {
         TextButton(
-            onClick = { /* no-op */ },
+            onClick = {},
             enabled = false,
             modifier = Modifier
                 .align(Alignment.TopCenter) // center horizontally at bottom
-                .padding(bottom = 24.dp) // lift above nav bar
+                .padding(top = 24.dp) // lift above nav bar
                 .background(
                     color = Color(0xFF4CAF50), // green background
                     shape = RoundedCornerShape(50) // pill shape
@@ -235,11 +235,9 @@ fun GalleryThumbnailItem(
                 .fillMaxSize()
                 .clickable(onClick = onClick),
             loading = {
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .background(MildGray)
-                )
+                Box(Modifier
+                    .fillMaxSize()
+                    .background(MildGray))
             },
             error = {
                 Image(

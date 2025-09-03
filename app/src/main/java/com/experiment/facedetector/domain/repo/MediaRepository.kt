@@ -1,11 +1,11 @@
 package com.experiment.facedetector.domain.repo
 
-import androidx.paging.Pager
 import com.experiment.facedetector.data.local.entities.MediaEntity
 import com.experiment.facedetector.data.local.entities.MediaErrorCode
-import com.experiment.facedetector.data.local.entities.MediaWithFaces
+import com.experiment.facedetector.data.local.entities.MediaWithFacesEntity
 import com.experiment.facedetector.data.local.entities.ProcessedState
 import com.experiment.facedetector.domain.entities.MediaIdFingerprint
+import com.experiment.facedetector.domain.entities.SourceMediaItem
 
 /**
  * Abstraction over media persistence.
@@ -32,7 +32,8 @@ interface MediaRepository {
     ): Map<String, String?>
 
     suspend fun updateProcessedState(
-        mediaId: Long,
+        sourceStableId: Long,
+        sourceKey: String,
         processedState: ProcessedState,
         lastErrorCode: MediaErrorCode?,
         lastErrorMessage: String?,
@@ -43,7 +44,7 @@ interface MediaRepository {
         cursorId: Long,
         limit: Int,
         processed: ProcessedState ,
-    ): List<MediaWithFaces>
+    ): List<MediaWithFacesEntity>
 
 
 }
