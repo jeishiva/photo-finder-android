@@ -39,6 +39,13 @@ interface MediaRepository {
         lastErrorMessage: String?,
     )
 
+    suspend fun updateProcessedState(
+        mediaIds : List<Long>,
+        processedState: ProcessedState,
+        lastErrorCode: MediaErrorCode?,
+        lastErrorMessage: String?,
+    )
+
     suspend fun loadMediaBefore(
         cursorDate: Long,
         cursorId: Long,

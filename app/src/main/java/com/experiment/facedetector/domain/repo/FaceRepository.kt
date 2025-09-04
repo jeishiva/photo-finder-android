@@ -7,5 +7,5 @@ import com.experiment.facedetector.data.local.entities.FaceEntity
  * Implement in the data layer using Room DAOs.
  */
 interface FaceRepository {
-    suspend fun upsertAll(faces: List<FaceEntity>)
+    suspend fun replaceFacesForMedia(mediaId: Long, faces: List<FaceEntity>)
 }

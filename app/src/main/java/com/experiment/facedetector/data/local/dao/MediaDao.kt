@@ -93,6 +93,25 @@ interface MediaDao {
 
     @Query(
         """
+    UPDATE media
+    SET processedState = :processedState,
+        lastErrorCode = :lastErrorCode,
+        lastErrorMessage = :lastErrorMessage,
+        lastProcessedAtMs = :lastProcessedAtMs,
+        attemptCount = attemptCount + 1
+    WHERE mediaId IN (:mediaIds)
+"""
+    )
+    suspend fun updateProcessedState(
+        mediaIds: List<Long>,
+        processedState: ProcessedState,
+        lastErrorCode: MediaErrorCode?,
+        lastErrorMessage: String?,
+        lastProcessedAtMs: Long = System.currentTimeMillis()
+    )
+
+    @Query(
+        """
         SELECT *
         FROM media
         WHERE processedState = :processed

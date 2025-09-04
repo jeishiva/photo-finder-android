@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.cancellation.CancellationException
 
 abstract class BaseMediaScanner(
     private val cursorRepo: MediaSourceCursorRepo,
@@ -50,7 +51,9 @@ abstract class BaseMediaScanner(
         val sourceKey = sourceType.key
         LogManager.d(
             tag,
-            "sync start: source=$sourceKey pageSize=${config.pageSize} maxItems=${config.maxItemsPerRun} chunkSize=${config.chunkSize} concurrency=${config.maxConcurrency}"
+            "sync start: source=$sourceKey pageSize=${config.pageSize} " +
+                    "maxItems=${config.maxItemsPerRun}" +
+                    " chunkSize=${config.chunkSize} concurrency=${config.maxConcurrency}"
         )
         val startCursor: MediaSourceCursor? = loadCursor(sourceKey)
         var pagesScanned = 0
@@ -65,64 +68,91 @@ abstract class BaseMediaScanner(
 
         try {
             pageLoop@ while (budgetRemaining > 0) {
-                val page = fetchPage(currentCursor, config.pageSize) ?: run {
-                    return@withContext SyncResult.Failure(
-                        sourceKey = sourceKey,
-                        reason = "Page fetch failed",
-                        throwable = null,
-                        pagesScanned = pagesScanned,
-                        itemsFetched = itemsFetched
-                    )
-                }
-                pagesScanned++
-                itemsFetched += page.items.size
-                LogManager.d(
-                    tag,
-                    "page $pagesScanned fetched=${page.items.size} afterCursor=$currentCursor hasMore=${page.hasMore}"
-                )
-                if (page.items.isEmpty()) {
-                    page.nextCursor?.let {
-                        advanceCursor(it).also { cursorAdvanced = cursorAdvanced || it }
-                    }
-                    break@pageLoop
-                }
-                val plan = upsertAndDetectChanges(page.items).also {
-                    itemsUpserted += it.upsertedCount
-                    itemsChanged += it.changedItems.size
-                }
-                if (plan.changedItems.isNotEmpty()) {
-                    val chunks = plan.changedItems.chunked(config.chunkSize)
-                    for ((index, chunk) in chunks.withIndex()) {
+                val pageResult = fetchPage(currentCursor, config.pageSize)
+
+                when (pageResult) {
+                    is PageResult.Success -> {
+                        val page = pageResult.page
+                        pagesScanned += 1
+                        itemsFetched += page.items.size
+
                         LogManager.d(
                             tag,
-                            "processing chunk $index size=${chunk.size} page=$pagesScanned"
+                            "page $pagesScanned fetched=${page.items.size} afterCursor=$currentCursor hasMore=${page.hasMore}"
                         )
-                        val results = processChunkWithFlow(
-                            chunk = chunk,
-                            idByStable = plan.idByStable,
-                            maxConcurrency = config.maxConcurrency
-                        ).toList()
 
-                        itemsProcessed += results.size
-                        LogManager.d(
+                        if (page.items.isEmpty()) {
+                            page.nextCursor?.let { next ->
+                                val advanced = advanceCursor(next)
+                                if (advanced) {
+                                    cursorAdvanced = true
+                                }
+                            }
+                            break@pageLoop
+                        }
+
+                        val deltaPlan = upsertAndDetectChanges(page.items).also {
+                            itemsUpserted += it.upsertedCount
+                            itemsChanged += it.changedItems.size
+                        }
+
+                        if (deltaPlan.changedItems.isNotEmpty()) {
+                            val chunks = deltaPlan.changedItems.chunked(config.chunkSize)
+                            for ((index, chunk) in chunks.withIndex()) {
+                                LogManager.d(
+                                    tag,
+                                    "processing chunk $index size=${chunk.size} page=$pagesScanned"
+                                )
+
+                                val results = processChunkWithFlow(
+                                    chunk = chunk,
+                                    idByStable = deltaPlan.idByStable,
+                                    maxConcurrency = config.maxConcurrency
+                                ).toList()
+
+                                itemsProcessed += results.size
+
+                                LogManager.d(
+                                    tag,
+                                    "chunk $index done: items=${results.size}"
+                                )
+                            }
+                        } else {
+                            LogManager.d(tag, "no changed items on page $pagesScanned (all skipped)")
+                        }
+
+                        page.nextCursor?.let { next ->
+                            val advanced = advanceCursor(next)
+                            if (advanced) {
+                                cursorAdvanced = true
+                            }
+                        }
+                        currentCursor = page.nextCursor
+                        budgetRemaining -= page.items.size
+
+                        if (!page.hasMore) {
+                            LogManager.d(tag, "no more items from source; stopping")
+                            break@pageLoop
+                        }
+                    }
+
+                    is PageResult.Error -> {
+                        LogManager.e(
                             tag,
-                            "chunk $index done: items=${results.size}"
+                            "fetchPage failed: cursor=$currentCursor limit=${config.pageSize}",
+                            pageResult.throwable
+                        )
+                        return@withContext SyncResult.Failure(
+                            sourceKey = sourceKey,
+                            reason = "Page fetch failed",
+                            throwable = pageResult.throwable,
+                            pagesScanned = pagesScanned,
+                            itemsFetched = itemsFetched
                         )
                     }
-                } else {
-                    LogManager.d(tag, "no changed items on page $pagesScanned (all skipped)")
-                }
-
-                page.nextCursor?.let {
-                    advanceCursor(it).also { cursorAdvanced = cursorAdvanced || it }
-                }
-                currentCursor = page.nextCursor
-                budgetRemaining -= page.items.size
-                if (!page.hasMore) {
-                    LogManager.d(tag, "no more items from source; stopping")
-                    break@pageLoop
                 }
             }
+
             SyncResult.Success(
                 sourceKey = sourceKey,
                 pagesScanned = pagesScanned,
@@ -133,6 +163,9 @@ abstract class BaseMediaScanner(
                 facesSaved = facesSavedTotal,
                 cursorAdvanced = cursorAdvanced
             )
+        } catch (ce: CancellationException) {
+            // propagate coroutine cancellation
+            throw ce
         } catch (t: Throwable) {
             LogManager.e(tag, "sync failed: source=$sourceKey", t)
             SyncResult.Failure(
@@ -154,12 +187,15 @@ abstract class BaseMediaScanner(
     private suspend fun fetchPage(
         after: MediaSourceCursor?,
         pageSize: Int,
-    ): MediaSourcePage<SourceMediaItem>? {
+    ): PageResult {
         return try {
-            source.listAfter(cursor = after, limit = pageSize)
+            val page = source.listAfter(cursor = after, limit = pageSize)
+            PageResult.Success(page)
+        } catch (ce: CancellationException) {
+            throw ce
         } catch (e: Exception) {
             LogManager.e(tag, "fetchPage failed: cursor=$after limit=$pageSize", e)
-            null
+            PageResult.Error(e)
         }
     }
 
@@ -255,9 +291,9 @@ abstract class BaseMediaScanner(
 
     private fun validateMediaId(
         sourceItem: SourceMediaItem,
-        idByStable: Map<Long, Long>,
+        mediaIdByStableId: Map<Long, Long>,
     ): Pair<SourceMediaItem, Long> {
-        val mediaId = idByStable[sourceItem.sourceStableId] ?: run {
+        val mediaId = mediaIdByStableId[sourceItem.sourceStableId] ?: run {
             LogManager.w(
                 tag,
                 "mediaId unresolved for ${sourceItem.contentPath} (stableId=${sourceItem.sourceStableId})"
@@ -308,7 +344,7 @@ abstract class BaseMediaScanner(
                         createdAtMs = System.currentTimeMillis()
                     )
                 }
-                faceRepo.upsertAll(faces)
+                faceRepo.replaceFacesForMedia(mediaId, faces)
             },
             onFailure = { throwable ->
                 LogManager.e(tag, "embedding: failed mediaId=$mediaId", throwable)
@@ -417,4 +453,10 @@ abstract class BaseMediaScanner(
     companion object {
         private const val TAG = "BaseMediaScanner"
     }
+
+    sealed class PageResult {
+        data class Success(val page: MediaSourcePage<SourceMediaItem>) : PageResult()
+        data class Error(val throwable: Throwable) : PageResult()
+    }
+
 }

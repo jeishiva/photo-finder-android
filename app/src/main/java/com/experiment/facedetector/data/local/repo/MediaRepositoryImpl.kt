@@ -80,6 +80,21 @@ class MediaRepositoryImpl(private val mediaDao: MediaDao) : MediaRepository {
         )
     }
 
+    override suspend fun updateProcessedState(
+        mediaIds: List<Long>,
+        processedState: ProcessedState,
+        lastErrorCode: MediaErrorCode?,
+        lastErrorMessage: String?,
+    ) {
+        mediaDao.updateProcessedState(
+            mediaIds,
+            processedState = processedState,
+            lastErrorCode = lastErrorCode,
+            lastErrorMessage = lastErrorMessage,
+            lastProcessedAtMs = System.currentTimeMillis()
+        )
+    }
+
     override suspend fun loadMediaBefore(
         cursorDate: Long,
         cursorId: Long,

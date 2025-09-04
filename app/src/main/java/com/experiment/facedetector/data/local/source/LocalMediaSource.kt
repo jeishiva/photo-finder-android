@@ -83,7 +83,6 @@ class LocalMediaSource(
                 }
             }
         }
-
         return mediaItems
     }
 

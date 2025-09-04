@@ -2,6 +2,7 @@ package com.experiment.facedetector.data.local.dao
 
 import androidx.room.Dao
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import com.experiment.facedetector.data.local.entities.FaceEntity
 
@@ -47,7 +48,12 @@ interface FaceDao {
     """)
     suspend fun deleteByMedia(mediaId: Long)
 
-    @Query("SELECT COUNT(*) FROM face")
-    suspend fun count(): Long
+    @Transaction
+    suspend fun replaceFacesForMedia(mediaId: Long, faces: List<FaceEntity>) {
+        deleteByMedia(mediaId)
+        if (faces.isNotEmpty()) {
+            upsertAll(faces)
+        }
+    }
 }
 
