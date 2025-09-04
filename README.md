@@ -6,6 +6,10 @@ Find your best photo in minutes — without scrolling endlessly through your gal
 With **Smart Photo Finder**, you can select a photo, detect a face, and instantly discover similar photos in your library.
 So the next time someone asks for your best or most relevant photo, you’ll have it ready in seconds.
 
+
+## Full Demo
+
+[![Watch full demo]](https://github.com/jeishiva/photo-search-android/blob/dev/finder-demo.mp4)
 ---
 ## 🚀 Features
 
