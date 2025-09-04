@@ -10,7 +10,7 @@ import com.experiment.facedetector.domain.processing.FaceEmbeddingPipeline
 import com.experiment.facedetector.domain.processing.ThumbnailGenerator
 import com.experiment.facedetector.domain.repo.MediaFingerPrint
 import com.experiment.facedetector.domain.repo.StableIdGenerator
-import com.experiment.facedetector.face.FaceDetectionProcessor
+import com.experiment.facedetector.core.face.FaceDetectionProcessor
 import org.koin.dsl.module
 
 val processorModule = module {

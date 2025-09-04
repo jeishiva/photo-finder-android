@@ -1,7 +1,7 @@
-package com.experiment.facedetector.domain.usecase.facesearch
+package com.experiment.facedetector.data.processing
 
 import android.graphics.Bitmap
-import com.experiment.facedetector.common.LogManager
+import com.experiment.facedetector.common.logging.LogManager
 import com.experiment.facedetector.domain.processing.FaceEmbeddingExtractor
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.sync.Mutex

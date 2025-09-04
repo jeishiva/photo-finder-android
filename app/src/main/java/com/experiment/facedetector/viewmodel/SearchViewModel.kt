@@ -1,22 +1,22 @@
 package com.experiment.facedetector.viewmodel
 
-import ExtractEmbeddingsUseCase
-import androidx.core.net.toUri
+import com.experiment.facedetector.domain.usecase.ExtractEmbeddingsUseCase
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.map
-import com.experiment.facedetector.common.LogManager
-import com.experiment.facedetector.common.safeCancel
+import com.experiment.facedetector.common.logging.LogManager
+import com.experiment.facedetector.common.extension.safeCancel
 import com.experiment.facedetector.domain.filter.MediaFilter
-import com.experiment.facedetector.domain.usecase.facesearch.SearchSimilarPhotoUseCase
-import com.experiment.facedetector.presentation.entities.SearchUiState
-import com.experiment.facedetector.presentation.common.UiStateHolder
-import com.experiment.facedetector.presentation.entities.FaceSearchItemUi
-import com.experiment.facedetector.presentation.entities.MediaItemUi
-import com.experiment.facedetector.presentation.entities.toUi
+import com.experiment.facedetector.domain.usecase.SearchSimilarPhotoUseCase
+import com.experiment.facedetector.presentation.app.model.UiStateHolder
+import com.experiment.facedetector.presentation.model.FaceSearchItemUi
+import com.experiment.facedetector.presentation.model.MediaItemUi
+import com.experiment.facedetector.presentation.model.toUi
+import com.experiment.facedetector.presentation.screen.search.model.SearchIntent
+import com.experiment.facedetector.presentation.screen.search.model.SearchUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -31,33 +31,30 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class SearchViewModel(
-    savedStateHandle: SavedStateHandle,
-    val embeddingUseCase: ExtractEmbeddingsUseCase,
-    val searchPhotosPagedUseCase: SearchSimilarPhotoUseCase,
+    private val savedStateHandle: SavedStateHandle,
+    private val embeddingUseCase: ExtractEmbeddingsUseCase,
+    private val searchPhotosPagedUseCase: SearchSimilarPhotoUseCase,
 ) : ViewModel() {
 
     private val _uiState = UiStateHolder<SearchUiState>(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.state
-    var searchJob: Job? = null
+
     private val _filter = MutableStateFlow(MediaFilter())
     val filter: StateFlow<MediaFilter> = _filter.asStateFlow()
-    private val searchTrigger: MutableStateFlow<List<FloatArray>> = MutableStateFlow(emptyList())
+
+    private val searchTrigger = MutableStateFlow<List<FloatArray>>(emptyList())
+    private var searchJob: Job? = null
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val pagedFaces: StateFlow<PagingData<MediaItemUi>> =
-    // new embeddings OR DB change → consider re-running,
-        // but only proceed when embeddings are non-empty.
         searchTrigger
-            .filter { embeddings ->
-                embeddings.isNotEmpty()
-            }
+            .filter { embeddings -> embeddings.isNotEmpty() }
             .flatMapLatest { embeddings ->
+                LogManager.d(TAG, "Triggering search with ${embeddings.size} embeddings")
                 searchPhotosPagedUseCase(embeddings)
             }
             .map { pagingData ->
-                pagingData.map {
-                    it.toUi()
-                }
+                pagingData.map { mediaItem -> mediaItem.toUi() }
             }
             .cachedIn(viewModelScope)
             .stateIn(
@@ -66,91 +63,107 @@ class SearchViewModel(
                 initialValue = PagingData.empty()
             )
 
-    fun searchFaces(searchItems: List<FaceSearchItemUi>) {
-        LogManager.d(TAG, "Search faces: ${searchItems.size}")
-        searchJob?.safeCancel()
-        searchJob = viewModelScope.launch(Dispatchers.IO) {
-            startLoading()
-            updateSearchItems(searchItems)
-            val embeddings = searchItems.mapNotNull { searchItem ->
-                embeddingUseCase(searchItem.faceBitmap).fold(
-                    onSuccess = { embedding ->
-                        LogManager.d(TAG, "Successfully extracted embedding for search item")
-                        embedding
-                    },
-                    onFailure = { exception ->
-                        LogManager.e(
-                            TAG,
-                            "Failed to extract embedding for search item",
-                            throwable = exception
-                        )
-                        null
-                    }
-                )
-            }
-            searchTrigger.value = embeddings
-            endLoading()
-        }
-    }
-
     fun handleIntent(intent: SearchIntent) {
         when (intent) {
             is SearchIntent.Start -> {
-                searchFaces(intent.searchFaces)
+                LogManager.d(TAG, "Handle start search intent with ${intent.searchFaces.size} faces")
+                performFaceSearch(intent.searchFaces)
             }
-
             is SearchIntent.ImageSelected -> {
-                handleImageSelectedIntent(intent.mediaItemUi)
+                LogManager.d(TAG, "Handle image selected intent: ${intent.mediaItemUi.contentPath}")
+                handleImageSelection(intent.mediaItemUi)
             }
-
             is SearchIntent.PhotoPreviewHandled -> {
-                markPhotoPreviewHandled()
+                LogManager.d(TAG, "Handle photo preview handled intent")
+                clearPhotoPreview()
             }
         }
     }
 
-    private fun handleImageSelectedIntent(mediaItemUi: MediaItemUi) {
-        _uiState.setState {
-            copy(
-                previewPhotoPath = mediaItemUi.contentPath?.toUri(),
+    private fun performFaceSearch(searchItems: List<FaceSearchItemUi>) {
+        if (searchItems.isEmpty()) {
+            LogManager.w(TAG, "Attempted to search with empty face list")
+            return
+        }
+
+        LogManager.d(TAG, "Starting face search with ${searchItems.size} faces")
+
+        // Cancel any existing search
+        searchJob?.safeCancel()
+
+        searchJob = viewModelScope.launch(Dispatchers.IO) {
+            try {
+                setLoadingState(true)
+                updateSearchFaceList(searchItems)
+
+                val embeddings = extractEmbeddingsFromFaces(searchItems)
+
+                if (embeddings.isNotEmpty()) {
+                    LogManager.d(TAG, "Successfully extracted ${embeddings.size} embeddings, triggering search")
+                    searchTrigger.value = embeddings
+                } else {
+                    LogManager.w(TAG, "No valid embeddings extracted from faces")
+                }
+
+            } catch (exception: Exception) {
+                LogManager.e(TAG, "Face search failed", exception)
+            } finally {
+                setLoadingState(false)
+            }
+        }
+    }
+
+    private suspend fun extractEmbeddingsFromFaces(searchItems: List<FaceSearchItemUi>): List<FloatArray> {
+        return searchItems.mapNotNull { searchItem ->
+            embeddingUseCase(searchItem.faceBitmap).fold(
+                onSuccess = { embedding ->
+                    LogManager.d(TAG, "Successfully extracted embedding for face")
+                    embedding
+                },
+                onFailure = { exception ->
+                    LogManager.e(TAG, "Failed to extract embedding for face", exception)
+                    null
+                }
             )
         }
     }
 
-    fun updateSearchItems(searchFaces: List<FaceSearchItemUi>) {
-        LogManager.d(TAG, "updateSearchItems ${searchFaces.size}")
+    // MARK: - Image Selection Handling
+    private fun handleImageSelection(mediaItemUi: MediaItemUi) {
         _uiState.setState {
-            copy(
-                faceList = searchFaces,
-            )
+            copy(previewPhotoPath = mediaItemUi.contentPath)
         }
     }
 
-    fun startLoading() {
-        _uiState.setState {
-            copy(isLoading = true)
-        }
-    }
-
-    fun endLoading() {
-        _uiState.setState {
-            copy(isLoading = false)
-        }
-    }
-
-    fun markPhotoPreviewHandled() {
+    private fun clearPhotoPreview() {
         _uiState.setState {
             copy(previewPhotoPath = null)
         }
     }
 
-    sealed class SearchIntent {
-        data class Start(val searchFaces: List<FaceSearchItemUi>) : SearchIntent()
-        data class ImageSelected(val mediaItemUi: MediaItemUi) : SearchIntent()
-        data object PhotoPreviewHandled : SearchIntent()
+    // MARK: - UI State Updates
+    private fun updateSearchFaceList(searchFaces: List<FaceSearchItemUi>) {
+        LogManager.d(TAG, "Updating search face list with ${searchFaces.size} items")
+        _uiState.setState {
+            copy(faceList = searchFaces)
+        }
+    }
+
+    private fun setLoadingState(isLoading: Boolean) {
+        LogManager.d(TAG, "Setting loading state: $isLoading")
+        _uiState.setState {
+            copy(isLoading = isLoading)
+        }
+    }
+
+    override fun onCleared() {
+        searchJob?.safeCancel()
+        super.onCleared()
     }
 
     companion object {
         private const val TAG = "SearchViewModel"
     }
+
 }
+

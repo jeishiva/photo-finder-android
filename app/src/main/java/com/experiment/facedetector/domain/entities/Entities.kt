@@ -29,7 +29,7 @@ data class MediaDomain(
     val thumbnailUri: String?,
     val dateModified: Long? = null,
     val sourceStableId: String,
-    val contentUri : String,
+    val contentPath : String,
 )
 
 data class MediaWithFacesDomain(

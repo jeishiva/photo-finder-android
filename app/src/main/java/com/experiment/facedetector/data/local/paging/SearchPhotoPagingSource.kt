@@ -2,22 +2,21 @@ package com.experiment.facedetector.data.local.paging
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import com.experiment.facedetector.data.local.entities.MediaWithFaces
+import com.experiment.facedetector.data.local.entities.MediaWithFacesEntity
 import com.experiment.facedetector.data.local.entities.ProcessedState
 import com.experiment.facedetector.domain.repo.MediaWithFacesRepository
 
-
 class SearchPhotoPagingSource(
     private val mediaWithFacesRepository: MediaWithFacesRepository,
-) : PagingSource<Pair<Long, Long>, MediaWithFaces>() {
+) : PagingSource<Pair<Long, Long>, MediaWithFacesEntity>() {
 
-    override fun getRefreshKey(state: PagingState<Pair<Long, Long>, MediaWithFaces>): Pair<Long, Long>? {
+    override fun getRefreshKey(state: PagingState<Pair<Long, Long>, MediaWithFacesEntity>): Pair<Long, Long>? {
         val anchorPos = state.anchorPosition ?: return null
         val anchorItem = state.closestItemToPosition(anchorPos) ?: return null
         return anchorItem.media.modifiedAtMs to anchorItem.media.mediaId
     }
 
-    override suspend fun load(params: LoadParams<Pair<Long, Long>>): LoadResult<Pair<Long, Long>, MediaWithFaces> {
+    override suspend fun load(params: LoadParams<Pair<Long, Long>>): LoadResult<Pair<Long, Long>, MediaWithFacesEntity> {
         return try {
             when (params) {
                 is LoadParams.Refresh -> {

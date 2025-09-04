@@ -1,5 +1,6 @@
 package com.experiment.facedetector.domain.repo
 
+import androidx.compose.foundation.pager.PageSize
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
@@ -17,11 +18,11 @@ class MediaPagingRepositoryImpl(
     private val mediaWithFacesRepository: MediaWithFacesRepository,
 ) : MediaPagingRepository {
 
-    override fun getGallerySourceFlow(): Flow<PagingData<MediaWithFacesDomain>> {
+    override fun getGallerySourceFlow(pageSize: Int): Flow<PagingData<MediaWithFacesDomain>> {
         return return Pager(
             config = PagingConfig(
-                pageSize = 20,
-                prefetchDistance = 20,
+                pageSize = pageSize,
+                prefetchDistance = pageSize / 2,
                 enablePlaceholders = true
             ),
             pagingSourceFactory = {
@@ -34,11 +35,11 @@ class MediaPagingRepositoryImpl(
         }
     }
 
-    override fun getSearchFaceFlow(): Flow<PagingData<MediaWithFacesDomain>> {
+    override fun getSearchFaceFlow(pageSize: Int): Flow<PagingData<MediaWithFacesDomain>> {
         return Pager(
             config = PagingConfig(
-                pageSize = 20,
-                prefetchDistance = 20,
+                pageSize = pageSize,
+                prefetchDistance = pageSize / 2,
                 enablePlaceholders = true
             ),
             pagingSourceFactory = {

@@ -1,7 +1,6 @@
 package com.experiment.facedetector.presentation
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -12,7 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import com.experiment.facedetector.navigation.AppNavGraph
-import com.experiment.facedetector.presentation.entities.AppUiModel
+import com.experiment.facedetector.presentation.app.model.AppActions
+import com.experiment.facedetector.presentation.app.model.AppUiModel
 import com.experiment.facedetector.presentation.theme.AndroidFaceDetectorTheme
 import com.experiment.facedetector.viewmodel.AppViewModel
 import org.koin.android.ext.android.inject
@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
 
     private val appViewModel: AppViewModel by inject()
     val appUiModel = AppUiModel(
-        actions = AppUiModel.Actions(
+        actions = AppActions(
             onPermissionGranted = {
                 startMediaScanning()
             }

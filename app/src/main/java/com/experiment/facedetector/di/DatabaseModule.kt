@@ -16,7 +16,7 @@ val databaseModule = module {
             AppDatabase::class.java,
             "app-db"
         )
-        .fallbackToDestructiveMigration(dropAllTables = false)
+        .fallbackToDestructiveMigration(dropAllTables = true)
         .build()
     } bind RoomDatabase::class
 

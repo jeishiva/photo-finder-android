@@ -1,6 +1,6 @@
 package com.experiment.facedetector.domain.matcher
 
-import com.experiment.facedetector.common.LogManager
+import com.experiment.facedetector.common.logging.LogManager
 import com.experiment.facedetector.config.AppConfig
 import com.experiment.facedetector.domain.entities.MediaWithFacesDomain
 

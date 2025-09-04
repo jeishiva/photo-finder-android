@@ -1,45 +1,78 @@
-# Photo Finder
-## 📱 App Overview
-
-This app provides a smart and efficient way to manage user-captured camera images by automatically detecting faces, generating thumbnails, and allowing face tagging. It uses modern Android development practices and leverages key Jetpack and ML components for a clean, responsive, and optimized experience.
 
 ---
 
-## ✅ **Core Functionality**
+# 📸 Smart Photo Finder
 
-* Requests **local storage access** to identify camera images captured by the user.
-* Automatically detects **faces** using **Google ML Kit (Face Detection)**.
-* Generates and stores **thumbnails** (200x200, \~50KB JPEG) for images with at least one detected face.
-* Displays all such filtered images in a **lazy-loading gallery screen** using **Jetpack Compose + Paging 3**.
-* On tapping a gallery item, the **full-resolution image** (1280x720) is displayed.
-* Users can tap on **face bounding boxes** to **add custom tags**.
-* Tags are persisted using **Room** local database.
+Find your best photo in minutes — without scrolling endlessly through your gallery.
+
+With **Smart Photo Finder**, you can select a photo, detect a face, and instantly discover similar photos in your library.
+So the next time someone asks for your best or most relevant photo, you’ll have it ready in seconds.
 
 ---
 
-## 🏗️ **Architecture & Components**
+## 🎥 Demo
 
-* **Architecture**: MVVM (Model-View-ViewModel)
+[Click here to watch the app video demo](https://www.youtube.com/watch?v=8ISe5TjXOfE)
+
+---
+
+## 🚀 Features
+
+* **Media Indexing** – Scans your local camera images for quick retrieval.
+* **Face Detection** – Powered by **Google ML Kit**.
+* **Face Embedding** – Extracts embeddings using **TensorFlow Lite (MobileFaceNet)** for similarity search.
+* **Thumbnail Generation** – Creates optimized **200×200 JPEG** thumbnails for smooth browsing.
+* **Face-Based Search** – Pick one photo and instantly find similar ones.
+
+> ✅ Currently supports **local camera images**.
+> Built to be **maintainable and extensible**, so new media sources like **WhatsApp media** or **cloud storage (Dropbox, Google Drive, etc.)** can be integrated easily.
+
+---
+
+## 🏗️ Architecture & Components
+
+* **Architecture**: MVVM (lifecycle awareness) + MVI (state management) + Clean Architecture (layered, testable, extensible)
 * **UI**: Jetpack Compose
 * **Navigation**: Jetpack Navigation
 * **Image Loading**: Coil
 * **Face Detection**: Google ML Kit
+* **Embeddings**: TensorFlow Lite
 * **Persistence**: Room Database
 * **Background Processing**: WorkManager
-* **Paging**: Paging 3 for lazy loading and memory-efficient gallery display
+* **Paging**: Paging 3 (for lazy loading + memory efficiency)
+* **Dependency Injection**: Koin
 
 ---
 
-## ⚙️ **Performance & Optimization**
+## ⚙️ Performance & Optimization
 
-1. **Batch Processing**: Camera images are processed in batches for face detection and thumbnail generation.
-2. **Bitmap Pooling**: Reuses bitmaps to reduce memory pressure and avoid out-of-memory (OOM) errors.
-3. **Lazy Loading**: Paging 3 combined with Room ensures only visible data is loaded to minimize memory usage.
-4. **Efficient Thumbnails**:Thumbnails are generated with a resolution of 200x200 and stored in JPEG format, ensuring broad device compatibility. While WebP offers smaller file sizes, JPEG was chosen due to broader support below API 30, aligning with compatibility requirements.
-5. **Optimized Full Images**: Full images are rendered in 1280x720 resolution, balancing quality and performance.
-6. **Local Persistence**: Face tags are stored locally using Room for offline availability and quick access.
-7. **Jetpack Compose**: Modern declarative UI ensures better performance and maintainability compared to traditional XML-based UI.
-8. **WorkManager**: Handles background syncing of added camera images, can be used to work in a battery- and system-aware manner.
+* **Batch Processing** – Camera images are processed in batches for face detection & thumbnails.
+* **Bitmap Pooling** – Reuses buffers to prevent out-of-memory (OOM) crashes.
+* **Lazy Loading** – Combines Room + Paging 3 to load only what’s visible.
+* **Optimized Full Images** – Original images are **downscaled to 1280 px (longest edge)**, and face detection is performed on this optimized version to balance accuracy and performance.
+* **Offline Support** – Face embeddings & tags stored locally with Room DB.
+* **Modern UI** – Jetpack Compose ensures performance and maintainability.
+* **System-Aware Background Work** – WorkManager schedules jobs without draining battery.
+
+---
+
+📦 Roadmap & Extensibility
+
+Extensibility is a core design goal of this project.
+The clean, modular architecture allows new data sources, ML models, or features to be added without disrupting existing functionality.
+
+## 🛠️ Tech Stack
+
+* **Language**: Kotlin
+* **UI**: Jetpack Compose
+* **Architecture**: MVVM + MVI + Clean Architecture
+* **Image Loading**: Coil
+* **Database**: Room
+* **Async**: Coroutines + Flow
+* **Dependency Injection**: Koin
+* **Background Work**: WorkManager
+* **Face Detection**: Google ML Kit
+* **Embeddings**: TensorFlow Lite
 
 ---
 

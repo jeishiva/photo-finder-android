@@ -1,11 +1,11 @@
 package com.experiment.facedetector.di
 
-import ExtractEmbeddingsUseCase
+import com.experiment.facedetector.domain.usecase.ExtractEmbeddingsUseCase
 import com.experiment.facedetector.domain.usecase.FaceDetectionUseCase
 import com.experiment.facedetector.domain.usecase.GetMediaDetailsUseCase
 import com.experiment.facedetector.domain.usecase.GetSyncedMediaUseCase
 import com.experiment.facedetector.domain.usecase.ScanMediaUseCase
-import com.experiment.facedetector.domain.usecase.facesearch.SearchSimilarPhotoUseCase
+import com.experiment.facedetector.domain.usecase.SearchSimilarPhotoUseCase
 import org.koin.dsl.module
 
 val useCaseModule = module {

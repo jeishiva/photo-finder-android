@@ -5,13 +5,9 @@ import com.experiment.facedetector.data.local.entities.FaceEntity
 import com.experiment.facedetector.domain.repo.FaceRepository
 
 class FaceRepositoryImpl(
-    private val faceDao: FaceDao
+    private val faceDao: FaceDao,
 ) : FaceRepository {
-    override suspend fun upsertAll(faces: List<FaceEntity>) {
-        if (faces.isEmpty()) {
-            return
-        } else {
-            faceDao.upsertAll(faces)
-        }
+    override suspend fun replaceFacesForMedia(mediaId: Long, faces: List<FaceEntity>) {
+        faceDao.replaceFacesForMedia(mediaId, faces)
     }
 }

@@ -2,7 +2,7 @@ package com.experiment.facedetector.data.local.dao
 
 import androidx.room.Dao
 import androidx.room.Query
-import com.experiment.facedetector.data.local.entities.MediaWithFaces
+import com.experiment.facedetector.data.local.entities.MediaWithFacesEntity
 import com.experiment.facedetector.data.local.entities.ProcessedState
 
 @Dao
@@ -29,5 +29,5 @@ interface MediaWithFacesDao {
         cursorId: Long,
         limit: Int,
         processed: ProcessedState = ProcessedState.PROCESSED,
-    ): List<MediaWithFaces>
+    ): List<MediaWithFacesEntity>
 }
