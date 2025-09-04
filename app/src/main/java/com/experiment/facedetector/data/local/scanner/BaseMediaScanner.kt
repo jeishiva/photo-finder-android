@@ -74,26 +74,22 @@ abstract class BaseMediaScanner(
                         itemsFetched = itemsFetched
                     )
                 }
-
                 pagesScanned++
                 itemsFetched += page.items.size
                 LogManager.d(
                     tag,
                     "page $pagesScanned fetched=${page.items.size} afterCursor=$currentCursor hasMore=${page.hasMore}"
                 )
-
                 if (page.items.isEmpty()) {
                     page.nextCursor?.let {
                         advanceCursor(it).also { cursorAdvanced = cursorAdvanced || it }
                     }
                     break@pageLoop
                 }
-
                 val plan = upsertAndDetectChanges(page.items).also {
                     itemsUpserted += it.upsertedCount
                     itemsChanged += it.changedItems.size
                 }
-
                 if (plan.changedItems.isNotEmpty()) {
                     val chunks = plan.changedItems.chunked(config.chunkSize)
                     for ((index, chunk) in chunks.withIndex()) {
@@ -121,7 +117,6 @@ abstract class BaseMediaScanner(
                     advanceCursor(it).also { cursorAdvanced = cursorAdvanced || it }
                 }
                 currentCursor = page.nextCursor
-
                 budgetRemaining -= page.items.size
                 if (!page.hasMore) {
                     LogManager.d(tag, "no more items from source; stopping")
@@ -151,9 +146,9 @@ abstract class BaseMediaScanner(
     }
 
     private suspend fun loadCursor(sourceKey: String): MediaSourceCursor? {
-        val c = cursorRepo.get(sourceType)
-        LogManager.d(tag, "loadCursor: source=$sourceKey cursor=$c")
-        return c
+        val cursor = cursorRepo.get(sourceType)
+        LogManager.d(tag, "loadCursor: source=$sourceKey cursor=$cursor")
+        return cursor
     }
 
     private suspend fun fetchPage(
@@ -168,49 +163,57 @@ abstract class BaseMediaScanner(
         }
     }
 
-    private suspend fun upsertAndDetectChanges(items: List<SourceMediaItem>): MediaDelta {
-        if (items.isEmpty()) {
+    private suspend fun upsertAndDetectChanges(sourceItems: List<SourceMediaItem>): MediaDelta {
+        if (sourceItems.isEmpty()) {
             return MediaDelta(emptyMap(), emptyList(), 0)
         }
-        val newRows: List<MediaEntity> = items.map {
-            it.toMediaEntity(
+
+        val mediaEntities: List<MediaEntity> = sourceItems.map { sourceItem ->
+            sourceItem.toMediaEntity(
                 fingerPrint = fingerPrint,
                 stableIdGenerator = stableIdGenerator
             )
         }
-        val stableIds = items.map { it.sourceStableId.toString() }
-        val oldFpByStable: Map<String, String?> =
-            mediaRepo.getFingerprintsBySource(sourceType.key, stableIds)
 
-        val changed = ArrayList<SourceMediaItem>(items.size)
-        for (item in items) {
-            val newFp =
-                newRows.first { it.sourceStableId == item.sourceStableId.toString() }.fingerprint
-            val oldFp = oldFpByStable[item.sourceStableId.toString()]
-            if (oldFp == null || oldFp != newFp) {
-                changed.add(item)
+        val sourceStableIds = sourceItems.map { it.sourceStableId.toString() }
+        val existingFingerprintsByStableId: Map<String, String?> =
+            mediaRepo.getFingerprintsBySource(sourceType.key, sourceStableIds)
+
+        val changedSourceItems = ArrayList<SourceMediaItem>(sourceItems.size)
+        for (sourceItem in sourceItems) {
+            val currentFingerprint = mediaEntities
+                .first { it.sourceStableId == sourceItem.sourceStableId.toString() }
+                .fingerprint
+            val existingFingerprint = existingFingerprintsByStableId[sourceItem.sourceStableId.toString()]
+
+            if (existingFingerprint == null || existingFingerprint != currentFingerprint) {
+                changedSourceItems.add(sourceItem)
             }
         }
+
         val upsertedCount = try {
-            mediaRepo.upsertAll(newRows)
-            newRows.size
+            mediaRepo.upsertAll(mediaEntities)
+            mediaEntities.size
         } catch (e: Exception) {
-            LogManager.e(tag, "upsertAll failed for count=${newRows.size}", e)
+            LogManager.e(TAG, "upsertAll failed for count=${mediaEntities.size}", e)
             0
         }
 
-        val idsForPage: Map<String, Long> = mediaRepo.getIdsForSource(sourceType.key, stableIds)
-        val idByStable = HashMap<Long, Long>(idsForPage.size)
-        for (item in items) {
-            idsForPage[item.sourceStableId.toString()]?.let { mediaId ->
-                idByStable[item.sourceStableId] = mediaId
+        val mediaIdsBySourceStableId: Map<String, Long> =
+            mediaRepo.getIdsForSource(sourceType.key, sourceStableIds)
+        val mediaIdMappings = HashMap<Long, Long>(mediaIdsBySourceStableId.size)
+
+        for (sourceItem in sourceItems) {
+            mediaIdsBySourceStableId[sourceItem.sourceStableId.toString()]?.let { mediaId ->
+                mediaIdMappings[sourceItem.sourceStableId] = mediaId
             }
         }
         LogManager.d(
-            tag,
-            "upsertAndDetectChanges: items=${items.size} upserted=$upsertedCount changed=${changed.size}"
+            TAG,
+            "upsertAndDetectChanges: sourceItems=${sourceItems.size} " +
+                    "upserted=$upsertedCount changed=${changedSourceItems.size}"
         )
-        return MediaDelta(idByStable, changed, upsertedCount)
+        return MediaDelta(mediaIdMappings, changedSourceItems, upsertedCount)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -222,7 +225,7 @@ abstract class BaseMediaScanner(
         return chunk.asFlow().flatMapMerge(concurrency = maxConcurrency) { item ->
             LogManager.d(
                 tag,
-                "process item stableId=${item.sourceStableId} modified=${item.lastModifiedAtMs}"
+                "process item stableId=${item.sourceStableId} modified=${item.timeInfo.modifiedAtMs}"
             )
             processSingleItemFlow(item, idByStable)
         }
@@ -244,7 +247,7 @@ abstract class BaseMediaScanner(
     }.map { itemProcessResult ->
         LogManager.d(
             tag,
-            "processing item stableId=${item.sourceStableId} modified=${item.lastModifiedAtMs}"
+            "processing item stableId=${item.sourceStableId} modified=${item.timeInfo.modifiedAtMs}"
         )
         updateProcessedState(itemProcessResult)
         itemProcessResult
@@ -410,4 +413,8 @@ abstract class BaseMediaScanner(
         val errorCode: MediaErrorCode,
         message: String,
     ) : Exception(message)
+
+    companion object {
+        private const val TAG = "BaseMediaScanner"
+    }
 }

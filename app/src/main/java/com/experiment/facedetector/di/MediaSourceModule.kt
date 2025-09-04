@@ -1,10 +1,10 @@
 
 package com.experiment.facedetector.di
-import com.experiment.facedetector.data.local.source.CameraMediaStoreSource
+import com.experiment.facedetector.data.local.source.LocalMediaSource
 import org.koin.dsl.module
 
 val mediaSourceModule = module {
-    single<CameraMediaStoreSource> {
-        CameraMediaStoreSource(get())
+    single<LocalMediaSource> {
+        LocalMediaSource(get())
     }
 }

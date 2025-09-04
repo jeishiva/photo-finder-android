@@ -1,11 +1,11 @@
 package com.experiment.facedetector.di
 
-import com.experiment.facedetector.data.local.scanner.CameraMediaScanner
+import com.experiment.facedetector.data.local.scanner.LocalMediaScanner
 import org.koin.dsl.module
 
 val scannerModule = module {
-    single<CameraMediaScanner> {
-        CameraMediaScanner(
+    single<LocalMediaScanner> {
+        LocalMediaScanner(
             cameraMediaStoreSource = get() ,
             mediaRepo = get(),
             faceRepo = get(),

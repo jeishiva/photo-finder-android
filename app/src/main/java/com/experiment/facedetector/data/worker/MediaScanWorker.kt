@@ -5,14 +5,14 @@ import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import com.experiment.facedetector.data.local.scanner.CameraMediaScanner
+import com.experiment.facedetector.data.local.scanner.LocalMediaScanner
 import com.experiment.facedetector.domain.entities.SyncResult
 import com.experiment.facedetector.domain.usecase.ScanMediaUseCase
 
 class MediaScanWorker(
     appContext: Context,
     params: WorkerParameters,
-    private val mediaScanner: CameraMediaScanner
+    private val mediaScanner: LocalMediaScanner
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result {

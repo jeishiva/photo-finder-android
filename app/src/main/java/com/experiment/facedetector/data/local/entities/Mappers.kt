@@ -16,13 +16,13 @@ fun SourceMediaItem.toMediaEntity(
     fingerPrint: MediaFingerPrint,
     stableIdGenerator: StableIdGenerator,
 ): MediaEntity {
-    val fp = fingerPrint.generate(
+
+    val fingerPrint = fingerPrint.generate(
         sourceStableId = this.sourceStableId.toString(),
-        lastModified = this.lastModifiedAtMs,
-        sizeBytes = this.sizeBytes
+        lastModified = this.timeInfo.modifiedAtMs,
+        sizeBytes = this.mediaInfo.sizeBytes
     )
 
-    // Decide kind from presence of the nested payloads on the unified item
     val kind: MediaKind = if (this.video != null) {
         MediaKind.VIDEO
     } else {
@@ -42,12 +42,12 @@ fun SourceMediaItem.toMediaEntity(
         mediaKind = kind, // new: IMAGE or VIDEO
 
         // descriptive
-        mimeType = this.mimeType,
-        width = this.width,
-        height = this.height,
-        sizeBytes = this.sizeBytes,
-        bucketId = this.bucketId,
-        bucketDisplayName = this.bucketDisplayName,
+        mimeType = this.mediaInfo.mimeType,
+        width = this.mediaInfo.width,
+        height = this.mediaInfo.height,
+        sizeBytes = this.mediaInfo.sizeBytes,
+        bucketId = this.bucketInfo.bucketId,
+        bucketDisplayName = this.bucketInfo.bucketName,
 
         // image-specific (nullable in unified schema)
         orientationDeg = this.image?.orientationDeg,
@@ -57,13 +57,13 @@ fun SourceMediaItem.toMediaEntity(
         rotationDeg = this.video?.rotationDeg,
 
         // timeline
-        createdAtMs = this.createdAtMs,
-        modifiedAtMs = this.lastModifiedAtMs,
-        generationModified = this.generationModified,
+        createdAtMs = this.timeInfo.createdAtMs,
+        modifiedAtMs = this.timeInfo.modifiedAtMs,
+        generationModified = this.timeInfo.generationModified,
 
         // pipeline
         thumbnailPath = null,
-        fingerprint = fp,
+        fingerprint = fingerPrint,
         processedState = ProcessedState.PENDING,
         lastProcessedAtMs = null,
         attemptCount = 0,
@@ -91,7 +91,6 @@ fun FaceEntity.toDomain(): FaceEmbedding {
         embedding = this.embeddingData,
     )
 }
-
 
 fun MediaEntity.toDomain(): MediaDomain {
     return MediaDomain(

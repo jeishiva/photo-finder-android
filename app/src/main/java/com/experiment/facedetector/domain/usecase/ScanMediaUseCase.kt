@@ -1,12 +1,12 @@
 package com.experiment.facedetector.domain.usecase
 
 import com.experiment.facedetector.common.logging.LogManager
-import com.experiment.facedetector.data.local.scanner.CameraMediaScanner
+import com.experiment.facedetector.data.local.scanner.LocalMediaScanner
 import com.experiment.facedetector.domain.entities.SyncConfig
 import com.experiment.facedetector.domain.entities.SyncResult
 
 class ScanMediaUseCase(
-    private val mediaScanner: CameraMediaScanner,
+    private val mediaScanner: LocalMediaScanner,
 ) {
     suspend operator fun invoke(): SyncResult {
         LogManager.d(TAG, "media scanning started")
