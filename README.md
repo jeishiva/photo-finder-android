@@ -9,7 +9,15 @@ So the next time someone asks for your best or most relevant photo, you’ll hav
 
 ## Full Demo
 
-[![Watch full demo]](https://github.com/jeishiva/photo-search-android/blob/dev/finder-demo.mp4)
+<!-- Inline player (uses raw URL) -->
+<video src="https://raw.githubusercontent.com/jeishiva/photo-search-android/dev/finder-demo.mp4"
+controls
+width="720"
+title="Smart Photo Finder – Demo">
+Your browser doesn’t support embedded videos.
+Here’s a direct link:
+<a href="https://raw.githubusercontent.com/jeishiva/photo-search-android/main/finder-demo.mp4">Watch the demo</a>.
+</video>
 ---
 ## 🚀 Features
 
