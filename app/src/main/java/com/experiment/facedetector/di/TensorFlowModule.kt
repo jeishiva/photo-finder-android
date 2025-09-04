@@ -2,7 +2,7 @@ package com.experiment.facedetector.di
 
 import android.content.Context
 import com.experiment.facedetector.domain.processing.FaceEmbeddingExtractor
-import com.experiment.facedetector.domain.usecase.facesearch.TensorFlowFaceEmbeddingExtractor
+import com.experiment.facedetector.data.processing.TensorFlowFaceEmbeddingExtractor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
