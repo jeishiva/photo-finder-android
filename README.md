@@ -1,4 +1,6 @@
 
+---
+
 # 📸 Smart Photo Finder
 
 Find your best photo in minutes — without scrolling endlessly through your gallery.
@@ -6,12 +8,13 @@ Find your best photo in minutes — without scrolling endlessly through your gal
 With **Smart Photo Finder**, you can select a photo, detect a face, and instantly discover similar photos in your library.
 So the next time someone asks for your best or most relevant photo, you’ll have it ready in seconds.
 
-<video src="https://github.com/jeishiva/photo-search-android/blob/dev/finder-demo.mp4"
-controls
-width="720"
-title="Smart Photo Finder Demo">
-</video>
+---
 
+## 🎥 Demo
+
+[Click here to watch the app video demo](https://www.youtube.com/watch?v=8ISe5TjXOfE)
+
+---
 
 ## 🚀 Features
 
@@ -21,9 +24,10 @@ title="Smart Photo Finder Demo">
 * **Thumbnail Generation** – Creates optimized **200×200 JPEG** thumbnails for smooth browsing.
 * **Face-Based Search** – Pick one photo and instantly find similar ones.
 
-> ✅ **Currently supports local camera images.**
-> The app is built to be **maintainable and extensible**, so new sources like **WhatsApp media** or **cloud storage (Dropbox, Google Drive, etc.)** can be integrated easily.
+> ✅ Currently supports **local camera images**.
+> Built to be **maintainable and extensible**, so new media sources like **WhatsApp media** or **cloud storage (Dropbox, Google Drive, etc.)** can be integrated easily.
 
+---
 
 ## 🏗️ Architecture & Components
 
@@ -39,22 +43,24 @@ title="Smart Photo Finder Demo">
 * **Dependency Injection**: Koin
 
 ---
+
 ## ⚙️ Performance & Optimization
 
 * **Batch Processing** – Camera images are processed in batches for face detection & thumbnails.
 * **Bitmap Pooling** – Reuses buffers to prevent out-of-memory (OOM) crashes.
 * **Lazy Loading** – Combines Room + Paging 3 to load only what’s visible.
-* **Optimized Full Images** – Original images are downscaled to 1280px (longest edge). Face detection is performed on this optimized version, striking the right balance between accuracy and performance.
+* **Optimized Full Images** – Original images are **downscaled to 1280 px (longest edge)**, and face detection is performed on this optimized version to balance accuracy and performance.
 * **Offline Support** – Face embeddings & tags stored locally with Room DB.
-* **Modern UI** – Jetpack Compose provides performance and maintainability.
+* **Modern UI** – Jetpack Compose ensures performance and maintainability.
 * **System-Aware Background Work** – WorkManager schedules jobs without draining battery.
 
-
-## 📦 Roadmap & Extensibility
-
-    Extensibility is a **core design goal** of this project.
-    The clean, modular architecture allows new data sources, ML models, or features to be added without disrupting existing functionality.
 ---
+
+📦 Roadmap & Extensibility
+
+Extensibility is a core design goal of this project.
+The clean, modular architecture allows new data sources, ML models, or features to be added without disrupting existing functionality.
+
 ## 🛠️ Tech Stack
 
 * **Language**: Kotlin
@@ -67,8 +73,6 @@ title="Smart Photo Finder Demo">
 * **Background Work**: WorkManager
 * **Face Detection**: Google ML Kit
 * **Embeddings**: TensorFlow Lite
-
-
 
 ---
 
