@@ -277,7 +277,7 @@ class GalleryViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             refreshSignals.collect {
                 LogManager.d(TAG, "Media changes detected - showing refresh button")
-                _uiState.setState { copy(showRefreshHint = true) }
+                // _uiState.setState { copy(showRefreshHint = true) }
             }
         }
     }
